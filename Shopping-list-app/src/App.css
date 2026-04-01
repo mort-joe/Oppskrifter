@@ -400,3 +400,92 @@
   width: 60px;
   font-size: 14px;
 }
+
+.auth-card {
+  max-width: 460px;
+  margin: 48px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fafafa;
+  text-align: left;
+  display: grid;
+  gap: 12px;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-logo {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.auth-title {
+  margin: 0;
+  font-size: clamp(1.9rem, 5vw, 2.35rem);
+  line-height: 1.05;
+  letter-spacing: -0.4px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.auth-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.auth-form button {
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.auth-help {
+  margin: 0;
+}
+
+.auth-error {
+  margin: 0;
+  color: #b42318;
+  font-weight: 600;
+}
+
+.user-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.user-toolbar button {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .auth-card {
+    margin: 24px auto;
+    padding: 16px;
+  }
+
+  .auth-logo {
+    width: 30px;
+    height: 30px;
+  }
+}

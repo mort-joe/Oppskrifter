@@ -3,6 +3,13 @@ import './App.css'
 import { supabase } from './supabaseClient'
 
 function App() {
+  const [session, setSession] = useState(null)
+  const [user, setUser] = useState(null)
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authSubmitting, setAuthSubmitting] = useState(false)
+  const [authError, setAuthError] = useState('')
   const [recipes, setRecipes] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRecipeId, setSelectedRecipeId] = useState(null)
@@ -31,7 +38,9 @@ function App() {
   const normalizeNames = (values) =>
     [...new Set(values.map((value) => value.trim()).filter(Boolean))]
 
-  const loadData = async () => {
+  const loadData = async (userId) => {
+    if (!userId) return
+
     const [{ data: categoryData, error: categoryError }, { data: tagData, error: tagError }, { data: recipeData, error: recipeError }] = await Promise.all([
       supabase.from('categories').select('name').order('name'),
       supabase.from('tags').select('name').order('name'),
@@ -40,6 +49,7 @@ function App() {
         .select(
           'id,name,recipe_ingredients(ingredient_id,quantity,ingredients(name)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
         )
+        .eq('user_id', userId)
         .order('id', { ascending: false }),
     ])
 
@@ -102,11 +112,39 @@ function App() {
   }
 
   useEffect(() => {
+    const initAuth = async () => {
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession()
+
+      setSession(currentSession)
+      setUser(currentSession?.user ?? null)
+      setIsAuthLoading(false)
+    }
+
+    void initAuth()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      setUser(nextSession?.user ?? null)
+      setAuthError('')
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+
     const load = async () => {
-      await loadData()
+      await loadData(user.id)
     }
     void load()
-  }, [])
+  }, [user])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)')
@@ -324,6 +362,41 @@ function App() {
     setCustomItemQuantity(1)
   }
 
+  const handleSignIn = async (event) => {
+    event.preventDefault()
+    setAuthError('')
+    setAuthSubmitting(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail.trim(),
+      password: authPassword,
+    })
+
+    if (error) {
+      setAuthError(error.message)
+    }
+
+    setAuthSubmitting(false)
+  }
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      alert('Kunne ikke logge ut akkurat nå. Prøv igjen.')
+      return
+    }
+
+    setShoppingListRecipeCounts({})
+    setCustomShoppingItems({})
+    setIngredientHaveCounts({})
+    setCheckedIngredients([])
+    setRecipes([])
+    setSelectedRecipeId(null)
+    setEditingRecipe(null)
+    setCustomItemName('')
+    setCustomItemQuantity(1)
+  }
+
   const parseQuantityValue = (value) => {
     const normalized = String(value).replace(',', '.')
     const parsed = parseFloat(normalized)
@@ -420,7 +493,7 @@ function App() {
       await supabase.from('recipe_categories').delete().eq('recipe_id', editingRecipe.id)
       await supabase.from('recipe_tags').delete().eq('recipe_id', editingRecipe.id)
       await supabase.from('recipes').delete().eq('id', editingRecipe.id)
-      await loadData()
+  await loadData(user.id)
       setEditingRecipe(null)
       setSelectedRecipeId(null)
     } catch (error) {
@@ -485,7 +558,7 @@ function App() {
         await supabase.from('recipe_ingredients').insert(ingredientRows)
       }
 
-      await loadData()
+  await loadData(user.id)
       setEditingRecipe(null)
     } catch (error) {
       console.error('Edit recipe error:', error)
@@ -545,7 +618,7 @@ function App() {
 
       const { data: recipeInsert, error: recipeError } = await supabase
         .from('recipes')
-        .insert([{ name: newRecipe.name.trim() }])
+        .insert([{ name: newRecipe.name.trim(), user_id: user.id }])
         .select('id')
         .single()
 
@@ -574,7 +647,7 @@ function App() {
         await supabase.from('recipe_tags').insert(tagRows)
       }
 
-      await loadData()
+    await loadData(user.id)
       setSelectedRecipeId(recipeId)
       setNewRecipe({ name: '', ingredients: [{ name: '', quantity: 1 }], typeTags: [], occasionTags: [] })
     } catch (error) {
@@ -590,8 +663,67 @@ function App() {
     Object.keys(ingredientHaveCounts).length > 0 ||
     checkedIngredients.length > 0
 
+  if (isAuthLoading) {
+    return (
+      <div className="App app-shell">
+        <section className="auth-card">
+          <h2>Laster inn…</h2>
+          <p>Sjekker innlogging.</p>
+        </section>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return (
+      <div className="App app-shell">
+        <section className="auth-card">
+          <div className="auth-brand">
+            <img src="/favicon.svg" alt="Matretter logo" className="auth-logo" />
+            <h1 className="auth-title">Matretter - Innkjøpsplanlegger</h1>
+          </div>
+          <h2>Logg inn</h2>
+          <p className="auth-help">Kun autorisert bruker har tilgang.</p>
+
+          <form className="auth-form" onSubmit={handleSignIn}>
+            <label>
+              E-post
+              <input
+                type="email"
+                value={authEmail}
+                onChange={(event) => setAuthEmail(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Passord
+              <input
+                type="password"
+                value={authPassword}
+                onChange={(event) => setAuthPassword(event.target.value)}
+                required
+              />
+            </label>
+
+            {authError && <p className="auth-error">{authError}</p>}
+
+            <button type="submit" disabled={authSubmitting}>
+              {authSubmitting ? 'Logger inn…' : 'Logg inn'}
+            </button>
+          </form>
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
+      <div className="user-toolbar">
+        <span>Innlogget som {user?.email}</span>
+        <button type="button" onClick={handleSignOut}>Logg ut</button>
+      </div>
+
       <h1>Matretter - Innkjøpsplanlegger</h1>
 
       <nav className={`main-nav ${isMobile ? 'mobile' : ''}`}>

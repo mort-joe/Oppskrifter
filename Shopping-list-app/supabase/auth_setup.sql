@@ -1,0 +1,250 @@
+-- Auth + RLS setup for Shopping-list-app (single-user app)
+-- Run this in Supabase SQL Editor.
+
+begin;
+
+-- 1) Add owner column to recipes (if missing)
+alter table public.recipes
+  add column if not exists user_id uuid references auth.users(id) on delete cascade;
+
+-- Optional but recommended index
+create index if not exists recipes_user_id_idx on public.recipes(user_id);
+
+-- 2) Enable RLS on recipe-related tables
+alter table public.recipes enable row level security;
+alter table public.recipe_ingredients enable row level security;
+alter table public.recipe_categories enable row level security;
+alter table public.recipe_tags enable row level security;
+
+-- 3) Recipes policies (user owns own rows)
+drop policy if exists "recipes_select_own" on public.recipes;
+create policy "recipes_select_own"
+  on public.recipes
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "recipes_insert_own" on public.recipes;
+create policy "recipes_insert_own"
+  on public.recipes
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+drop policy if exists "recipes_update_own" on public.recipes;
+create policy "recipes_update_own"
+  on public.recipes
+  for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "recipes_delete_own" on public.recipes;
+create policy "recipes_delete_own"
+  on public.recipes
+  for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- 4) Child table policies based on parent recipe ownership
+-- recipe_ingredients
+drop policy if exists "recipe_ingredients_select_owner" on public.recipe_ingredients;
+create policy "recipe_ingredients_select_owner"
+  on public.recipe_ingredients
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_ingredients.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_ingredients_insert_owner" on public.recipe_ingredients;
+create policy "recipe_ingredients_insert_owner"
+  on public.recipe_ingredients
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_ingredients.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_ingredients_update_owner" on public.recipe_ingredients;
+create policy "recipe_ingredients_update_owner"
+  on public.recipe_ingredients
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_ingredients.recipe_id
+        and r.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_ingredients.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_ingredients_delete_owner" on public.recipe_ingredients;
+create policy "recipe_ingredients_delete_owner"
+  on public.recipe_ingredients
+  for delete
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_ingredients.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+-- recipe_categories
+drop policy if exists "recipe_categories_select_owner" on public.recipe_categories;
+create policy "recipe_categories_select_owner"
+  on public.recipe_categories
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_categories.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_categories_insert_owner" on public.recipe_categories;
+create policy "recipe_categories_insert_owner"
+  on public.recipe_categories
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_categories.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_categories_update_owner" on public.recipe_categories;
+create policy "recipe_categories_update_owner"
+  on public.recipe_categories
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_categories.recipe_id
+        and r.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_categories.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_categories_delete_owner" on public.recipe_categories;
+create policy "recipe_categories_delete_owner"
+  on public.recipe_categories
+  for delete
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_categories.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+-- recipe_tags
+drop policy if exists "recipe_tags_select_owner" on public.recipe_tags;
+create policy "recipe_tags_select_owner"
+  on public.recipe_tags
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_tags.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_tags_insert_owner" on public.recipe_tags;
+create policy "recipe_tags_insert_owner"
+  on public.recipe_tags
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_tags.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_tags_update_owner" on public.recipe_tags;
+create policy "recipe_tags_update_owner"
+  on public.recipe_tags
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_tags.recipe_id
+        and r.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_tags.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "recipe_tags_delete_owner" on public.recipe_tags;
+create policy "recipe_tags_delete_owner"
+  on public.recipe_tags
+  for delete
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.recipes r
+      where r.id = recipe_tags.recipe_id
+        and r.user_id = auth.uid()
+    )
+  );
+
+commit;
+
+-- IMPORTANT:
+-- 1) Create one user in Supabase Authentication -> Users.
+-- 2) Use that email/password in app login.
+-- 3) Optionally disable "Enable email signups" if you only want one fixed user.
