@@ -11,6 +11,9 @@ function App() {
   const [mobileRecipePane, setMobileRecipePane] = useState('list')
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [shoppingListRecipeCounts, setShoppingListRecipeCounts] = useState({})
+  const [customShoppingItems, setCustomShoppingItems] = useState({})
+  const [customItemName, setCustomItemName] = useState('')
+  const [customItemQuantity, setCustomItemQuantity] = useState(1)
   const [ingredientHaveCounts, setIngredientHaveCounts] = useState({})
   const [checkedIngredients, setCheckedIngredients] = useState([])
   const [menuDays, setMenuDays] = useState(1)
@@ -165,6 +168,12 @@ function App() {
         totals.set(ingredient.name, current + ingredient.quantity * recipe.count)
       })
     })
+
+    Object.entries(customShoppingItems).forEach(([name, quantity]) => {
+      const current = totals.get(name) ?? 0
+      totals.set(name, current + quantity)
+    })
+
     return Array.from(totals.entries()).map(([name, requiredQuantity]) => {
       const haveQuantity = Number(ingredientHaveCounts[name] ?? 0)
       return {
@@ -174,7 +183,7 @@ function App() {
         neededQuantity: Math.max(requiredQuantity - haveQuantity, 0),
       }
     })
-  }, [shoppingRecipes, ingredientHaveCounts])
+  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems])
 
   const handleSelectRecipe = (id) => {
     setSelectedRecipeId(id)
@@ -264,6 +273,31 @@ function App() {
       ...current,
       [ingredientName]: Math.max(0, Number(value) || 0),
     }))
+  }
+
+  const handleAddCustomShoppingItem = () => {
+    const name = customItemName.trim()
+    const quantity = Math.max(1, Number(customItemQuantity) || 1)
+
+    if (!name) {
+      alert('Skriv inn navn på varen du vil legge til i handlelisten.')
+      return
+    }
+
+    setCustomShoppingItems((current) => ({
+      ...current,
+      [name]: (current[name] ?? 0) + quantity,
+    }))
+    setCustomItemName('')
+    setCustomItemQuantity(1)
+  }
+
+  const handleRemoveCustomShoppingItem = (name) => {
+    setCustomShoppingItems((current) => {
+      const next = { ...current }
+      delete next[name]
+      return next
+    })
   }
 
   const parseQuantityValue = (value) => {
@@ -952,61 +986,109 @@ function App() {
       )}
 
       {selectedMenu === 'lag-handleliste' && (
-        <section style={{ display: 'grid', gap: '24px' }}>
+        <section style={{ display: 'grid', gap: isMobile ? '16px' : '24px' }}>
           <h2>Lag handleliste</h2>
           <p>{shoppingRecipeCount} matrett(er) er valgt for handlelisten.</p>
-          {shoppingRecipes.length === 0 ? (
-            <p>Du har ikke lagt til noen matretter i handlelisten ennå.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: '16px' }}>
+          <div style={{ padding: isMobile ? '12px' : '16px', border: '1px solid #ddd', borderRadius: isMobile ? '10px' : '12px', background: '#fafafa', display: 'grid', gap: isMobile ? '8px' : '12px', textAlign: 'left' }}>
+            <h3 style={{ margin: 0, fontSize: isMobile ? '1.45rem' : '1.75rem' }}>Legg til egen vare</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 84px' : '2fr 1fr auto', gap: '8px' }}>
+              <input
+                type="text"
+                value={customItemName}
+                onChange={(event) => setCustomItemName(event.target.value)}
+                placeholder="F.eks. kaffe eller melk"
+                style={{ width: '100%', padding: isMobile ? '8px' : '10px', boxSizing: 'border-box' }}
+              />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={customItemQuantity}
+                onChange={(event) => setCustomItemQuantity(event.target.value)}
+                style={{ width: '100%', padding: isMobile ? '8px' : '10px', boxSizing: 'border-box' }}
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomShoppingItem}
+                style={{
+                  gridColumn: isMobile ? '1 / -1' : 'auto',
+                  padding: isMobile ? '8px 12px' : '10px 14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Legg til
+              </button>
+            </div>
+            {Object.keys(customShoppingItems).length > 0 && (
               <div>
-                <h3>Valgte matretter</h3>
-                <ul>
-                  {shoppingRecipes.map((recipe) => (
-                    <li key={`shopping-recipe-${recipe.id}`}>
-                      {recipe.name} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
+                <strong>Egne varer:</strong>
+                <ul style={{ margin: '8px 0 0', paddingLeft: '18px' }}>
+                  {Object.entries(customShoppingItems).map(([name, quantity]) => (
+                    <li key={`custom-item-${name}`} style={{ marginBottom: '6px' }}>
+                      {name} ({quantity}){' '}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomShoppingItem(name)}
+                        style={{ marginLeft: '8px', padding: '2px 8px', cursor: 'pointer' }}
+                      >
+                        Fjern
+                      </button>
                     </li>
                   ))}
                 </ul>
               </div>
+            )}
+          </div>
+          {shoppingIngredients.length === 0 ? (
+            <p>Handlelisten er tom. Legg til matretter eller egne varer.</p>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {shoppingRecipes.length > 0 && (
+                <div>
+                  <h3>Valgte matretter</h3>
+                  <ul>
+                    {shoppingRecipes.map((recipe) => (
+                      <li key={`shopping-recipe-${recipe.id}`}>
+                        {recipe.name} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div>
                 <h3>Handleliste</h3>
-                {shoppingIngredients.length === 0 ? (
-                  <p>Ingen ingredienser å vise.</p>
-                ) : (
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    {shoppingIngredients.map((ingredient) => (
-                      <div key={`shopping-ingredient-${ingredient.name}`} style={{ display: 'grid', gap: isMobile ? '4px' : '8px', padding: isMobile ? '8px' : '10px', border: '1px solid #ddd', borderRadius: '10px', background: '#fff' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '8px' : '12px', flexWrap: 'nowrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                            <input
-                              type="checkbox"
-                              checked={checkedIngredients.includes(ingredient.name) || ingredient.neededQuantity === 0}
-                              onChange={() => handleToggleIngredient(ingredient.name)}
-                            />
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              <strong>{ingredient.name}</strong> {ingredient.neededQuantity ? `(${ingredient.neededQuantity})` : ''}
-                            </span>
-                          </div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '8px', whiteSpace: 'nowrap', width: 'auto', justifyContent: 'flex-start', fontSize: isMobile ? '0.95rem' : '1rem' }}>
-                            {isMobile ? 'Har:' : 'Har allerede:'}
-                            <select
-                              value={ingredient.haveQuantity}
-                              onChange={(e) => handleHaveQuantityChange(ingredient.name, e.target.value)}
-                              style={{ width: isMobile ? '60px' : '80px', padding: '4px 6px', fontSize: isMobile ? '14px' : 'inherit' }}
-                            >
-                              {Array.from({ length: 11 }, (_, index) => index).map((num) => (
-                                <option key={num} value={num}>
-                                  {num}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {shoppingIngredients.map((ingredient) => (
+                    <div key={`shopping-ingredient-${ingredient.name}`} style={{ display: 'grid', gap: isMobile ? '4px' : '8px', padding: isMobile ? '8px' : '10px', border: '1px solid #ddd', borderRadius: '10px', background: '#fff' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '8px' : '12px', flexWrap: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={checkedIngredients.includes(ingredient.name) || ingredient.neededQuantity === 0}
+                            onChange={() => handleToggleIngredient(ingredient.name)}
+                          />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <strong>{ingredient.name}</strong> {ingredient.neededQuantity ? `(${ingredient.neededQuantity})` : ''}
+                          </span>
                         </div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '8px', whiteSpace: 'nowrap', width: 'auto', justifyContent: 'flex-start', fontSize: isMobile ? '0.95rem' : '1rem' }}>
+                          {isMobile ? 'Har:' : 'Har allerede:'}
+                          <select
+                            value={ingredient.haveQuantity}
+                            onChange={(e) => handleHaveQuantityChange(ingredient.name, e.target.value)}
+                            style={{ width: isMobile ? '60px' : '80px', padding: '4px 6px', fontSize: isMobile ? '14px' : 'inherit' }}
+                          >
+                            {Array.from({ length: 11 }, (_, index) => index).map((num) => (
+                              <option key={num} value={num}>
+                                {num}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
