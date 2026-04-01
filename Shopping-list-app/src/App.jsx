@@ -6,13 +6,15 @@ function App() {
   const [recipes, setRecipes] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRecipeId, setSelectedRecipeId] = useState(null)
-  const [selectedMenu, setSelectedMenu] = useState('')
+  const [selectedMenu, setSelectedMenu] = useState('matretter')
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches)
+  const [mobileRecipePane, setMobileRecipePane] = useState('list')
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [shoppingListRecipeCounts, setShoppingListRecipeCounts] = useState({})
   const [ingredientHaveCounts, setIngredientHaveCounts] = useState({})
   const [checkedIngredients, setCheckedIngredients] = useState([])
   const [menuDays, setMenuDays] = useState(1)
-  const [menuPlan, setMenuPlan] = useState([null])
+  const [menuPlan, setMenuPlan] = useState([{ recipeId: null, servings: 4 }])
   const [menuCreated, setMenuCreated] = useState(false)
   const [allCategories, setAllCategories] = useState([])
   const [allTags, setAllTags] = useState([])
@@ -103,6 +105,23 @@ function App() {
     void load()
   }, [])
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)')
+
+    const handleMediaChange = (event) => {
+      setIsMobile(event.matches)
+      if (!event.matches) {
+        setMobileRecipePane('list')
+      }
+    }
+
+    mediaQuery.addEventListener('change', handleMediaChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaChange)
+    }
+  }, [])
+
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
 
   const filteredRecipes = useMemo(() => {
@@ -159,6 +178,9 @@ function App() {
 
   const handleSelectRecipe = (id) => {
     setSelectedRecipeId(id)
+    if (isMobile) {
+      setMobileRecipePane('details')
+    }
   }
 
   const handleAddToShoppingList = (recipeId, count = 1) => {
@@ -172,7 +194,10 @@ function App() {
     const days = Math.max(1, Number(value) || 1)
     setMenuDays(days)
     setMenuPlan((current) => {
-      const next = Array.from({ length: days }, (_, index) => current[index] ?? null)
+      const next = Array.from(
+        { length: days },
+        (_, index) => current[index] ?? { recipeId: null, servings: 4 },
+      )
       return next
     })
     setMenuCreated(false)
@@ -181,20 +206,38 @@ function App() {
   const handleMenuRecipeChange = (index, recipeId) => {
     setMenuPlan((current) => {
       const next = [...current]
-      next[index] = recipeId ? Number(recipeId) : null
+      next[index] = {
+        ...(next[index] ?? { recipeId: null, servings: 4 }),
+        recipeId: recipeId ? Number(recipeId) : null,
+      }
+      return next
+    })
+    setMenuCreated(false)
+  }
+
+  const handleMenuServingsChange = (index, servings) => {
+    setMenuPlan((current) => {
+      const next = [...current]
+      next[index] = {
+        ...(next[index] ?? { recipeId: null, servings: 4 }),
+        servings: Number(servings) || 4,
+      }
       return next
     })
     setMenuCreated(false)
   }
 
   const handleCreateMenu = () => {
-    if (menuPlan.some((recipeId) => !recipeId)) {
+    if (menuPlan.some((dayPlan) => !dayPlan?.recipeId)) {
       alert('Velg en rett for hver dag før du oppretter menyen.')
       return
     }
 
-    const counts = menuPlan.reduce((acc, recipeId) => {
-      acc[recipeId] = (acc[recipeId] ?? 0) + 1
+    const counts = menuPlan.reduce((acc, dayPlan) => {
+      const recipeId = dayPlan.recipeId
+      const servings = dayPlan.servings || 4
+      const factor = servings / 4
+      acc[recipeId] = (acc[recipeId] ?? 0) + factor
       return acc
     }, {})
 
@@ -254,6 +297,9 @@ function App() {
       occasionTags: [...recipe.occasionTags],
     })
     setSelectedRecipeId(recipe.id)
+    if (isMobile) {
+      setMobileRecipePane('details')
+    }
   }
 
   const handleEditToggleTag = (tagType, tagValue) => {
@@ -479,11 +525,29 @@ function App() {
     }
   }
 
+  const ingredientRowColumns = isMobile ? '1fr' : '2fr 1fr auto'
+
   return (
-    <div className="App" style={{ padding: '16px', fontFamily: 'system-ui, sans-serif', maxWidth: 1100, margin: '0 auto' }}>
+    <div
+      className="App"
+      style={{
+        padding: isMobile ? '14px' : '16px',
+        fontFamily: 'system-ui, sans-serif',
+        maxWidth: 1100,
+        margin: '0 auto',
+      }}
+    >
       <h1>Matretter - Innkjøpsplanlegger</h1>
 
-      <nav style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '32px', marginBottom: '24px', flexWrap: 'wrap' }}>
+      <nav
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+          gap: '12px',
+          marginTop: isMobile ? '20px' : '32px',
+          marginBottom: '24px',
+        }}
+      >
         {[
           { id: 'matretter', label: 'Matretter' },
           { id: 'legg-til-matrett', label: 'Legg til matrett' },
@@ -495,14 +559,17 @@ function App() {
             type="button"
             onClick={() => setSelectedMenu(item.id)}
             style={{
-              padding: '18px 24px',
+              padding: isMobile ? '14px 12px' : '18px 24px',
               borderRadius: '14px',
-              fontSize: '1.2rem',
-              flex: '1 1 min(180px, 100%)',
-              maxWidth: '260px',
+              fontSize: isMobile ? '1rem' : '1.2rem',
+              width: '100%',
+              minWidth: 0,
               border: selectedMenu === item.id ? '3px solid #1f6feb' : '1px solid #ccc',
               background: selectedMenu === item.id ? '#e8f0ff' : '#fff',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}
           >
             {item.label}
@@ -532,8 +599,48 @@ function App() {
             />
           </section>
 
-          <section style={{ display: 'grid', gap: '24px', gridTemplateColumns: '1.6fr 1fr' }}>
-            <div>
+          {isMobile && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '8px',
+                marginBottom: '12px',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setMobileRecipePane('list')}
+                style={{
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: mobileRecipePane === 'list' ? '2px solid #1f6feb' : '1px solid #ccc',
+                  background: mobileRecipePane === 'list' ? '#e8f0ff' : '#fff',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Matretter
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileRecipePane('details')}
+                style={{
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: mobileRecipePane === 'details' ? '2px solid #1f6feb' : '1px solid #ccc',
+                  background: mobileRecipePane === 'details' ? '#e8f0ff' : '#fff',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Valgt matrett
+              </button>
+            </div>
+          )}
+
+          <section style={{ display: 'grid', gap: '24px', gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr' }}>
+            <div style={{ display: !isMobile || mobileRecipePane === 'list' ? 'block' : 'none' }}>
               <h2>Matretter</h2>
               {filteredRecipes.length === 0 ? (
                 <p>Ingen matretter matcher søket.</p>
@@ -603,7 +710,7 @@ function App() {
               )}
             </div>
 
-            <div>
+            <div style={{ display: !isMobile || mobileRecipePane === 'details' ? 'block' : 'none' }}>
               <h2>{editingRecipe ? 'Rediger matrett' : 'Valgt matrett'}</h2>
               {editingRecipe ? (
                 <form onSubmit={handleSaveRecipeEdit} style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', textAlign: 'left' }}>
@@ -653,7 +760,7 @@ function App() {
                   </div>
                   <div style={{ display: 'grid', gap: '10px' }}>
                     {editingRecipe.ingredients.map((ingredient, index) => (
-                      <div key={`edit-ingredient-${index}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px' }}>
+                      <div key={`edit-ingredient-${index}`} style={{ display: 'grid', gridTemplateColumns: ingredientRowColumns, gap: '10px' }}>
                         <input
                           type="text"
                           placeholder="Ingrediensnavn"
@@ -722,7 +829,7 @@ function App() {
                     ))}
                   </div>
                   <h4>Ingredienser</h4>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', display: 'block', overflowX: 'auto' }}>
                     <thead>
                       <tr>
                         <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Ingrediens</th>
@@ -747,7 +854,7 @@ function App() {
                   </button>
                 </div>
               ) : (
-                <p>Velg en matrett i listen for å se ingrediensene.</p>
+                <p>{isMobile ? 'Velg en matrett for å se detaljer.' : 'Velg en matrett i listen for å se ingrediensene.'}</p>
               )}
             </div>
           </section>
@@ -770,7 +877,7 @@ function App() {
             <div>
               <strong>Ingredienser</strong>
               {newRecipe.ingredients.map((ingredient, index) => (
-                <div key={`ingredient-row-${index}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: '10px', marginTop: '8px' }}>
+                <div key={`ingredient-row-${index}`} style={{ display: 'grid', gridTemplateColumns: ingredientRowColumns, gap: '10px', marginTop: '8px' }}>
                   <input
                     type="text"
                     placeholder="Navn på ingrediens"
@@ -869,8 +976,8 @@ function App() {
                 ) : (
                   <div style={{ display: 'grid', gap: '12px' }}>
                     {shoppingIngredients.map((ingredient) => (
-                      <div key={`shopping-ingredient-${ingredient.name}`} style={{ display: 'grid', gap: '8px', padding: '10px', border: '1px solid #ddd', borderRadius: '10px', background: '#fff' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                      <div key={`shopping-ingredient-${ingredient.name}`} style={{ display: 'grid', gap: isMobile ? '4px' : '8px', padding: isMobile ? '8px' : '10px', border: '1px solid #ddd', borderRadius: '10px', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '8px' : '12px', flexWrap: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                             <input
                               type="checkbox"
@@ -881,15 +988,19 @@ function App() {
                               <strong>{ingredient.name}</strong> {ingredient.neededQuantity ? `(${ingredient.neededQuantity})` : ''}
                             </span>
                           </div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-                            Har allerede:
-                            <input
-                              type="number"
-                              min="0"
+                          <label style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '8px', whiteSpace: 'nowrap', width: 'auto', justifyContent: 'flex-start', fontSize: isMobile ? '0.95rem' : '1rem' }}>
+                            {isMobile ? 'Har:' : 'Har allerede:'}
+                            <select
                               value={ingredient.haveQuantity}
                               onChange={(e) => handleHaveQuantityChange(ingredient.name, e.target.value)}
-                              style={{ width: '80px', padding: '4px 6px' }}
-                            />
+                              style={{ width: isMobile ? '60px' : '80px', padding: '4px 6px', fontSize: isMobile ? '14px' : 'inherit' }}
+                            >
+                              {Array.from({ length: 11 }, (_, index) => index).map((num) => (
+                                <option key={num} value={num}>
+                                  {num}
+                                </option>
+                              ))}
+                            </select>
                           </label>
                         </div>
                       </div>
@@ -923,21 +1034,37 @@ function App() {
           </div>
           <div style={{ display: 'grid', gap: '12px' }}>
             {Array.from({ length: menuDays }, (_, index) => (
-              <label key={`menu-day-${index}`} style={{ display: 'grid', gap: '6px' }}>
-                Dag {index + 1}
-                <select
-                  value={menuPlan[index] || ''}
-                  onChange={(event) => handleMenuRecipeChange(index, event.target.value)}
-                  style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-                >
-                  <option value="">Velg en rett</option>
-                  {filteredRecipes.map((recipe) => (
-                    <option key={recipe.id} value={recipe.id}>
-                      {recipe.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div key={`menu-day-${index}`} style={{ display: 'grid', gap: '6px' }}>
+                <label style={{ display: 'grid', gap: '6px' }}>
+                  Dag {index + 1}
+                  <select
+                    value={menuPlan[index]?.recipeId || ''}
+                    onChange={(event) => handleMenuRecipeChange(index, event.target.value)}
+                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+                  >
+                    <option value="">Velg en rett</option>
+                    {filteredRecipes.map((recipe) => (
+                      <option key={recipe.id} value={recipe.id}>
+                        {recipe.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'grid', gap: '6px' }}>
+                  Porsjoner (standard er 4)
+                  <select
+                    value={menuPlan[index]?.servings || 4}
+                    onChange={(event) => handleMenuServingsChange(index, event.target.value)}
+                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+                  >
+                    {[2, 4, 6, 8].map((servings) => (
+                      <option key={`${index}-servings-${servings}`} value={servings}>
+                        {servings} porsjoner
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             ))}
           </div>
           <button type="button" onClick={handleCreateMenu} style={{ padding: '12px 18px', cursor: 'pointer', width: 'fit-content' }}>
@@ -948,9 +1075,13 @@ function App() {
               <h3>Meny opprettet</h3>
               <p>Ingrediensene fra valgte retter er lagt til i handlelisten.</p>
               <ul>
-                {menuPlan.map((recipeId, index) => {
-                  const recipe = recipes.find((item) => item.id === recipeId)
-                  return <li key={`menu-summary-${index}`}>Dag {index + 1}: {recipe?.name || 'Ingen rett valgt'}</li>
+                {menuPlan.map((dayPlan, index) => {
+                  const recipe = recipes.find((item) => item.id === dayPlan?.recipeId)
+                  return (
+                    <li key={`menu-summary-${index}`}>
+                      Dag {index + 1}: {recipe?.name || 'Ingen rett valgt'} ({dayPlan?.servings || 4} porsjoner)
+                    </li>
+                  )
                 })}
               </ul>
             </div>
