@@ -300,6 +300,30 @@ function App() {
     })
   }
 
+  const handleResetShoppingList = () => {
+    const hasItems =
+      Object.keys(shoppingListRecipeCounts).length > 0 ||
+      Object.keys(customShoppingItems).length > 0 ||
+      Object.keys(ingredientHaveCounts).length > 0 ||
+      checkedIngredients.length > 0
+
+    if (!hasItems) {
+      return
+    }
+
+    const shouldReset = window.confirm('Er du sikker på at du vil nullstille hele handlelisten?')
+    if (!shouldReset) {
+      return
+    }
+
+    setShoppingListRecipeCounts({})
+    setCustomShoppingItems({})
+    setIngredientHaveCounts({})
+    setCheckedIngredients([])
+    setCustomItemName('')
+    setCustomItemQuantity(1)
+  }
+
   const parseQuantityValue = (value) => {
     const normalized = String(value).replace(',', '.')
     const parsed = parseFloat(normalized)
@@ -560,28 +584,17 @@ function App() {
   }
 
   const ingredientRowColumns = isMobile ? '1fr' : '2fr 1fr auto'
+  const canResetShoppingList =
+    Object.keys(shoppingListRecipeCounts).length > 0 ||
+    Object.keys(customShoppingItems).length > 0 ||
+    Object.keys(ingredientHaveCounts).length > 0 ||
+    checkedIngredients.length > 0
 
   return (
-    <div
-      className="App"
-      style={{
-        padding: isMobile ? '14px' : '16px',
-        fontFamily: 'system-ui, sans-serif',
-        maxWidth: 1100,
-        margin: '0 auto',
-      }}
-    >
+    <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
       <h1>Matretter - Innkjøpsplanlegger</h1>
 
-      <nav
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: '12px',
-          marginTop: isMobile ? '20px' : '32px',
-          marginBottom: '24px',
-        }}
-      >
+      <nav className={`main-nav ${isMobile ? 'mobile' : ''}`}>
         {[
           { id: 'matretter', label: 'Matretter' },
           { id: 'legg-til-matrett', label: 'Legg til matrett' },
@@ -592,19 +605,7 @@ function App() {
             key={item.id}
             type="button"
             onClick={() => setSelectedMenu(item.id)}
-            style={{
-              padding: isMobile ? '14px 12px' : '18px 24px',
-              borderRadius: '14px',
-              fontSize: isMobile ? '1rem' : '1.2rem',
-              width: '100%',
-              minWidth: 0,
-              border: selectedMenu === item.id ? '3px solid #1f6feb' : '1px solid #ccc',
-              background: selectedMenu === item.id ? '#e8f0ff' : '#fff',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
+            className={`main-nav-button ${isMobile ? 'mobile' : ''} ${selectedMenu === item.id ? 'active' : ''}`}
           >
             {item.label}
           </button>
@@ -986,18 +987,28 @@ function App() {
       )}
 
       {selectedMenu === 'lag-handleliste' && (
-        <section style={{ display: 'grid', gap: isMobile ? '16px' : '24px' }}>
+        <section className={`shopping-section ${isMobile ? 'mobile' : ''}`}>
           <h2>Lag handleliste</h2>
           <p>{shoppingRecipeCount} matrett(er) er valgt for handlelisten.</p>
-          <div style={{ padding: isMobile ? '12px' : '16px', border: '1px solid #ddd', borderRadius: isMobile ? '10px' : '12px', background: '#fafafa', display: 'grid', gap: isMobile ? '8px' : '12px', textAlign: 'left' }}>
-            <h3 style={{ margin: 0, fontSize: isMobile ? '1.45rem' : '1.75rem' }}>Legg til egen vare</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 84px' : '2fr 1fr auto', gap: '8px' }}>
+          <div className="shopping-reset-row">
+            <button
+              type="button"
+              onClick={handleResetShoppingList}
+              disabled={!canResetShoppingList}
+              className={`shopping-reset-btn ${isMobile ? 'mobile' : ''}`}
+            >
+              Nullstill handleliste
+            </button>
+          </div>
+          <div className={`custom-item-card ${isMobile ? 'mobile' : ''}`}>
+            <h3 className={`custom-item-title ${isMobile ? 'mobile' : ''}`}>Legg til egen vare</h3>
+            <div className={`custom-item-form ${isMobile ? 'mobile' : ''}`}>
               <input
                 type="text"
                 value={customItemName}
                 onChange={(event) => setCustomItemName(event.target.value)}
                 placeholder="F.eks. kaffe eller melk"
-                style={{ width: '100%', padding: isMobile ? '8px' : '10px', boxSizing: 'border-box' }}
+                className="custom-item-input"
               />
               <input
                 type="number"
@@ -1005,16 +1016,12 @@ function App() {
                 step="1"
                 value={customItemQuantity}
                 onChange={(event) => setCustomItemQuantity(event.target.value)}
-                style={{ width: '100%', padding: isMobile ? '8px' : '10px', boxSizing: 'border-box' }}
+                className="custom-item-quantity"
               />
               <button
                 type="button"
                 onClick={handleAddCustomShoppingItem}
-                style={{
-                  gridColumn: isMobile ? '1 / -1' : 'auto',
-                  padding: isMobile ? '8px 12px' : '10px 14px',
-                  cursor: 'pointer',
-                }}
+                className={`custom-item-add-btn ${isMobile ? 'mobile' : ''}`}
               >
                 Legg til
               </button>
@@ -1022,14 +1029,14 @@ function App() {
             {Object.keys(customShoppingItems).length > 0 && (
               <div>
                 <strong>Egne varer:</strong>
-                <ul style={{ margin: '8px 0 0', paddingLeft: '18px' }}>
+                <ul className="custom-item-list">
                   {Object.entries(customShoppingItems).map(([name, quantity]) => (
-                    <li key={`custom-item-${name}`} style={{ marginBottom: '6px' }}>
+                    <li key={`custom-item-${name}`} className="custom-item-list-row">
                       {name} ({quantity}){' '}
                       <button
                         type="button"
                         onClick={() => handleRemoveCustomShoppingItem(name)}
-                        style={{ marginLeft: '8px', padding: '2px 8px', cursor: 'pointer' }}
+                        className="custom-item-remove-btn"
                       >
                         Fjern
                       </button>
@@ -1042,7 +1049,7 @@ function App() {
           {shoppingIngredients.length === 0 ? (
             <p>Handlelisten er tom. Legg til matretter eller egne varer.</p>
           ) : (
-            <div style={{ display: 'grid', gap: '16px' }}>
+            <div className="shopping-content">
               {shoppingRecipes.length > 0 && (
                 <div>
                   <h3>Valgte matretter</h3>
@@ -1057,10 +1064,10 @@ function App() {
               )}
               <div>
                 <h3>Handleliste</h3>
-                <div style={{ display: 'grid', gap: '12px' }}>
+                <div className="shopping-cards">
                   {shoppingIngredients.map((ingredient) => (
-                    <div key={`shopping-ingredient-${ingredient.name}`} style={{ display: 'grid', gap: isMobile ? '4px' : '8px', padding: isMobile ? '8px' : '10px', border: '1px solid #ddd', borderRadius: '10px', background: '#fff' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '8px' : '12px', flexWrap: 'nowrap' }}>
+                    <div key={`shopping-ingredient-${ingredient.name}`} className={`shopping-ingredient-card ${isMobile ? 'mobile' : ''}`}>
+                      <div className={`shopping-ingredient-row ${isMobile ? 'mobile' : ''}`}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                           <input
                             type="checkbox"
@@ -1071,12 +1078,12 @@ function App() {
                             <strong>{ingredient.name}</strong> {ingredient.neededQuantity ? `(${ingredient.neededQuantity})` : ''}
                           </span>
                         </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '8px', whiteSpace: 'nowrap', width: 'auto', justifyContent: 'flex-start', fontSize: isMobile ? '0.95rem' : '1rem' }}>
+                        <label className={`shopping-have-label ${isMobile ? 'mobile' : ''}`}>
                           {isMobile ? 'Har:' : 'Har allerede:'}
                           <select
                             value={ingredient.haveQuantity}
                             onChange={(e) => handleHaveQuantityChange(ingredient.name, e.target.value)}
-                            style={{ width: isMobile ? '60px' : '80px', padding: '4px 6px', fontSize: isMobile ? '14px' : 'inherit' }}
+                            className={`shopping-have-select ${isMobile ? 'mobile' : ''}`}
                           >
                             {Array.from({ length: 11 }, (_, index) => index).map((num) => (
                               <option key={num} value={num}>
