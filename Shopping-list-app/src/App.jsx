@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 
+const INGREDIENT_UNITS = ['', 'l', 'dl', 'kg', 'g', 'ss', 'ts']
+
 function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -24,19 +26,53 @@ function App() {
   const [ingredientHaveCounts, setIngredientHaveCounts] = useState({})
   const [checkedIngredients, setCheckedIngredients] = useState([])
   const [menuDays, setMenuDays] = useState(1)
-  const [menuPlan, setMenuPlan] = useState([{ recipeId: null, servings: 4 }])
+  const [menuServings, setMenuServings] = useState(4)
+  const [menuPlan, setMenuPlan] = useState([{ recipeId: null }])
   const [menuCreated, setMenuCreated] = useState(false)
+  const [isShoppingStateReady, setIsShoppingStateReady] = useState(false)
   const [allCategories, setAllCategories] = useState([])
   const [allTags, setAllTags] = useState([])
   const [newRecipe, setNewRecipe] = useState({
     name: '',
-    ingredients: [{ name: '', quantity: 1 }],
+    ingredients: [{ name: '', quantity: 1, unit: '' }],
     typeTags: [],
     occasionTags: [],
   })
 
   const normalizeNames = (values) =>
     [...new Set(values.map((value) => value.trim()).filter(Boolean))]
+
+  const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
+
+  const normalizePositiveNumberRecord = (value) => {
+    if (!value || typeof value !== 'object') return {}
+
+    return Object.fromEntries(
+      Object.entries(value)
+        .map(([key, raw]) => [key, Number(raw) || 0])
+        .filter(([, numberValue]) => numberValue > 0),
+    )
+  }
+
+  const normalizeNonNegativeNumberRecord = (value) => {
+    if (!value || typeof value !== 'object') return {}
+
+    return Object.fromEntries(
+      Object.entries(value)
+        .map(([key, raw]) => [key, Math.max(0, Number(raw) || 0)]),
+    )
+  }
+
+  const normalizeMenuPlan = (value, fallbackDays = 1) => {
+    const defaultPlan = Array.from({ length: fallbackDays }, () => ({ recipeId: null }))
+    if (!Array.isArray(value) || value.length === 0) {
+      return defaultPlan
+    }
+
+    return value.map((entry) => ({
+      recipeId: entry?.recipeId ? Number(entry.recipeId) : null,
+    }))
+  }
 
   const loadData = async (userId) => {
     if (!userId) return
@@ -47,7 +83,7 @@ function App() {
       supabase
         .from('recipes')
         .select(
-          'id,name,recipe_ingredients(ingredient_id,quantity,ingredients(name)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
+          'id,name,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
         )
         .eq('user_id', userId)
         .order('id', { ascending: false }),
@@ -77,7 +113,7 @@ function App() {
           name: recipe.name,
           ingredients:
             recipe.recipe_ingredients
-              ?.map((row) => ({ name: row.ingredients?.name, quantity: row.quantity ?? 1 }))
+              ?.map((row) => ({ name: row.ingredients?.name, quantity: row.quantity ?? 1, unit: row.unit ?? '' }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
             recipe.recipe_categories?.map((row) => row.categories?.name).filter(Boolean) ?? [],
@@ -130,6 +166,9 @@ function App() {
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
       setAuthError('')
+      if (!nextSession) {
+        setIsShoppingStateReady(false)
+      }
     })
 
     return () => {
@@ -142,9 +181,98 @@ function App() {
 
     const load = async () => {
       await loadData(user.id)
+
+      const { data, error } = await supabase
+        .from('shopping_state')
+        .select('state')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Could not load shopping state:', error)
+        setIsShoppingStateReady(true)
+        return
+      }
+
+      const state = data?.state
+      if (!state || typeof state !== 'object') {
+        setIsShoppingStateReady(true)
+        return
+      }
+
+      const normalizedMenuDays = Math.max(1, Number(state.menuDays) || 1)
+      const normalizedPlan = normalizeMenuPlan(state.menuPlan, normalizedMenuDays)
+      const normalizedMenuServings = Math.max(
+        1,
+        Number(
+          state.menuServings ??
+            (Array.isArray(state.menuPlan) && state.menuPlan[0]?.servings
+              ? state.menuPlan[0].servings
+              : 4),
+        ) || 4,
+      )
+
+      setShoppingListRecipeCounts(normalizePositiveNumberRecord(state.shoppingListRecipeCounts))
+      setCustomShoppingItems(normalizePositiveNumberRecord(state.customShoppingItems))
+      setIngredientHaveCounts(normalizeNonNegativeNumberRecord(state.ingredientHaveCounts))
+      setCheckedIngredients(
+        Array.isArray(state.checkedIngredients)
+          ? state.checkedIngredients.filter((item) => typeof item === 'string')
+          : [],
+      )
+      setMenuDays(normalizedMenuDays)
+  setMenuServings(normalizedMenuServings)
+      setMenuPlan(normalizedPlan)
+      setMenuCreated(Boolean(state.menuCreated))
+      setIsShoppingStateReady(true)
     }
     void load()
   }, [user])
+
+  useEffect(() => {
+    if (!user || !isShoppingStateReady) return
+
+    const persistState = async () => {
+      const state = {
+        shoppingListRecipeCounts,
+        customShoppingItems,
+        ingredientHaveCounts,
+        checkedIngredients,
+        menuDays,
+  menuServings,
+        menuPlan,
+        menuCreated,
+      }
+
+      const { error } = await supabase
+        .from('shopping_state')
+        .upsert(
+          {
+            user_id: user.id,
+            state,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        )
+
+      if (error) {
+        console.error('Could not save shopping state:', error)
+      }
+    }
+
+    void persistState()
+  }, [
+    user,
+    isShoppingStateReady,
+    shoppingListRecipeCounts,
+    customShoppingItems,
+    ingredientHaveCounts,
+    checkedIngredients,
+    menuDays,
+    menuServings,
+    menuPlan,
+    menuCreated,
+  ])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 768px)')
@@ -202,23 +330,33 @@ function App() {
     const totals = new Map()
     shoppingRecipes.forEach((recipe) => {
       recipe.ingredients.forEach((ingredient) => {
-        const current = totals.get(ingredient.name) ?? 0
-        totals.set(ingredient.name, current + ingredient.quantity * recipe.count)
+        const key = ingredientIdentityKey(ingredient.name, ingredient.unit)
+        const existing = totals.get(key) ?? { name: ingredient.name, unit: ingredient.unit ?? '', requiredQuantity: 0 }
+        totals.set(key, {
+          ...existing,
+          requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
+        })
       })
     })
 
     Object.entries(customShoppingItems).forEach(([name, quantity]) => {
-      const current = totals.get(name) ?? 0
-      totals.set(name, current + quantity)
+      const key = ingredientIdentityKey(name, '')
+      const existing = totals.get(key) ?? { name, unit: '', requiredQuantity: 0 }
+      totals.set(key, {
+        ...existing,
+        requiredQuantity: existing.requiredQuantity + quantity,
+      })
     })
 
-    return Array.from(totals.entries()).map(([name, requiredQuantity]) => {
-      const haveQuantity = Number(ingredientHaveCounts[name] ?? 0)
+    return Array.from(totals.entries()).map(([key, item]) => {
+      const haveQuantity = Number(ingredientHaveCounts[key] ?? 0)
       return {
-        name,
-        requiredQuantity,
+        key,
+        name: item.name,
+        unit: item.unit,
+        requiredQuantity: item.requiredQuantity,
         haveQuantity,
-        neededQuantity: Math.max(requiredQuantity - haveQuantity, 0),
+        neededQuantity: Math.max(item.requiredQuantity - haveQuantity, 0),
       }
     })
   }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems])
@@ -241,10 +379,7 @@ function App() {
     const days = Math.max(1, Number(value) || 1)
     setMenuDays(days)
     setMenuPlan((current) => {
-      const next = Array.from(
-        { length: days },
-        (_, index) => current[index] ?? { recipeId: null, servings: 4 },
-      )
+      const next = Array.from({ length: days }, (_, index) => current[index] ?? { recipeId: null })
       return next
     })
     setMenuCreated(false)
@@ -254,7 +389,7 @@ function App() {
     setMenuPlan((current) => {
       const next = [...current]
       next[index] = {
-        ...(next[index] ?? { recipeId: null, servings: 4 }),
+        ...(next[index] ?? { recipeId: null }),
         recipeId: recipeId ? Number(recipeId) : null,
       }
       return next
@@ -262,15 +397,8 @@ function App() {
     setMenuCreated(false)
   }
 
-  const handleMenuServingsChange = (index, servings) => {
-    setMenuPlan((current) => {
-      const next = [...current]
-      next[index] = {
-        ...(next[index] ?? { recipeId: null, servings: 4 }),
-        servings: Number(servings) || 4,
-      }
-      return next
-    })
+  const handleMenuServingsChange = (servings) => {
+    setMenuServings(Math.max(1, Number(servings) || 4))
     setMenuCreated(false)
   }
 
@@ -282,8 +410,7 @@ function App() {
 
     const counts = menuPlan.reduce((acc, dayPlan) => {
       const recipeId = dayPlan.recipeId
-      const servings = dayPlan.servings || 4
-      const factor = servings / 4
+      const factor = menuServings / 4
       acc[recipeId] = (acc[recipeId] ?? 0) + factor
       return acc
     }, {})
@@ -393,6 +520,11 @@ function App() {
     setRecipes([])
     setSelectedRecipeId(null)
     setEditingRecipe(null)
+    setMenuDays(1)
+  setMenuServings(4)
+  setMenuPlan([{ recipeId: null }])
+    setMenuCreated(false)
+    setIsShoppingStateReady(false)
     setCustomItemName('')
     setCustomItemQuantity(1)
   }
@@ -467,7 +599,7 @@ function App() {
       if (!current) return current
       return {
         ...current,
-        ingredients: [...current.ingredients, { name: '', quantity: 1 }],
+        ingredients: [...current.ingredients, { name: '', quantity: 1, unit: '' }],
       }
     })
   }
@@ -507,7 +639,11 @@ function App() {
     if (!editingRecipe) return
 
     const ingredientEntries = editingRecipe.ingredients
-      .map((ingredient) => ({ name: ingredient.name.trim(), quantity: Number(ingredient.quantity) || 1 }))
+      .map((ingredient) => ({
+        name: ingredient.name.trim(),
+        quantity: Number(ingredient.quantity) || 1,
+        unit: INGREDIENT_UNITS.includes(ingredient.unit) ? ingredient.unit : '',
+      }))
       .filter((ingredient) => ingredient.name)
 
     if (!editingRecipe.name.trim()) {
@@ -523,13 +659,14 @@ function App() {
     try {
       const ingredientMap = new Map()
       ingredientEntries.forEach((entry) => {
-        if (!ingredientMap.has(entry.name)) {
-          ingredientMap.set(entry.name, entry.quantity)
+        const entryKey = ingredientIdentityKey(entry.name, entry.unit)
+        if (!ingredientMap.has(entryKey)) {
+          ingredientMap.set(entryKey, entry)
         }
       })
 
-      const ingredientNames = Array.from(ingredientMap.keys())
-      const ingredientQuantities = Array.from(ingredientMap.values())
+      const uniqueEntries = Array.from(ingredientMap.values())
+      const ingredientNames = uniqueEntries.map((entry) => entry.name)
       const ingredientIds = await getOrCreateRecords('ingredients', ingredientNames)
       const categoryIds = await getOrCreateRecords('categories', editingRecipe.typeTags || [])
       const tagIds = await getOrCreateRecords('tags', editingRecipe.occasionTags || [])
@@ -551,7 +688,8 @@ function App() {
       const ingredientRows = ingredientIds.map((ingredientId, index) => ({
         recipe_id: editingRecipe.id,
         ingredient_id: ingredientId,
-        quantity: ingredientQuantities[index] ?? 1,
+        quantity: uniqueEntries[index]?.quantity ?? 1,
+        unit: uniqueEntries[index]?.unit ?? '',
       }))
 
       if (ingredientRows.length) {
@@ -580,7 +718,7 @@ function App() {
   const handleAddIngredientRow = () => {
     setNewRecipe((current) => ({
       ...current,
-      ingredients: [...current.ingredients, { name: '', quantity: 1 }],
+      ingredients: [...current.ingredients, { name: '', quantity: 1, unit: '' }],
     }))
   }
 
@@ -594,7 +732,11 @@ function App() {
   const handleAddRecipe = async (event) => {
     event.preventDefault()
     const ingredientEntries = newRecipe.ingredients
-      .map((ingredient) => ({ name: ingredient.name.trim(), quantity: Number(ingredient.quantity) || 1 }))
+      .map((ingredient) => ({
+        name: ingredient.name.trim(),
+        quantity: Number(ingredient.quantity) || 1,
+        unit: INGREDIENT_UNITS.includes(ingredient.unit) ? ingredient.unit : '',
+      }))
       .filter((ingredient) => ingredient.name)
 
     if (!newRecipe.name.trim() || !ingredientEntries.length || !newRecipe.typeTags.length || !newRecipe.occasionTags.length) {
@@ -605,12 +747,13 @@ function App() {
     try {
       const ingredientMap = new Map()
       ingredientEntries.forEach((entry) => {
-        if (!ingredientMap.has(entry.name)) {
-          ingredientMap.set(entry.name, entry.quantity)
+        const entryKey = ingredientIdentityKey(entry.name, entry.unit)
+        if (!ingredientMap.has(entryKey)) {
+          ingredientMap.set(entryKey, entry)
         }
       })
-      const ingredientNames = Array.from(ingredientMap.keys())
-      const ingredientQuantities = Array.from(ingredientMap.values())
+      const uniqueEntries = Array.from(ingredientMap.values())
+      const ingredientNames = uniqueEntries.map((entry) => entry.name)
 
       const ingredientIds = await getOrCreateRecords('ingredients', ingredientNames)
       const categoryIds = await getOrCreateRecords('categories', newRecipe.typeTags)
@@ -632,7 +775,8 @@ function App() {
       const ingredientRows = ingredientIds.map((ingredientId, index) => ({
         recipe_id: recipeId,
         ingredient_id: ingredientId,
-        quantity: ingredientQuantities[index] ?? 1,
+        quantity: uniqueEntries[index]?.quantity ?? 1,
+        unit: uniqueEntries[index]?.unit ?? '',
       }))
       const categoryRows = categoryIds.map((categoryId) => ({ recipe_id: recipeId, category_id: categoryId }))
       const tagRows = tagIds.map((tagId) => ({ recipe_id: recipeId, tag_id: tagId }))
@@ -649,14 +793,14 @@ function App() {
 
     await loadData(user.id)
       setSelectedRecipeId(recipeId)
-      setNewRecipe({ name: '', ingredients: [{ name: '', quantity: 1 }], typeTags: [], occasionTags: [] })
+  setNewRecipe({ name: '', ingredients: [{ name: '', quantity: 1, unit: '' }], typeTags: [], occasionTags: [] })
     } catch (error) {
       console.error('Add recipe error:', error)
       alert('Noe gikk galt ved lagring i databasen.')
     }
   }
 
-  const ingredientRowColumns = isMobile ? '1fr' : '2fr 1fr auto'
+  const ingredientRowColumns = isMobile ? '1fr' : '2fr 1fr 1fr auto'
   const canResetShoppingList =
     Object.keys(shoppingListRecipeCounts).length > 0 ||
     Object.keys(customShoppingItems).length > 0 ||
@@ -944,6 +1088,17 @@ function App() {
                           onChange={(event) => handleEditIngredientChange(index, 'quantity', event.target.value)}
                           style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
                         />
+                        <select
+                          value={ingredient.unit || ''}
+                          onChange={(event) => handleEditIngredientChange(index, 'unit', event.target.value)}
+                          style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+                        >
+                          {INGREDIENT_UNITS.map((unit) => (
+                            <option key={`edit-unit-${unit || 'none'}`} value={unit}>
+                              {unit || 'Ingen enhet'}
+                            </option>
+                          ))}
+                        </select>
                         <button
                           type="button"
                           onClick={() => handleRemoveEditIngredientRow(index)}
@@ -1001,13 +1156,15 @@ function App() {
                       <tr>
                         <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Ingrediens</th>
                         <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Antall</th>
+                        <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Enhet</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedRecipe.ingredients.map((ingredient) => (
-                        <tr key={`selected-ingredient-${selectedRecipe.id}-${ingredient.name}`}>
+                        <tr key={`selected-ingredient-${selectedRecipe.id}-${ingredient.name}-${ingredient.unit || 'none'}`}>
                           <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{ingredient.name}</td>
                           <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{ingredient.quantity}</td>
+                          <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{ingredient.unit || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1061,6 +1218,17 @@ function App() {
                     onChange={(event) => handleNewIngredientChange(index, 'quantity', event.target.value)}
                     style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
                   />
+                  <select
+                    value={ingredient.unit || ''}
+                    onChange={(event) => handleNewIngredientChange(index, 'unit', event.target.value)}
+                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+                  >
+                    {INGREDIENT_UNITS.map((unit) => (
+                      <option key={`new-unit-${unit || 'none'}`} value={unit}>
+                        {unit || 'Ingen enhet'}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     onClick={() => handleRemoveIngredientRow(index)}
@@ -1198,23 +1366,24 @@ function App() {
                 <h3>Handleliste</h3>
                 <div className="shopping-cards">
                   {shoppingIngredients.map((ingredient) => (
-                    <div key={`shopping-ingredient-${ingredient.name}`} className={`shopping-ingredient-card ${isMobile ? 'mobile' : ''}`}>
+                    <div key={`shopping-ingredient-${ingredient.key}`} className={`shopping-ingredient-card ${isMobile ? 'mobile' : ''}`}>
                       <div className={`shopping-ingredient-row ${isMobile ? 'mobile' : ''}`}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                           <input
                             type="checkbox"
-                            checked={checkedIngredients.includes(ingredient.name) || ingredient.neededQuantity === 0}
-                            onChange={() => handleToggleIngredient(ingredient.name)}
+                            checked={checkedIngredients.includes(ingredient.key) || ingredient.neededQuantity === 0}
+                            onChange={() => handleToggleIngredient(ingredient.key)}
                           />
                           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            <strong>{ingredient.name}</strong> {ingredient.neededQuantity ? `(${ingredient.neededQuantity})` : ''}
+                            <strong>{ingredient.name}</strong>
+                            {ingredient.unit ? ` (${ingredient.unit})` : ''} {ingredient.neededQuantity ? `(${ingredient.neededQuantity})` : ''}
                           </span>
                         </div>
                         <label className={`shopping-have-label ${isMobile ? 'mobile' : ''}`}>
                           {isMobile ? 'Har:' : 'Har allerede:'}
                           <select
                             value={ingredient.haveQuantity}
-                            onChange={(e) => handleHaveQuantityChange(ingredient.name, e.target.value)}
+                            onChange={(e) => handleHaveQuantityChange(ingredient.key, e.target.value)}
                             className={`shopping-have-select ${isMobile ? 'mobile' : ''}`}
                           >
                             {Array.from({ length: 11 }, (_, index) => index).map((num) => (
@@ -1252,6 +1421,20 @@ function App() {
                 ))}
               </select>
             </label>
+            <label style={{ display: 'block' }}>
+              Porsjoner for hele menyen (standard er 4)
+              <select
+                value={menuServings}
+                onChange={(event) => handleMenuServingsChange(event.target.value)}
+                style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
+              >
+                {[2, 4, 6, 8].map((servings) => (
+                  <option key={`menu-servings-${servings}`} value={servings}>
+                    {servings} porsjoner
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <div style={{ display: 'grid', gap: '12px' }}>
             {Array.from({ length: menuDays }, (_, index) => (
@@ -1271,20 +1454,6 @@ function App() {
                     ))}
                   </select>
                 </label>
-                <label style={{ display: 'grid', gap: '6px' }}>
-                  Porsjoner (standard er 4)
-                  <select
-                    value={menuPlan[index]?.servings || 4}
-                    onChange={(event) => handleMenuServingsChange(index, event.target.value)}
-                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
-                  >
-                    {[2, 4, 6, 8].map((servings) => (
-                      <option key={`${index}-servings-${servings}`} value={servings}>
-                        {servings} porsjoner
-                      </option>
-                    ))}
-                  </select>
-                </label>
               </div>
             ))}
           </div>
@@ -1300,11 +1469,12 @@ function App() {
                   const recipe = recipes.find((item) => item.id === dayPlan?.recipeId)
                   return (
                     <li key={`menu-summary-${index}`}>
-                      Dag {index + 1}: {recipe?.name || 'Ingen rett valgt'} ({dayPlan?.servings || 4} porsjoner)
+                      Dag {index + 1}: {recipe?.name || 'Ingen rett valgt'}
                     </li>
                   )
                 })}
               </ul>
+              <p>Alle dager er beregnet med {menuServings} porsjoner.</p>
             </div>
           )}
         </section>
