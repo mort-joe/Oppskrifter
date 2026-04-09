@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 
-const INGREDIENT_UNITS = ['', 'l', 'dl', 'kg', 'g', 'ss', 'ts']
-
+const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske']
 function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
