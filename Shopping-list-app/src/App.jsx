@@ -680,7 +680,7 @@ function App() {
         <section className="auth-card">
           <div className="auth-brand">
             <img src="/favicon.svg" alt="Matretter logo" className="auth-logo" />
-            <h1 className="auth-title">Matretter - Innkjøpsplanlegger</h1>
+            <h1 className="auth-title">Innkjøpsplanlegger</h1>
           </div>
           <h2>Logg inn</h2>
           <p className="auth-help">Kun autorisert bruker har tilgang.</p>
@@ -724,7 +724,7 @@ function App() {
         <button type="button" onClick={handleSignOut}>Logg ut</button>
       </div>
 
-      <h1>Matretter - Innkjøpsplanlegger</h1>
+      <h1>Innkjøpsplanlegger</h1>
 
       <nav className={`main-nav ${isMobile ? 'mobile' : ''}`}>
         {[
