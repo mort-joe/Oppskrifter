@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 
-const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske']
+const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske', 'fed']
 function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -31,6 +31,7 @@ function App() {
   const [isShoppingStateReady, setIsShoppingStateReady] = useState(false)
   const [allCategories, setAllCategories] = useState([])
   const [allTags, setAllTags] = useState([])
+  const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
     name: '',
     ingredients: [{ name: '', quantity: 1, unit: '' }],
@@ -613,6 +614,29 @@ function App() {
     })
   }
 
+  const handleIngredientDragStart = (index) => {
+    setDragIngredientIndex(index)
+  }
+
+  const handleIngredientDragOver = (e, index) => {
+    e.preventDefault()
+    if (dragIngredientIndex === null || dragIngredientIndex === index) return
+    setEditingRecipe((current) => {
+      if (!current) return current
+      const ingredients = [...current.ingredients]
+      const [moved] = ingredients.splice(dragIngredientIndex, 1)
+      ingredients.splice(index, 0, moved)
+      return { ...current, ingredients }
+    })
+    setDragIngredientIndex(index)
+  }
+
+  const handleIngredientDragEnd = () => {
+    setDragIngredientIndex(null)
+  }
+    })
+  }
+
   const handleDeleteRecipe = async () => {
     if (!editingRecipe) return
     if (!window.confirm(`Er du sikker på at du vil slette matretten "${editingRecipe.name}"?`)) {
@@ -1011,7 +1035,7 @@ function App() {
                             fontSize: '1.1rem',
                           }}
                         >
-                          ✏️
+                          ⋯
                         </button>
                       </div>
                     </div>
@@ -1070,7 +1094,14 @@ function App() {
                   </div>
                   <div style={{ display: 'grid', gap: '10px' }}>
                     {editingRecipe.ingredients.map((ingredient, index) => (
-                      <div key={`edit-ingredient-${index}`} style={{ display: 'grid', gridTemplateColumns: ingredientRowColumns, gap: '10px' }}>
+                      <div
+                        key={`edit-ingredient-${index}`}
+                        draggable
+                        onDragStart={() => handleIngredientDragStart(index)}
+                        onDragOver={(e) => handleIngredientDragOver(e, index)}
+                        onDragEnd={handleIngredientDragEnd}
+                        style={{ display: 'grid', gridTemplateColumns: ingredientRowColumns, gap: '10px', opacity: dragIngredientIndex === index ? 0.4 : 1 }}
+                      >
                         <input
                           type="text"
                           placeholder="Ingrediensnavn"
@@ -1098,13 +1129,22 @@ function App() {
                             </option>
                           ))}
                         </select>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveEditIngredientRow(index)}
-                          style={{ padding: '10px', cursor: 'pointer' }}
-                        >
-                          Slett
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <span
+                            title="Dra for å endre rekkefølge"
+                            aria-label="Dra for å flytte ingrediens"
+                            style={{ cursor: 'grab', fontSize: '20px', padding: '6px 10px', userSelect: 'none', color: '#888', lineHeight: 1 }}
+                          >
+                            ⋮
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEditIngredientRow(index)}
+                            style={{ padding: '10px', cursor: 'pointer' }}
+                          >
+                            Slett
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
