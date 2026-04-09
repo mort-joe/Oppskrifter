@@ -634,8 +634,6 @@ function App() {
   const handleIngredientDragEnd = () => {
     setDragIngredientIndex(null)
   }
-    })
-  }
 
   const handleDeleteRecipe = async () => {
     if (!editingRecipe) return

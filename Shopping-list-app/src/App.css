@@ -198,7 +198,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 44px;
   margin-bottom: 24px;
 }
 
@@ -208,9 +208,9 @@
 }
 
 .main-nav-button {
-  padding: 18px 24px;
+  padding: 14px 18px;
   border-radius: 14px;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   width: 100%;
   min-width: 0;
   border: 1px solid #ccc;
@@ -222,8 +222,8 @@
 }
 
 .main-nav-button.mobile {
-  padding: 14px 12px;
-  font-size: 1rem;
+  padding: 11px 10px;
+  font-size: 0.95rem;
 }
 
 .main-nav-button.active {
