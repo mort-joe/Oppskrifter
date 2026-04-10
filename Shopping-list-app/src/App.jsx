@@ -821,7 +821,7 @@ function App() {
     }
   }
 
-  const ingredientRowColumns = isMobile ? '1fr' : '2fr 1fr 1fr auto'
+  const ingredientRowColumns = isMobile ? '1fr 1fr auto' : '2fr 1fr 1fr auto'
   const canResetShoppingList =
     Object.keys(shoppingListRecipeCounts).length > 0 ||
     Object.keys(customShoppingItems).length > 0 ||
@@ -1105,7 +1105,7 @@ function App() {
                           placeholder="Ingrediensnavn"
                           value={ingredient.name}
                           onChange={(event) => handleEditIngredientChange(index, 'name', event.target.value)}
-                          style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '10px', boxSizing: 'border-box', gridColumn: isMobile ? '1 / -1' : undefined }}
                         />
                         <input
                           type="number"
@@ -1244,7 +1244,7 @@ function App() {
                     placeholder="Navn på ingrediens"
                     value={ingredient.name}
                     onChange={(event) => handleNewIngredientChange(index, 'name', event.target.value)}
-                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box', gridColumn: isMobile ? '1 / -1' : undefined }}
                   />
                   <input
                     type="number"
