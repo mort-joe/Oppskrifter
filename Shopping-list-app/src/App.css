@@ -453,6 +453,33 @@
   font-size: 14px;
 }
 
+.menu-created-summary {
+  text-align: center;
+}
+
+.menu-created-days {
+  display: grid;
+  gap: 6px;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.menu-created-day-row {
+  display: grid;
+  grid-template-columns: 72px minmax(180px, 1fr);
+  column-gap: 10px;
+  align-items: baseline;
+}
+
+.menu-created-day-label {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.menu-created-day-recipe {
+  text-align: left;
+}
+
 .auth-card {
   max-width: 460px;
   margin: 48px auto;

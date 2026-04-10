@@ -1609,19 +1609,20 @@ function App() {
             Opprett meny
           </button>
           {menuCreated && (
-            <div style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '10px', background: '#fff' }}>
+            <div className="menu-created-summary" style={{ padding: '16px', border: '1px solid #ccc', borderRadius: '10px', background: '#fff' }}>
               <h3>Meny opprettet</h3>
               <p>Ingrediensene fra valgte retter er lagt til i handlelisten.</p>
-              <ul>
+              <div className="menu-created-days" role="table" aria-label="Valgte retter per dag">
                 {menuPlan.map((dayPlan, index) => {
                   const recipe = recipes.find((item) => item.id === dayPlan?.recipeId)
                   return (
-                    <li key={`menu-summary-${index}`}>
-                      Dag {index + 1}: {recipe?.name || 'Ingen rett valgt'}
-                    </li>
+                    <div key={`menu-summary-${index}`} className="menu-created-day-row" role="row">
+                      <span className="menu-created-day-label" role="cell">Dag {index + 1}:</span>
+                      <span className="menu-created-day-recipe" role="cell">{recipe?.name || 'Ingen rett valgt'}</span>
+                    </div>
                   )
                 })}
-              </ul>
+              </div>
               <p>Alle dager er beregnet med {menuServings} porsjoner.</p>
             </div>
           )}
