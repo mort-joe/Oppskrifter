@@ -3,6 +3,48 @@ import './App.css'
 import { supabase } from './supabaseClient'
 
 const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske', 'fed']
+
+const SHOPPING_CATEGORY_ORDER = [
+  'gronnsaker',
+  'kjott',
+  'pasta',
+  'bakevarer',
+  'frosenvarer',
+  'melkeprodukter',
+  'mineralvann',
+  'annet',
+]
+
+const SHOPPING_CATEGORY_KEYWORDS = {
+  gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'rosenkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp'],
+  kjott: ['kjott', 'biff', 'svin', 'kylling', 'karbonade', 'kjottdeig', 'kotelett', 'pylse', 'bacon', 'skinke', 'lam', 'rein', 'kalv', 'filet'],
+  pasta: ['pasta', 'spagetti', 'penne', 'fusilli', 'lasagne', 'tagliatelle', 'makaroni', 'nudler', 'risnudler'],
+  bakevarer: ['mel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
+  frosenvarer: ['frossen', 'fryst', 'fryse', 'is', 'fryste', 'frossne'],
+  melkeprodukter: ['melk', 'flote', 'yoghurt', 'ost', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr'],
+  mineralvann: ['mineralvann', 'brus', 'cola', 'fanta', 'sprite', 'pepsi', 'sitronbrus', 'sodavann', 'tonic'],
+}
+
+const normalizeIngredientText = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+const getShoppingCategory = (ingredientName) => {
+  const normalizedName = normalizeIngredientText(ingredientName)
+
+  for (const category of SHOPPING_CATEGORY_ORDER) {
+    if (category === 'annet') continue
+    const keywords = SHOPPING_CATEGORY_KEYWORDS[category] ?? []
+    if (keywords.some((keyword) => normalizedName.includes(normalizeIngredientText(keyword)))) {
+      return category
+    }
+  }
+
+  return 'annet'
+}
+
 function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -351,7 +393,7 @@ function App() {
       })
     })
 
-    return Array.from(totals.entries()).map(([key, item]) => {
+    const items = Array.from(totals.entries()).map(([key, item]) => {
       const haveQuantity = Number(ingredientHaveCounts[key] ?? 0)
       return {
         key,
@@ -361,6 +403,19 @@ function App() {
         haveQuantity,
         neededQuantity: Math.max(item.requiredQuantity - haveQuantity, 0),
       }
+    })
+
+    return items.sort((a, b) => {
+      const categoryA = getShoppingCategory(a.name)
+      const categoryB = getShoppingCategory(b.name)
+      const categoryIndexA = SHOPPING_CATEGORY_ORDER.indexOf(categoryA)
+      const categoryIndexB = SHOPPING_CATEGORY_ORDER.indexOf(categoryB)
+
+      if (categoryIndexA !== categoryIndexB) {
+        return categoryIndexA - categoryIndexB
+      }
+
+      return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
     })
   }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems])
 
