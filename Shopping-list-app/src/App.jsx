@@ -1604,6 +1604,19 @@ function App() {
 
       {selectedMenu === 'lag-meny' && (
         <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', display: 'grid', gap: '16px' }}>
+          <section style={{ marginBottom: '8px' }}>
+            <label htmlFor="menu-search" style={{ display: 'block', marginBottom: '8px' }}>
+              Søk etter tag eller ingrediens:
+            </label>
+            <input
+              id="menu-search"
+              type="text"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Søk på navn, kategori, tag eller ingrediens"
+              style={{ width: '100%', padding: '10px', fontSize: '16px', boxSizing: 'border-box' }}
+            />
+          </section>
           <h2>Lag meny</h2>
           <div style={{ display: 'grid', gap: '12px' }}>
             <label style={{ display: 'block' }}>
