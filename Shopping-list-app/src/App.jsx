@@ -7,6 +7,7 @@ const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss'
 const SHOPPING_CATEGORY_ORDER = [
   'gronnsaker',
   'kjott',
+  'fisk',
   'pasta',
   'bakevarer',
   'frosenvarer',
@@ -18,6 +19,7 @@ const SHOPPING_CATEGORY_ORDER = [
 const SHOPPING_CATEGORY_KEYWORDS = {
   gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'rosenkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp'],
   kjott: ['kjott', 'biff', 'svin', 'kylling', 'karbonade', 'kjottdeig', 'kotelett', 'pylse', 'bacon', 'skinke', 'lam', 'rein', 'kalv', 'filet'],
+  fisk: ['fisk', 'laks', 'torsk', 'sei', 'makrell', 'sild', 'reker', 'scampi', 'tunfisk', 'kveite', 'orsret', 'dorade'],
   pasta: ['pasta', 'spagetti', 'penne', 'fusilli', 'lasagne', 'tagliatelle', 'makaroni', 'nudler', 'risnudler'],
   bakevarer: ['mel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
   frosenvarer: ['frossen', 'fryst', 'fryse', 'is', 'fryste', 'frossne'],
