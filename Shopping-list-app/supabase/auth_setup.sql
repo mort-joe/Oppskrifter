@@ -33,7 +33,7 @@ with normalized as (
 update public.ingredients i
 set shopping_category = case
   when n.normalized_name like any (array[
-    '%brokkoli%', '%gulrot%', '%potet%', '%lok%', '%purre%', '%salat%', '%tomat%', '%agurk%', '%paprika%', '%spinat%', '%blomkal%', '%hvitlok%', '%ingefaer%', '%squash%', '%avokado%', '%sopp%'
+    '%brokkoli%', '%gulrot%', '%potet%', '%lok%', '%purre%', '%salat%', '%tomat%', '%agurk%', '%paprika%', '%spinat%', '%blomkal%', '%hvitlok%', '%ingefaer%', '%squash%', '%avokado%', '%sopp%', '%rukkola%'
   ]) then 'gronnsaker'
   when n.normalized_name like any (array[
     '%eple%', '%banan%', '%appelsin%', '%pare%', '%druer%', '%sitron%', '%lime%', '%melon%', '%ananas%', '%kiwi%', '%mango%', '%jordbaer%', '%bringebaer%', '%blabaer%'

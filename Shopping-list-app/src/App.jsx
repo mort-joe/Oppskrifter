@@ -19,7 +19,7 @@ const SHOPPING_CATEGORY_ORDER = [
 ]
 
 const SHOPPING_CATEGORY_KEYWORDS = {
-  gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp'],
+  gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp', 'rukkola'],
   frukt: ['eple', 'banan', 'appelsin', 'pare', 'druer', 'sitron', 'lime', 'melon', 'ananas', 'kiwi', 'mango', 'jordbaer', 'bringebaer', 'blabaer'],
   kjott: ['kjott', 'biff', 'svin', 'kylling', 'karbonade', 'kjottdeig', 'kotelett', 'pylse', 'bacon', 'skinke', 'lam', 'rein', 'kalv', 'filet'],
   fisk: ['fisk', 'laks', 'torsk', 'sei', 'makrell', 'sild', 'reker', 'scampi', 'tunfisk', 'kveite', 'orsret', 'dorade'],
