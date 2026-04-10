@@ -476,6 +476,7 @@ function App() {
   const handleSelectRecipe = (id) => {
     setSelectedRecipeId(id)
     if (isMobile) {
+      setEditingRecipe(null)
       setMobileRecipePane('details')
     }
   }
