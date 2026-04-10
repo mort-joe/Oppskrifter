@@ -45,6 +45,9 @@ set shopping_category = case
     '%fisk%', '%laks%', '%torsk%', '%sei%', '%makrell%', '%sild%', '%reker%', '%scampi%', '%tunfisk%', '%kveite%', '%orret%', '%dorade%'
   ]) then 'fisk'
   when n.normalized_name like any (array[
+    '%yoghurt%', '%romme%', '%creme fraiche%', '%smoreost%', '%kefir%', '%skyr%'
+  ]) then 'kjolevarer'
+  when n.normalized_name like any (array[
     '%pasta%', '%spagetti%', '%penne%', '%fusilli%', '%lasagne%', '%tagliatelle%', '%makaroni%', '%nudler%', '%risnudler%', '%lefse%', '%lefser%', '%tray%', '%tortilla%'
   ]) then 'pasta'
   when n.normalized_name like any (array[
