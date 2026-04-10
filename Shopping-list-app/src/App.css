@@ -388,6 +388,15 @@
   gap: 16px;
 }
 
+.selected-recipes-summary {
+  text-align: left;
+}
+
+.selected-recipes-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
 .shopping-cards {
   display: grid;
   gap: 12px;

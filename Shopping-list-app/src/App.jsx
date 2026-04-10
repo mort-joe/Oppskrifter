@@ -1497,9 +1497,9 @@ function App() {
           ) : (
             <div className="shopping-content">
               {shoppingRecipes.length > 0 && (
-                <div>
+                <div className="selected-recipes-summary">
                   <h3>Valgte matretter</h3>
-                  <ul>
+                  <ul className="selected-recipes-list">
                     {shoppingRecipes.map((recipe) => (
                       <li key={`shopping-recipe-${recipe.id}`}>
                         {recipe.name} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
