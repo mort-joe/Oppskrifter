@@ -473,27 +473,65 @@ function App() {
   }
 
   const handleResetShoppingList = () => {
-    const hasItems =
+    const hasIngredientListItems =
       Object.keys(shoppingListRecipeCounts).length > 0 ||
-      Object.keys(customShoppingItems).length > 0 ||
       Object.keys(ingredientHaveCounts).length > 0 ||
       checkedIngredients.length > 0
+    const hasCustomItems = Object.keys(customShoppingItems).length > 0
+    const hasItems = hasIngredientListItems || hasCustomItems
 
     if (!hasItems) {
       return
     }
 
-    const shouldReset = window.confirm('Er du sikker på at du vil nullstille hele handlelisten?')
+    const resetChoice = window.prompt(
+      'Hva vil du nullstille?\n1: Handleliste med ingredienser\n2: Egne varer\n3: Begge\n\nSkriv 1, 2 eller 3.',
+      '3',
+    )
+
+    if (resetChoice === null) {
+      return
+    }
+
+    const choice = resetChoice.trim()
+    if (!['1', '2', '3'].includes(choice)) {
+      alert('Ugyldig valg. Skriv 1, 2 eller 3.')
+      return
+    }
+
+    if ((choice === '1' || choice === '3') && !hasIngredientListItems) {
+      alert('Det finnes ingen ingrediens-handleliste å nullstille.')
+      return
+    }
+
+    if ((choice === '2' || choice === '3') && !hasCustomItems) {
+      alert('Det finnes ingen egne varer å nullstille.')
+      return
+    }
+
+    const scopeText =
+      choice === '1'
+        ? 'handleliste med ingredienser'
+        : choice === '2'
+          ? 'egne varer'
+          : 'begge'
+
+    const shouldReset = window.confirm(`Er du sikker på at du vil nullstille ${scopeText}?`)
     if (!shouldReset) {
       return
     }
 
-    setShoppingListRecipeCounts({})
-    setCustomShoppingItems({})
-    setIngredientHaveCounts({})
-    setCheckedIngredients([])
-    setCustomItemName('')
-    setCustomItemQuantity(1)
+    if (choice === '1' || choice === '3') {
+      setShoppingListRecipeCounts({})
+      setIngredientHaveCounts({})
+      setCheckedIngredients([])
+    }
+
+    if (choice === '2' || choice === '3') {
+      setCustomShoppingItems({})
+      setCustomItemName('')
+      setCustomItemQuantity(1)
+    }
   }
 
   const handleSignIn = async (event) => {
