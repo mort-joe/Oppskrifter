@@ -132,7 +132,7 @@ function App() {
       supabase
         .from('recipes')
         .select(
-          'id,name,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
+          'id,name,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
         )
         .eq('user_id', userId)
         .order('id', { ascending: false }),
@@ -162,7 +162,12 @@ function App() {
           name: recipe.name,
           ingredients:
             recipe.recipe_ingredients
-              ?.map((row) => ({ name: row.ingredients?.name, quantity: row.quantity ?? 1, unit: row.unit ?? '' }))
+              ?.map((row) => ({
+                name: row.ingredients?.name,
+                quantity: row.quantity ?? 1,
+                unit: row.unit ?? '',
+                shoppingCategory: row.ingredients?.shopping_category ?? 'annet',
+              }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
             recipe.recipe_categories?.map((row) => row.categories?.name).filter(Boolean) ?? [],
@@ -187,6 +192,39 @@ function App() {
 
     if (missingNames.length) {
       const { data: inserted, error: insertError } = await supabase.from(table).insert(missingNames.map((name) => ({ name }))).select('id,name')
+      if (insertError) {
+        throw insertError
+      }
+      inserted.forEach((row) => existingMap.set(row.name, row.id))
+    }
+
+    return uniqueNames.map((name) => existingMap.get(name))
+  }
+
+  const getOrCreateIngredients = async (names) => {
+    const uniqueNames = normalizeNames(names)
+    if (!uniqueNames.length) return []
+
+    const { data: existing, error: existingError } = await supabase
+      .from('ingredients')
+      .select('id,name,shopping_category')
+      .in('name', uniqueNames)
+    if (existingError) {
+      throw existingError
+    }
+
+    const existingMap = new Map(existing.map((row) => [row.name, row.id]))
+    const missingNames = uniqueNames.filter((name) => !existingMap.has(name))
+
+    if (missingNames.length) {
+      const rowsToInsert = missingNames.map((name) => ({
+        name,
+        shopping_category: getShoppingCategory(name),
+      }))
+      const { data: inserted, error: insertError } = await supabase
+        .from('ingredients')
+        .insert(rowsToInsert)
+        .select('id,name')
       if (insertError) {
         throw insertError
       }
@@ -380,9 +418,15 @@ function App() {
     shoppingRecipes.forEach((recipe) => {
       recipe.ingredients.forEach((ingredient) => {
         const key = ingredientIdentityKey(ingredient.name, ingredient.unit)
-        const existing = totals.get(key) ?? { name: ingredient.name, unit: ingredient.unit ?? '', requiredQuantity: 0 }
+        const existing = totals.get(key) ?? {
+          name: ingredient.name,
+          unit: ingredient.unit ?? '',
+          shoppingCategory: ingredient.shoppingCategory ?? 'annet',
+          requiredQuantity: 0,
+        }
         totals.set(key, {
           ...existing,
+          shoppingCategory: existing.shoppingCategory || ingredient.shoppingCategory || 'annet',
           requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
         })
       })
@@ -390,7 +434,7 @@ function App() {
 
     Object.entries(customShoppingItems).forEach(([name, quantity]) => {
       const key = ingredientIdentityKey(name, '')
-      const existing = totals.get(key) ?? { name, unit: '', requiredQuantity: 0 }
+      const existing = totals.get(key) ?? { name, unit: '', shoppingCategory: 'annet', requiredQuantity: 0 }
       totals.set(key, {
         ...existing,
         requiredQuantity: existing.requiredQuantity + quantity,
@@ -403,6 +447,7 @@ function App() {
         key,
         name: item.name,
         unit: item.unit,
+        shoppingCategory: item.shoppingCategory ?? 'annet',
         requiredQuantity: item.requiredQuantity,
         haveQuantity,
         neededQuantity: Math.max(item.requiredQuantity - haveQuantity, 0),
@@ -410,13 +455,16 @@ function App() {
     })
 
     return items.sort((a, b) => {
-      const categoryA = getShoppingCategory(a.name)
-      const categoryB = getShoppingCategory(b.name)
+      const categoryA = a.shoppingCategory || 'annet'
+      const categoryB = b.shoppingCategory || 'annet'
       const categoryIndexA = SHOPPING_CATEGORY_ORDER.indexOf(categoryA)
       const categoryIndexB = SHOPPING_CATEGORY_ORDER.indexOf(categoryB)
 
-      if (categoryIndexA !== categoryIndexB) {
-        return categoryIndexA - categoryIndexB
+      const safeCategoryIndexA = categoryIndexA >= 0 ? categoryIndexA : SHOPPING_CATEGORY_ORDER.length
+      const safeCategoryIndexB = categoryIndexB >= 0 ? categoryIndexB : SHOPPING_CATEGORY_ORDER.length
+
+      if (safeCategoryIndexA !== safeCategoryIndexB) {
+        return safeCategoryIndexA - safeCategoryIndexB
       }
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
@@ -790,7 +838,7 @@ function App() {
 
       const uniqueEntries = Array.from(ingredientMap.values())
       const ingredientNames = uniqueEntries.map((entry) => entry.name)
-      const ingredientIds = await getOrCreateRecords('ingredients', ingredientNames)
+      const ingredientIds = await getOrCreateIngredients(ingredientNames)
       const categoryIds = await getOrCreateRecords('categories', editingRecipe.typeTags || [])
       const tagIds = await getOrCreateRecords('tags', editingRecipe.occasionTags || [])
 
@@ -878,7 +926,7 @@ function App() {
       const uniqueEntries = Array.from(ingredientMap.values())
       const ingredientNames = uniqueEntries.map((entry) => entry.name)
 
-      const ingredientIds = await getOrCreateRecords('ingredients', ingredientNames)
+      const ingredientIds = await getOrCreateIngredients(ingredientNames)
       const categoryIds = await getOrCreateRecords('categories', newRecipe.typeTags)
       const tagIds = await getOrCreateRecords('tags', newRecipe.occasionTags)
 

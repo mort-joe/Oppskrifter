@@ -10,6 +10,60 @@ alter table public.recipes
 -- Optional but recommended index
 create index if not exists recipes_user_id_idx on public.recipes(user_id);
 
+-- 1b) Add shopping category to ingredients for deterministic sorting in app
+alter table public.ingredients
+  add column if not exists shopping_category text not null default 'annet';
+
+create index if not exists ingredients_shopping_category_idx on public.ingredients(shopping_category);
+
+with normalized as (
+  select
+    id,
+    lower(
+      replace(
+        replace(
+          replace(name, 'æ', 'ae'),
+          'ø', 'o'
+        ),
+        'å', 'a'
+      )
+    ) as normalized_name
+  from public.ingredients
+)
+update public.ingredients i
+set shopping_category = case
+  when n.normalized_name like any (array[
+    '%brokkoli%', '%gulrot%', '%potet%', '%lok%', '%purre%', '%salat%', '%tomat%', '%agurk%', '%paprika%', '%spinat%', '%blomkal%', '%hvitlok%', '%ingefaer%', '%squash%', '%avokado%', '%sopp%'
+  ]) then 'gronnsaker'
+  when n.normalized_name like any (array[
+    '%eple%', '%banan%', '%appelsin%', '%pare%', '%druer%', '%sitron%', '%lime%', '%melon%', '%ananas%', '%kiwi%', '%mango%', '%jordbaer%', '%bringebaer%', '%blabaer%'
+  ]) then 'frukt'
+  when n.normalized_name like any (array[
+    '%kjott%', '%biff%', '%svin%', '%kylling%', '%karbonade%', '%kjottdeig%', '%kotelett%', '%pylse%', '%bacon%', '%skinke%', '%lam%', '%rein%', '%kalv%', '%filet%'
+  ]) then 'kjott'
+  when n.normalized_name like any (array[
+    '%fisk%', '%laks%', '%torsk%', '%sei%', '%makrell%', '%sild%', '%reker%', '%scampi%', '%tunfisk%', '%kveite%', '%orret%', '%dorade%'
+  ]) then 'fisk'
+  when n.normalized_name like any (array[
+    '%pasta%', '%spagetti%', '%penne%', '%fusilli%', '%lasagne%', '%tagliatelle%', '%makaroni%', '%nudler%', '%risnudler%', '%lefse%', '%lefser%', '%tray%', '%tortilla%'
+  ]) then 'pasta'
+  when n.normalized_name like any (array[
+    '%mel%', '%gjaer%', '%bakepulver%', '%sukker%', '%vaniljesukker%', '%sirup%', '%kakao%', '%havregryn%', '%smor%', '%egg%', '%brod%', '%rundstykke%', '%lompe%'
+  ]) then 'bakevarer'
+  when n.normalized_name like any (array[
+    '%frossen%', '%fryst%', '%fryse%', '%is%', '%fryste%', '%frossne%', '%rosenkal%'
+  ]) then 'frosenvarer'
+  when n.normalized_name like any (array[
+    '%melk%', '%flote%', '%yoghurt%', '%ost%', '%romme%', '%creme fraiche%', '%smoreost%', '%kefir%', '%skyr%'
+  ]) then 'melkeprodukter'
+  when n.normalized_name like any (array[
+    '%mineralvann%', '%brus%', '%cola%', '%fanta%', '%sprite%', '%pepsi%', '%sitronbrus%', '%sodavann%', '%tonic%'
+  ]) then 'mineralvann'
+  else coalesce(i.shopping_category, 'annet')
+end
+from normalized n
+where i.id = n.id;
+
 -- 2) Enable RLS on recipe-related tables
 alter table public.recipes enable row level security;
 alter table public.recipe_ingredients enable row level security;
