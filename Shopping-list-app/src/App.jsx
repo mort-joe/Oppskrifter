@@ -368,6 +368,13 @@ function App() {
     }
   }
 
+  const handleMenuSelect = (menuId) => {
+    setSelectedMenu(menuId)
+    if (menuId === 'matretter' && isMobile) {
+      setMobileRecipePane('list')
+    }
+  }
+
   const handleAddToShoppingList = (recipeId, count = 1) => {
     setShoppingListRecipeCounts((current) => ({
       ...current,
@@ -901,7 +908,7 @@ function App() {
           <button
             key={item.id}
             type="button"
-            onClick={() => setSelectedMenu(item.id)}
+            onClick={() => handleMenuSelect(item.id)}
             className={`main-nav-button ${isMobile ? 'mobile' : ''} ${selectedMenu === item.id ? 'active' : ''}`}
           >
             {item.label}
@@ -930,46 +937,6 @@ function App() {
               style={{ width: '100%', padding: '10px', fontSize: '16px', boxSizing: 'border-box' }}
             />
           </section>
-
-          {isMobile && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '8px',
-                marginBottom: '12px',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setMobileRecipePane('list')}
-                style={{
-                  padding: '10px',
-                  borderRadius: '10px',
-                  border: mobileRecipePane === 'list' ? '2px solid #1f6feb' : '1px solid #ccc',
-                  background: mobileRecipePane === 'list' ? '#e8f0ff' : '#fff',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Matretter
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileRecipePane('details')}
-                style={{
-                  padding: '10px',
-                  borderRadius: '10px',
-                  border: mobileRecipePane === 'details' ? '2px solid #1f6feb' : '1px solid #ccc',
-                  background: mobileRecipePane === 'details' ? '#e8f0ff' : '#fff',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Valgt matrett
-              </button>
-            </div>
-          )}
 
           <section style={{ display: 'grid', gap: '24px', gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr' }}>
             <div style={{ display: !isMobile || mobileRecipePane === 'list' ? 'block' : 'none' }}>
@@ -1043,6 +1010,15 @@ function App() {
             </div>
 
             <div style={{ display: !isMobile || mobileRecipePane === 'details' ? 'block' : 'none' }}>
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setMobileRecipePane('list')}
+                  style={{ marginBottom: '10px', padding: '8px 12px', cursor: 'pointer' }}
+                >
+                  Tilbake til matretter
+                </button>
+              )}
               <h2>{editingRecipe ? 'Rediger matrett' : 'Valgt matrett'}</h2>
               {editingRecipe ? (
                 <form onSubmit={handleSaveRecipeEdit} style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', textAlign: 'left' }}>
