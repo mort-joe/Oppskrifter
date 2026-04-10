@@ -1298,7 +1298,29 @@ function App() {
                 </form>
               ) : selectedRecipe ? (
                 <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', textAlign: 'left' }}>
-                  <h3>{selectedRecipe.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                    <h3 style={{ margin: 0 }}>{selectedRecipe.name}</h3>
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditing(selectedRecipe)}
+                      aria-label="Rediger matrett"
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '50%',
+                        border: '1px solid #ccc',
+                        background: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                        fontSize: '1.1rem',
+                      }}
+                    >
+                      ⋯
+                    </button>
+                  </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Tags:</strong>{' '}
                     {[...selectedRecipe.typeTags, ...selectedRecipe.occasionTags].map((tag) => (
