@@ -23,7 +23,7 @@ const SHOPPING_CATEGORY_KEYWORDS = {
   frukt: ['eple', 'banan', 'appelsin', 'pare', 'druer', 'sitron', 'lime', 'melon', 'ananas', 'kiwi', 'mango', 'jordbaer', 'bringebaer', 'blabaer'],
   kjott: ['kjott', 'biff', 'svin', 'kylling', 'karbonade', 'kjottdeig', 'kotelett', 'pylse', 'bacon', 'skinke', 'lam', 'rein', 'kalv', 'filet'],
   fisk: ['fisk', 'laks', 'torsk', 'sei', 'makrell', 'sild', 'reker', 'scampi', 'tunfisk', 'kveite', 'orsret', 'dorade'],
-  kjolevarer: ['yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr', 'ost'],
+  kjolevarer: ['yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr', 'ost', 'kebabdressing'],
   pasta: ['pasta', 'spagetti', 'penne', 'fusilli', 'lasagne', 'tagliatelle', 'makaroni', 'nudler', 'risnudler', 'lefse', 'lefser', 'tray', 'tortilla'],
   bakevarer: ['mel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
   frosenvarer: ['frossen', 'fryst', 'fryse', 'is', 'fryste', 'frossne', 'rosenkal'],
