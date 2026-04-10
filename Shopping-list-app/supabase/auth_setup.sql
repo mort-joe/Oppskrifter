@@ -33,7 +33,7 @@ with normalized as (
 update public.ingredients i
 set shopping_category = case
   when n.normalized_name like any (array[
-    '%brokkoli%', '%gulrot%', '%potet%', '%lok%', '%purre%', '%salat%', '%tomat%', '%agurk%', '%paprika%', '%spinat%', '%blomkal%', '%hvitlok%', '%ingefaer%', '%squash%', '%avokado%', '%sopp%', '%rukkola%'
+    '%brokkoli%', '%gulrot%', '%potet%', '%lok%', '%purre%', '%salat%', '%tomat%', '%agurk%', '%paprika%', '%spinat%', '%blomkal%', '%hvitlok%', '%ingefaer%', '%squash%', '%avokado%', '%sopp%', '%rukkola%', '%chili%'
   ]) then 'gronnsaker'
   when n.normalized_name like any (array[
     '%eple%', '%banan%', '%appelsin%', '%pare%', '%druer%', '%sitron%', '%lime%', '%melon%', '%ananas%', '%kiwi%', '%mango%', '%jordbaer%', '%bringebaer%', '%blabaer%'
@@ -45,7 +45,7 @@ set shopping_category = case
     '%fisk%', '%laks%', '%torsk%', '%sei%', '%makrell%', '%sild%', '%reker%', '%scampi%', '%tunfisk%', '%kveite%', '%orret%', '%dorade%'
   ]) then 'fisk'
   when n.normalized_name like any (array[
-    '%yoghurt%', '%romme%', '%creme fraiche%', '%smoreost%', '%kefir%', '%skyr%'
+    '%yoghurt%', '%romme%', '%creme fraiche%', '%smoreost%', '%kefir%', '%skyr%', '%ost%'
   ]) then 'kjolevarer'
   when n.normalized_name like any (array[
     '%pasta%', '%spagetti%', '%penne%', '%fusilli%', '%lasagne%', '%tagliatelle%', '%makaroni%', '%nudler%', '%risnudler%', '%lefse%', '%lefser%', '%tray%', '%tortilla%'
@@ -57,7 +57,7 @@ set shopping_category = case
     '%frossen%', '%fryst%', '%fryse%', '%is%', '%fryste%', '%frossne%', '%rosenkal%'
   ]) then 'frosenvarer'
   when n.normalized_name like any (array[
-    '%melk%', '%flote%', '%yoghurt%', '%ost%', '%romme%', '%creme fraiche%', '%smoreost%', '%kefir%', '%skyr%'
+    '%melk%', '%flote%', '%yoghurt%', '%romme%', '%creme fraiche%', '%smoreost%', '%kefir%', '%skyr%'
   ]) then 'melkeprodukter'
   when n.normalized_name like any (array[
     '%mineralvann%', '%brus%', '%cola%', '%fanta%', '%sprite%', '%pepsi%', '%sitronbrus%', '%sodavann%', '%tonic%'

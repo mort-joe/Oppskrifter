@@ -19,15 +19,15 @@ const SHOPPING_CATEGORY_ORDER = [
 ]
 
 const SHOPPING_CATEGORY_KEYWORDS = {
-  gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp', 'rukkola'],
+  gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp', 'rukkola', 'chili'],
   frukt: ['eple', 'banan', 'appelsin', 'pare', 'druer', 'sitron', 'lime', 'melon', 'ananas', 'kiwi', 'mango', 'jordbaer', 'bringebaer', 'blabaer'],
   kjott: ['kjott', 'biff', 'svin', 'kylling', 'karbonade', 'kjottdeig', 'kotelett', 'pylse', 'bacon', 'skinke', 'lam', 'rein', 'kalv', 'filet'],
   fisk: ['fisk', 'laks', 'torsk', 'sei', 'makrell', 'sild', 'reker', 'scampi', 'tunfisk', 'kveite', 'orsret', 'dorade'],
-  kjolevarer: ['yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr'],
+  kjolevarer: ['yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr', 'ost'],
   pasta: ['pasta', 'spagetti', 'penne', 'fusilli', 'lasagne', 'tagliatelle', 'makaroni', 'nudler', 'risnudler', 'lefse', 'lefser', 'tray', 'tortilla'],
   bakevarer: ['mel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
   frosenvarer: ['frossen', 'fryst', 'fryse', 'is', 'fryste', 'frossne', 'rosenkal'],
-  melkeprodukter: ['melk', 'flote', 'yoghurt', 'ost', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr'],
+  melkeprodukter: ['melk', 'flote', 'yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr'],
   mineralvann: ['mineralvann', 'brus', 'cola', 'fanta', 'sprite', 'pepsi', 'sitronbrus', 'sodavann', 'tonic'],
 }
 
