@@ -37,6 +37,13 @@ const normalizeIngredientText = (value) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
 
+const normalizeCategoryName = (value) => {
+  const trimmedValue = String(value || '').trim()
+  if (!trimmedValue) return ''
+  if (normalizeIngredientText(trimmedValue) === 'supper') return 'Suppe'
+  return trimmedValue
+}
+
 const getShoppingCategory = (ingredientName) => {
   const normalizedName = normalizeIngredientText(ingredientName)
 
@@ -91,7 +98,7 @@ function App() {
   })
 
   const normalizeNames = (values) =>
-    [...new Set(values.map((value) => value.trim()).filter(Boolean))]
+    [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
 
   const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
 
@@ -143,7 +150,10 @@ function App() {
     if (categoryError) {
       console.error('Could not load categories:', categoryError)
     } else if (categoryData) {
-      setAllCategories(categoryData.map((row) => row.name))
+      const normalizedCategoryNames = categoryData
+        .map((row) => normalizeCategoryName(row.name))
+        .filter(Boolean)
+      setAllCategories(normalizeNames(normalizedCategoryNames))
     }
 
     if (tagError) {
@@ -172,7 +182,11 @@ function App() {
               }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
-            recipe.recipe_categories?.map((row) => row.categories?.name).filter(Boolean) ?? [],
+            normalizeNames(
+              recipe.recipe_categories
+                ?.map((row) => normalizeCategoryName(row.categories?.name))
+                .filter(Boolean) ?? [],
+            ),
           occasionTags:
             recipe.recipe_tags?.map((row) => row.tags?.name).filter(Boolean) ?? [],
         })),
@@ -181,7 +195,10 @@ function App() {
   }
 
   const getOrCreateRecords = async (table, names) => {
-    const uniqueNames = normalizeNames(names)
+    const normalizedInputNames = table === 'categories'
+      ? names.map((name) => normalizeCategoryName(name))
+      : names
+    const uniqueNames = normalizeNames(normalizedInputNames)
     if (!uniqueNames.length) return []
 
     const { data: existing, error: existingError } = await supabase.from(table).select('id,name').in('name', uniqueNames)
