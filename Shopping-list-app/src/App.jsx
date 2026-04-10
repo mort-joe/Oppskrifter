@@ -22,6 +22,9 @@ function App() {
   const [customShoppingItems, setCustomShoppingItems] = useState({})
   const [customItemName, setCustomItemName] = useState('')
   const [customItemQuantity, setCustomItemQuantity] = useState(1)
+  const [showResetOptions, setShowResetOptions] = useState(false)
+  const [resetIngredientsSelected, setResetIngredientsSelected] = useState(false)
+  const [resetCustomItemsSelected, setResetCustomItemsSelected] = useState(false)
   const [ingredientHaveCounts, setIngredientHaveCounts] = useState({})
   const [checkedIngredients, setCheckedIngredients] = useState([])
   const [menuDays, setMenuDays] = useState(1)
@@ -473,65 +476,57 @@ function App() {
   }
 
   const handleResetShoppingList = () => {
-    const hasIngredientListItems =
-      Object.keys(shoppingListRecipeCounts).length > 0 ||
-      Object.keys(ingredientHaveCounts).length > 0 ||
-      checkedIngredients.length > 0
-    const hasCustomItems = Object.keys(customShoppingItems).length > 0
-    const hasItems = hasIngredientListItems || hasCustomItems
-
-    if (!hasItems) {
+    if (!canResetShoppingList) {
       return
     }
 
-    const resetChoice = window.prompt(
-      'Hva vil du nullstille?\n1: Handleliste med ingredienser\n2: Egne varer\n3: Begge\n\nSkriv 1, 2 eller 3.',
-      '3',
-    )
+    setResetIngredientsSelected(hasIngredientListItems)
+    setResetCustomItemsSelected(hasCustomItems)
+    setShowResetOptions(true)
+  }
 
-    if (resetChoice === null) {
-      return
-    }
+  const handleConfirmResetShoppingList = () => {
+    const shouldResetIngredients = resetIngredientsSelected && hasIngredientListItems
+    const shouldResetCustomItems = resetCustomItemsSelected && hasCustomItems
 
-    const choice = resetChoice.trim()
-    if (!['1', '2', '3'].includes(choice)) {
-      alert('Ugyldig valg. Skriv 1, 2 eller 3.')
-      return
-    }
-
-    if ((choice === '1' || choice === '3') && !hasIngredientListItems) {
-      alert('Det finnes ingen ingrediens-handleliste å nullstille.')
-      return
-    }
-
-    if ((choice === '2' || choice === '3') && !hasCustomItems) {
-      alert('Det finnes ingen egne varer å nullstille.')
+    if (!shouldResetIngredients && !shouldResetCustomItems) {
+      alert('Velg minst en liste å nullstille.')
       return
     }
 
     const scopeText =
-      choice === '1'
-        ? 'handleliste med ingredienser'
-        : choice === '2'
-          ? 'egne varer'
-          : 'begge'
+      shouldResetIngredients && shouldResetCustomItems
+        ? 'handleliste med ingredienser og egne varer'
+        : shouldResetIngredients
+          ? 'handleliste med ingredienser'
+          : 'egne varer'
 
     const shouldReset = window.confirm(`Er du sikker på at du vil nullstille ${scopeText}?`)
     if (!shouldReset) {
       return
     }
 
-    if (choice === '1' || choice === '3') {
+    if (shouldResetIngredients) {
       setShoppingListRecipeCounts({})
       setIngredientHaveCounts({})
       setCheckedIngredients([])
     }
 
-    if (choice === '2' || choice === '3') {
+    if (shouldResetCustomItems) {
       setCustomShoppingItems({})
       setCustomItemName('')
       setCustomItemQuantity(1)
     }
+
+    setShowResetOptions(false)
+    setResetIngredientsSelected(false)
+    setResetCustomItemsSelected(false)
+  }
+
+  const handleCancelResetShoppingList = () => {
+    setShowResetOptions(false)
+    setResetIngredientsSelected(false)
+    setResetCustomItemsSelected(false)
   }
 
   const handleSignIn = async (event) => {
@@ -572,6 +567,9 @@ function App() {
     setIsShoppingStateReady(false)
     setCustomItemName('')
     setCustomItemQuantity(1)
+    setShowResetOptions(false)
+    setResetIngredientsSelected(false)
+    setResetCustomItemsSelected(false)
   }
 
   const parseQuantityValue = (value) => {
@@ -867,11 +865,12 @@ function App() {
   }
 
   const ingredientRowColumns = isMobile ? '1fr 1fr auto' : '2fr 1fr 1fr auto'
-  const canResetShoppingList =
+  const hasIngredientListItems =
     Object.keys(shoppingListRecipeCounts).length > 0 ||
-    Object.keys(customShoppingItems).length > 0 ||
     Object.keys(ingredientHaveCounts).length > 0 ||
     checkedIngredients.length > 0
+  const hasCustomItems = Object.keys(customShoppingItems).length > 0
+  const canResetShoppingList = hasIngredientListItems || hasCustomItems
 
   if (isAuthLoading) {
     return (
@@ -1351,6 +1350,45 @@ function App() {
               Nullstill handleliste
             </button>
           </div>
+          {showResetOptions && (
+            <div className={`shopping-reset-panel ${isMobile ? 'mobile' : ''}`}>
+              <strong>Velg hva som skal nullstilles</strong>
+              <label className="shopping-reset-option">
+                <input
+                  type="checkbox"
+                  checked={resetIngredientsSelected}
+                  onChange={(event) => setResetIngredientsSelected(event.target.checked)}
+                  disabled={!hasIngredientListItems}
+                />
+                Handleliste med ingredienser
+              </label>
+              <label className="shopping-reset-option">
+                <input
+                  type="checkbox"
+                  checked={resetCustomItemsSelected}
+                  onChange={(event) => setResetCustomItemsSelected(event.target.checked)}
+                  disabled={!hasCustomItems}
+                />
+                Egne varer
+              </label>
+              <div className="shopping-reset-actions">
+                <button
+                  type="button"
+                  onClick={handleConfirmResetShoppingList}
+                  className="shopping-reset-confirm-btn"
+                >
+                  Bekreft nullstilling
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelResetShoppingList}
+                  className="shopping-reset-cancel-btn"
+                >
+                  Avbryt
+                </button>
+              </div>
+            </div>
+          )}
           <div className={`custom-item-card ${isMobile ? 'mobile' : ''}`}>
             <h3 className={`custom-item-title ${isMobile ? 'mobile' : ''}`}>Legg til egen vare</h3>
             <div className={`custom-item-form ${isMobile ? 'mobile' : ''}`}>

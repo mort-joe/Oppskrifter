@@ -268,6 +268,49 @@
   cursor: not-allowed;
 }
 
+.shopping-reset-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #ffd4d4;
+  background: #fff4f4;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+}
+
+.shopping-reset-panel.mobile {
+  padding: 10px;
+}
+
+.shopping-reset-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopping-reset-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shopping-reset-confirm-btn,
+.shopping-reset-cancel-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.shopping-reset-confirm-btn {
+  background: #ffe6e6;
+  border-color: #ff9999;
+}
+
+.shopping-reset-cancel-btn {
+  background: #fff;
+}
+
 .custom-item-card {
   padding: 16px;
   border: 1px solid #ddd;
