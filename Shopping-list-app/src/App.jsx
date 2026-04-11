@@ -25,7 +25,7 @@ const SHOPPING_CATEGORY_KEYWORDS = {
   fisk: ['fisk', 'laks', 'torsk', 'sei', 'makrell', 'sild', 'reker', 'scampi', 'tunfisk', 'kveite', 'orsret', 'dorade'],
   kjolevarer: ['yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr', 'ost', 'kebabdressing'],
   pasta: ['pasta', 'spagetti', 'penne', 'fusilli', 'lasagne', 'tagliatelle', 'makaroni', 'nudler', 'risnudler', 'lefse', 'lefser', 'tray', 'tortilla'],
-  bakevarer: ['mel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
+  bakevarer: ['hvetemel', 'sammalt mel', 'speltmel', 'rugmel', 'byggmel', 'maismel', 'rismel', 'potetmel', 'kokosmel', 'mandelmel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
   frosenvarer: ['frossen', 'fryst', 'fryse', 'is', 'fryste', 'frossne', 'rosenkal'],
   melkeprodukter: ['melk', 'flote', 'yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr'],
   mineralvann: ['mineralvann', 'brus', 'cola', 'fanta', 'sprite', 'pepsi', 'sitronbrus', 'sodavann', 'tonic'],
@@ -56,6 +56,15 @@ const getShoppingCategory = (ingredientName) => {
   }
 
   return 'annet'
+}
+
+const resolveShoppingCategory = (ingredientName, storedCategory) => {
+  const inferredCategory = getShoppingCategory(ingredientName)
+  if (inferredCategory !== 'annet') {
+    return inferredCategory
+  }
+
+  return storedCategory ?? 'annet'
 }
 
 function App() {
@@ -181,7 +190,7 @@ function App() {
                 name: row.ingredients?.name,
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
-                shoppingCategory: row.ingredients?.shopping_category ?? 'annet',
+                shoppingCategory: resolveShoppingCategory(row.ingredients?.name, row.ingredients?.shopping_category),
               }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:

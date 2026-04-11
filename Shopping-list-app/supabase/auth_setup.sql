@@ -51,7 +51,7 @@ set shopping_category = case
     '%pasta%', '%spagetti%', '%penne%', '%fusilli%', '%lasagne%', '%tagliatelle%', '%makaroni%', '%nudler%', '%risnudler%', '%lefse%', '%lefser%', '%tray%', '%tortilla%'
   ]) then 'pasta'
   when n.normalized_name like any (array[
-    '%mel%', '%gjaer%', '%bakepulver%', '%sukker%', '%vaniljesukker%', '%sirup%', '%kakao%', '%havregryn%', '%smor%', '%egg%', '%brod%', '%rundstykke%', '%lompe%'
+    '%hvetemel%', '%sammalt mel%', '%speltmel%', '%rugmel%', '%byggmel%', '%maismel%', '%rismel%', '%potetmel%', '%kokosmel%', '%mandelmel%', '%gjaer%', '%bakepulver%', '%sukker%', '%vaniljesukker%', '%sirup%', '%kakao%', '%havregryn%', '%smor%', '%egg%', '%brod%', '%rundstykke%', '%lompe%'
   ]) then 'bakevarer'
   when n.normalized_name like any (array[
     '%frossen%', '%fryst%', '%fryse%', '%is%', '%fryste%', '%frossne%', '%rosenkal%'
