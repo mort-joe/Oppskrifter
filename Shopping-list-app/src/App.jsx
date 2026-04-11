@@ -121,6 +121,9 @@ function App() {
     )
   }
 
+  const filterRecordByAllowedKeys = (value, allowedKeys) =>
+    Object.fromEntries(Object.entries(value).filter(([key]) => allowedKeys.has(key)))
+
   const normalizeMenuPlan = (value, fallbackDays = 1) => {
     const defaultPlan = Array.from({ length: fallbackDays }, () => ({ recipeId: null }))
     if (!Array.isArray(value) || value.length === 0) {
@@ -490,6 +493,32 @@ function App() {
     })
   }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems])
 
+  const getActiveShoppingIngredientKeys = (recipeCounts, customItems) => {
+    const keys = new Set()
+
+    recipes.forEach((recipe) => {
+      if (!recipeCounts[recipe.id]) {
+        return
+      }
+
+      recipe.ingredients.forEach((ingredient) => {
+        keys.add(ingredientIdentityKey(ingredient.name, ingredient.unit))
+      })
+    })
+
+    Object.keys(customItems).forEach((name) => {
+      keys.add(ingredientIdentityKey(name, ''))
+    })
+
+    return keys
+  }
+
+  const pruneShoppingIngredientState = (recipeCounts, customItems) => {
+    const activeIngredientKeys = getActiveShoppingIngredientKeys(recipeCounts, customItems)
+    setIngredientHaveCounts((current) => filterRecordByAllowedKeys(current, activeIngredientKeys))
+    setCheckedIngredients((current) => current.filter((key) => activeIngredientKeys.has(key)))
+  }
+
   const handleSelectRecipe = (id) => {
     setSelectedRecipeId(id)
     if (isMobile) {
@@ -595,11 +624,23 @@ function App() {
   }
 
   const handleRemoveCustomShoppingItem = (name) => {
-    setCustomShoppingItems((current) => {
-      const next = { ...current }
-      delete next[name]
-      return next
-    })
+    const nextCustomItems = { ...customShoppingItems }
+    delete nextCustomItems[name]
+
+    setCustomShoppingItems(nextCustomItems)
+    pruneShoppingIngredientState(shoppingListRecipeCounts, nextCustomItems)
+  }
+
+  const handleRemoveShoppingRecipe = (recipeId) => {
+    if (!shoppingListRecipeCounts[recipeId]) {
+      return
+    }
+
+    const nextRecipeCounts = { ...shoppingListRecipeCounts }
+    delete nextRecipeCounts[recipeId]
+
+    setShoppingListRecipeCounts(nextRecipeCounts)
+    pruneShoppingIngredientState(nextRecipeCounts, customShoppingItems)
   }
 
   const handleResetShoppingList = () => {
@@ -1593,8 +1634,17 @@ function App() {
                   <h3>Valgte matretter</h3>
                   <ul className="selected-recipes-list">
                     {shoppingRecipes.map((recipe) => (
-                      <li key={`shopping-recipe-${recipe.id}`}>
-                        {recipe.name} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
+                      <li key={`shopping-recipe-${recipe.id}`} className="selected-recipes-list-row">
+                        <span>
+                          {recipe.name} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveShoppingRecipe(recipe.id)}
+                          className="selected-recipes-remove-btn"
+                        >
+                          Fjern
+                        </button>
                       </li>
                     ))}
                   </ul>

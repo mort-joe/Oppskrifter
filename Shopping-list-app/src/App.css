@@ -397,6 +397,16 @@
   padding-left: 20px;
 }
 
+.selected-recipes-list-row {
+  margin-bottom: 6px;
+}
+
+.selected-recipes-remove-btn {
+  margin-left: 8px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
 .shopping-cards {
   display: grid;
   gap: 12px;
