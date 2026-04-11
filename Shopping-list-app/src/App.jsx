@@ -31,6 +31,10 @@ const SHOPPING_CATEGORY_KEYWORDS = {
   mineralvann: ['mineralvann', 'brus', 'cola', 'fanta', 'sprite', 'pepsi', 'sitronbrus', 'sodavann', 'tonic'],
 }
 
+const INGREDIENT_NAME_ALIASES = {
+  soyasaus2: 'Soyasaus',
+}
+
 const normalizeIngredientText = (value) =>
   String(value || '')
     .toLowerCase()
@@ -42,6 +46,14 @@ const normalizeCategoryName = (value) => {
   if (!trimmedValue) return ''
   if (normalizeIngredientText(trimmedValue) === 'supper') return 'Suppe'
   return trimmedValue
+}
+
+const normalizeIngredientName = (value) => {
+  const trimmedValue = String(value || '').trim()
+  if (!trimmedValue) return ''
+
+  const normalizedKey = normalizeIngredientText(trimmedValue)
+  return INGREDIENT_NAME_ALIASES[normalizedKey] ?? trimmedValue
 }
 
 const getShoppingCategory = (ingredientName) => {
@@ -187,7 +199,7 @@ function App() {
           ingredients:
             recipe.recipe_ingredients
               ?.map((row) => ({
-                name: row.ingredients?.name,
+                name: normalizeIngredientName(row.ingredients?.name),
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
                 shoppingCategory: resolveShoppingCategory(row.ingredients?.name, row.ingredients?.shopping_category),
@@ -233,7 +245,8 @@ function App() {
   }
 
   const getOrCreateIngredients = async (names) => {
-    const uniqueNames = normalizeNames(names)
+    const normalizedNames = names.map((name) => normalizeIngredientName(name))
+    const uniqueNames = normalizeNames(normalizedNames)
     if (!uniqueNames.length) return []
 
     const { data: existing, error: existingError } = await supabase
