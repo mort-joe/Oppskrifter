@@ -1,0 +1,147 @@
+.admin-shell {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f2f6ff 0%, #fff7e9 50%, #f5fff7 100%);
+  padding: 28px;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.admin-header {
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #d8e0f2;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 12px 40px rgba(16, 40, 100, 0.08);
+}
+
+.admin-menu-tabs {
+  max-width: 1200px;
+  margin: 0 auto 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.admin-menu-tabs button.active {
+  border-color: #1f6feb;
+  box-shadow: inset 0 0 0 1px #1f6feb;
+}
+
+.admin-form,
+.admin-create-form {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-create-form {
+  grid-template-columns: 2fr 1fr auto auto;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.admin-error {
+  color: #b42318;
+  background: #ffe3e0;
+  border: 1px solid #ffb3ad;
+  border-radius: 10px;
+  padding: 8px 10px;
+  max-width: 1200px;
+  margin: 0 auto 10px;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 10px;
+  border-bottom: 1px solid #e4e8f3;
+  text-align: left;
+}
+
+.admin-actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dashboard-kpis article {
+  background: #f5f8ff;
+  border: 1px solid #d7e0f8;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.dashboard-kpis h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.dashboard-kpis strong {
+  font-size: 1.7rem;
+}
+
+.admin-shell input,
+.admin-shell select,
+.admin-shell button {
+  border-radius: 10px;
+  border: 1px solid #c7d3eb;
+  padding: 9px 10px;
+  font-size: 0.98rem;
+}
+
+.admin-shell button {
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.admin-shell button:hover {
+  border-color: #4d78d7;
+}
+
+@media (max-width: 900px) {
+  .admin-shell {
+    padding: 14px;
+  }
+
+  .admin-create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
