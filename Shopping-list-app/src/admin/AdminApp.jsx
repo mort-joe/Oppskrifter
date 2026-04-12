@@ -1,16 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import './AdminApp.css'
-import { adminLogin, createUser, deleteUser, listUsers, updateUser } from './adminApi'
+import {
+  adminLogin,
+  createShoppingCategory,
+  createUser,
+  deleteUser,
+  fetchDashboard,
+  listShoppingCategories,
+  listUsers,
+  reorderShoppingCategories,
+  updateShoppingCategory,
+  updateUser,
+} from './adminApi'
 
 const ADMIN_TOKEN_KEY = 'admin_session_token'
 
 const getStoredToken = () => window.localStorage.getItem(ADMIN_TOKEN_KEY) || ''
 
-const formatDate = (value) => {
+const formatDate = (value, includeTime = true) => {
   if (!value) return '-'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return '-'
-  return parsed.toLocaleString('no-NO')
+  return includeTime ? parsed.toLocaleString('no-NO') : parsed.toLocaleDateString('no-NO')
 }
 
 function AdminApp() {
@@ -19,6 +30,12 @@ function AdminApp() {
   const [error, setError] = useState('')
   const [users, setUsers] = useState([])
   const [activeMenu, setActiveMenu] = useState('brukeradministrering')
+  const [dashboardDetailPage, setDashboardDetailPage] = useState('all-recipes')
+  const [dashboardUsers, setDashboardUsers] = useState([])
+  const [dashboardRecipes, setDashboardRecipes] = useState([])
+  const [shoppingCategories, setShoppingCategories] = useState([])
+  const [categoryNameDrafts, setCategoryNameDrafts] = useState({})
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -29,21 +46,75 @@ function AdminApp() {
 
   const [passwordDrafts, setPasswordDrafts] = useState({})
   const [roleDrafts, setRoleDrafts] = useState({})
+  const [openUserActionsId, setOpenUserActionsId] = useState(null)
 
   const isLoggedIn = Boolean(token)
 
   const sortedUsers = useMemo(
-    () => [...users].sort((a, b) => (a.email || '').localeCompare(b.email || '', 'no', { sensitivity: 'base' })),
+    () =>
+      [...users].sort((a, b) => {
+        const roleA = a.role === 'admin' ? 0 : 1
+        const roleB = b.role === 'admin' ? 0 : 1
+        if (roleA !== roleB) {
+          return roleA - roleB
+        }
+
+        return (a.email || '').localeCompare(b.email || '', 'no', { sensitivity: 'base' })
+      }),
     [users],
   )
 
   const dashboardSummary = useMemo(() => {
-    const totalUsers = users.length
-    const adminUsers = users.filter((user) => user.role === 'admin').length
+    const totalUsers = dashboardUsers.length
+    const adminUsers = dashboardUsers.filter((user) => user.role === 'admin').length
     const normalUsers = totalUsers - adminUsers
 
     return { totalUsers, adminUsers, normalUsers }
-  }, [users])
+  }, [dashboardUsers])
+
+  const sortedDashboardUsers = useMemo(
+    () =>
+      [...dashboardUsers].sort((a, b) => {
+        const roleA = a.role === 'admin' ? 0 : 1
+        const roleB = b.role === 'admin' ? 0 : 1
+
+        if (roleA !== roleB) {
+          return roleA - roleB
+        }
+
+        return (a.email || '').localeCompare(b.email || '', 'no', { sensitivity: 'base' })
+      }),
+    [dashboardUsers],
+  )
+
+  const loadDashboard = async () => {
+    if (!token) return
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const [dashboardResult, categoryResult] = await Promise.all([
+        fetchDashboard(token),
+        listShoppingCategories(token),
+      ])
+
+      setDashboardUsers(dashboardResult.users || [])
+      setDashboardRecipes(dashboardResult.recipes || [])
+      const categories = categoryResult.categories || []
+      setShoppingCategories(categories)
+
+      const draftMap = {}
+      categories.forEach((category) => {
+        draftMap[category.id] = category.name
+      })
+      setCategoryNameDrafts(draftMap)
+    } catch (dashboardError) {
+      setError(dashboardError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadUsers = async () => {
     if (!token) return
@@ -74,6 +145,12 @@ function AdminApp() {
     }
   }, [token])
 
+  useEffect(() => {
+    if (token && activeMenu === 'dashboard') {
+      void loadDashboard()
+    }
+  }, [token, activeMenu])
+
   const handleLogIn = async (event) => {
     event.preventDefault()
     setLoading(true)
@@ -98,6 +175,7 @@ function AdminApp() {
     setUsers([])
     setPasswordDrafts({})
     setRoleDrafts({})
+    setOpenUserActionsId(null)
   }
 
   const handleCreateUser = async (event) => {
@@ -122,31 +200,11 @@ function AdminApp() {
     }
   }
 
-  const handleEnsureTestUser = async () => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const existing = users.find((user) => (user.email || '').toLowerCase() === 'morten@jorgensen.nu')
-      if (existing) {
-        await updateUser(token, existing.id, { password: 'Oppskrifter2026!' })
-      } else {
-        await createUser(token, {
-          email: 'morten@jorgensen.nu',
-          password: 'Oppskrifter2026!',
-          role: 'user',
-        })
-      }
-
-      await loadUsers()
-    } catch (testError) {
-      setError(testError.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSaveUser = async (user) => {
+    if (user.is_config_admin) {
+      return
+    }
+
     const password = (passwordDrafts[user.id] || '').trim()
     const role = roleDrafts[user.id] || user.role || 'user'
 
@@ -163,6 +221,7 @@ function AdminApp() {
       if (role !== user.role) payload.role = role
       await updateUser(token, user.id, payload)
       setPasswordDrafts((current) => ({ ...current, [user.id]: '' }))
+      setOpenUserActionsId(null)
       await loadUsers()
     } catch (saveError) {
       setError(saveError.message)
@@ -172,6 +231,10 @@ function AdminApp() {
   }
 
   const handleDeleteUser = async (user) => {
+    if (user.is_config_admin) {
+      return
+    }
+
     const confirmed = window.confirm(`Slette brukeren ${user.email}?`)
     if (!confirmed) return
 
@@ -180,9 +243,92 @@ function AdminApp() {
 
     try {
       await deleteUser(token, user.id)
+      setOpenUserActionsId(null)
       await loadUsers()
     } catch (deleteError) {
       setError(deleteError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateCategory = async (event) => {
+    event.preventDefault()
+
+    const name = newCategoryName.trim()
+    if (!name) {
+      setError('Kategorinavn ma fylles ut.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      await createShoppingCategory(token, { name })
+      setNewCategoryName('')
+      await loadDashboard()
+    } catch (categoryError) {
+      setError(categoryError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectMainMenu = (menuId) => {
+    setActiveMenu(menuId)
+    if (menuId === 'dashboard') {
+      setDashboardDetailPage('all-recipes')
+    }
+  }
+
+  const handleSaveCategoryName = async (categoryId) => {
+    const name = String(categoryNameDrafts[categoryId] || '').trim()
+    if (!name) {
+      setError('Kategorinavn ma fylles ut.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      await updateShoppingCategory(token, categoryId, { name })
+      await loadDashboard()
+    } catch (categoryError) {
+      setError(categoryError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMoveCategory = async (categoryId, direction) => {
+    const index = shoppingCategories.findIndex((category) => category.id === categoryId)
+    if (index < 0) return
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= shoppingCategories.length) {
+      return
+    }
+
+    const reordered = [...shoppingCategories]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(targetIndex, 0, moved)
+
+    setLoading(true)
+    setError('')
+    try {
+      const result = await reorderShoppingCategories(
+        token,
+        reordered.map((category) => category.id),
+      )
+      const categories = result.categories || []
+      setShoppingCategories(categories)
+      const draftMap = {}
+      categories.forEach((category) => {
+        draftMap[category.id] = category.name
+      })
+      setCategoryNameDrafts(draftMap)
+    } catch (categoryError) {
+      setError(categoryError.message)
     } finally {
       setLoading(false)
     }
@@ -239,14 +385,14 @@ function AdminApp() {
         <button
           type="button"
           className={activeMenu === 'brukeradministrering' ? 'active' : ''}
-          onClick={() => setActiveMenu('brukeradministrering')}
+          onClick={() => handleSelectMainMenu('brukeradministrering')}
         >
           Brukeradministrering
         </button>
         <button
           type="button"
           className={activeMenu === 'dashboard' ? 'active' : ''}
-          onClick={() => setActiveMenu('dashboard')}
+          onClick={() => handleSelectMainMenu('dashboard')}
         >
           Dashboard
         </button>
@@ -274,11 +420,10 @@ function AdminApp() {
               <option value="user">Bruker</option>
               <option value="admin">Administrator</option>
             </select>
-            <button type="submit" disabled={loading}>Opprett konto</button>
-            <button type="button" onClick={handleEnsureTestUser} disabled={loading}>Lag/oppdater testbruker</button>
+            <button type="submit" disabled={loading}>Opprett brukerkonto</button>
           </form>
 
-          <div className="admin-table-wrap">
+          <div className="admin-table-wrap admin-users-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -292,11 +437,15 @@ function AdminApp() {
               </thead>
               <tbody>
                 {sortedUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.email}</td>
+                  <tr key={user.id} className={user.role === 'admin' ? 'admin-user-row' : ''}>
+                    <td>
+                      <span className="admin-user-email">{user.email}</span>
+                      {user.role === 'admin' && <span className="admin-user-badge">Administrator</span>}
+                    </td>
                     <td>
                       <select
                         value={roleDrafts[user.id] || user.role || 'user'}
+                        disabled={Boolean(user.is_config_admin)}
                         onChange={(event) =>
                           setRoleDrafts((current) => ({
                             ...current,
@@ -308,24 +457,56 @@ function AdminApp() {
                         <option value="admin">Administrator</option>
                       </select>
                     </td>
-                    <td>{formatDate(user.created_at)}</td>
-                    <td>{formatDate(user.last_sign_in_at)}</td>
+                    <td>{formatDate(user.created_at, false)}</td>
+                    <td>{formatDate(user.last_sign_in_at, false)}</td>
                     <td>
                       <input
                         type="text"
                         value={passwordDrafts[user.id] || ''}
+                        disabled={Boolean(user.is_config_admin)}
                         onChange={(event) =>
                           setPasswordDrafts((current) => ({
                             ...current,
                             [user.id]: event.target.value,
                           }))
                         }
-                        placeholder="Nytt passord"
+                        placeholder={user.is_config_admin ? 'Styres av konfigurasjon' : 'Nytt passord'}
                       />
                     </td>
                     <td className="admin-actions-cell">
-                      <button type="button" onClick={() => handleSaveUser(user)} disabled={loading}>Lagre</button>
-                      <button type="button" onClick={() => handleDeleteUser(user)} disabled={loading}>Slett</button>
+                      <button
+                        type="button"
+                        className="admin-more-btn"
+                        onClick={() =>
+                          setOpenUserActionsId((current) => (current === user.id ? null : user.id))
+                        }
+                        disabled={loading || Boolean(user.is_config_admin)}
+                        aria-label="Vis handlinger"
+                        title="Handlinger"
+                        aria-expanded={openUserActionsId === user.id}
+                      >
+                        ⋯
+                      </button>
+                      {openUserActionsId === user.id && !user.is_config_admin && (
+                        <div className="admin-inline-actions">
+                          <button
+                            type="button"
+                            className="admin-inline-action-btn"
+                            onClick={() => handleSaveUser(user)}
+                            disabled={loading}
+                          >
+                            Lagre
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-inline-action-btn danger"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={loading}
+                          >
+                            Slett
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -357,7 +538,148 @@ function AdminApp() {
               <strong>{dashboardSummary.normalUsers}</strong>
             </article>
           </div>
-          <p>Detaljert dashboard kommer i del 2.</p>
+
+          <div className="dashboard-grid">
+            <article className="dashboard-panel">
+              <h3>Kontooversikt</h3>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Brukerkonto</th>
+                      <th>Rolle</th>
+                      <th>Matretter</th>
+                      <th>Sist innlogget</th>
+                      <th>Sist aktiv</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedDashboardUsers.map((user) => (
+                      <tr key={`dashboard-user-${user.id}`} className={user.role === 'admin' ? 'admin-user-row' : ''}>
+                        <td>
+                          <span className="admin-user-email">{user.email}</span>
+                          {user.role === 'admin' && <span className="admin-user-badge">Administrator</span>}
+                        </td>
+                        <td>{user.role === 'admin' ? 'Administrator' : 'Bruker'}</td>
+                        <td>{user.recipe_count || 0}</td>
+                        <td>{formatDate(user.last_sign_in_at)}</td>
+                        <td>{formatDate(user.last_active_at)}</td>
+                      </tr>
+                    ))}
+                    {sortedDashboardUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={5}>Ingen kontoer funnet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <nav className="dashboard-submenu" aria-label="Dashboard undermeny">
+              <button
+                type="button"
+                className={dashboardDetailPage === 'all-recipes' ? 'active' : ''}
+                onClick={() => setDashboardDetailPage('all-recipes')}
+              >
+                Alle matretter
+              </button>
+              <button
+                type="button"
+                className={dashboardDetailPage === 'shopping-categories' ? 'active' : ''}
+                onClick={() => setDashboardDetailPage('shopping-categories')}
+              >
+                Sorteringskategorier
+              </button>
+            </nav>
+
+            {dashboardDetailPage === 'all-recipes' && (
+              <article className="dashboard-panel">
+                <h3>Alle matretter i databasen</h3>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Matrett</th>
+                        <th>Opprettet av</th>
+                        <th>Opprettet</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboardRecipes.map((recipe) => (
+                        <tr key={`dashboard-recipe-${recipe.id}`}>
+                          <td>{recipe.name}</td>
+                          <td>{recipe.owner_email}</td>
+                          <td>{formatDate(recipe.created_at, false)}</td>
+                        </tr>
+                      ))}
+                      {dashboardRecipes.length === 0 && (
+                        <tr>
+                          <td colSpan={3}>Ingen matretter funnet.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            )}
+
+            {dashboardDetailPage === 'shopping-categories' && (
+              <article className="dashboard-panel">
+                <h3>Sorteringskategorier for handleliste</h3>
+
+                <form onSubmit={handleCreateCategory} className="category-create-form">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(event) => setNewCategoryName(event.target.value)}
+                    placeholder="Legg til ny kategori"
+                  />
+                  <button type="submit" disabled={loading}>Legg til kategori</button>
+                </form>
+
+                <div className="category-list">
+                  {shoppingCategories.map((category, index) => (
+                    <div key={`category-${category.id}`} className="category-row">
+                      <span className="category-index">{index + 1}</span>
+                      <input
+                        type="text"
+                        value={categoryNameDrafts[category.id] ?? category.name}
+                        onChange={(event) =>
+                          setCategoryNameDrafts((current) => ({
+                            ...current,
+                            [category.id]: event.target.value,
+                          }))
+                        }
+                      />
+                      <button type="button" onClick={() => handleSaveCategoryName(category.id)} disabled={loading}>Lagre navn</button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCategory(category.id, 'up')}
+                        disabled={loading || index === 0}
+                        aria-label="Flytt kategori opp"
+                        title="Flytt opp"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveCategory(category.id, 'down')}
+                        disabled={loading || index === shoppingCategories.length - 1}
+                        aria-label="Flytt kategori ned"
+                        title="Flytt ned"
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  ))}
+                  {shoppingCategories.length === 0 && (
+                    <p>Ingen sorteringskategorier funnet. Kjor SQL-oppsettet for dashboard-kategorier.</p>
+                  )}
+                </div>
+              </article>
+            )}
+          </div>
         </section>
       )}
     </main>

@@ -1,10 +1,19 @@
-import { requireAdminSession } from '../../_lib/adminSession'
-import { supabaseAdmin } from '../../_lib/supabaseAdmin'
+import { requireAdminSession } from '../../_lib/adminSession.js'
+import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
 
 const normalizeRole = (role) => (role === 'admin' ? 'admin' : 'user')
+const CONFIG_ADMIN_ID = '__local_admin__'
 
 export default async function handler(req, res) {
   if (!requireAdminSession(req, res)) return
+
+  let supabaseAdmin
+  try {
+    supabaseAdmin = getSupabaseAdmin()
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
+    return
+  }
 
   const {
     query: { id },
@@ -12,6 +21,11 @@ export default async function handler(req, res) {
 
   if (!id) {
     res.status(400).json({ error: 'Mangler bruker-id.' })
+    return
+  }
+
+  if (id === CONFIG_ADMIN_ID) {
+    res.status(400).json({ error: 'Denne administratorkontoen styres av konfigurasjon og kan ikke endres her.' })
     return
   }
 

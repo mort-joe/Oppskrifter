@@ -1,4 +1,4 @@
-import { createAdminToken, validateAdminCredentials } from '../_lib/adminSession'
+import { createAdminToken, validateAdminCredentials } from '../_lib/adminSession.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

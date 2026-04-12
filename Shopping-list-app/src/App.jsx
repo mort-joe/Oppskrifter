@@ -1,10 +1,12 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 
 const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske', 'fed']
+const DEFAULT_ACCOUNT_PEOPLE = 4
+const IMPORT_GROUPS_STORAGE_KEY = 'recipe_import_collapsed_groups'
 
-const SHOPPING_CATEGORY_ORDER = [
+const DEFAULT_SHOPPING_CATEGORY_ORDER = [
   'gronnsaker',
   'frukt',
   'kjott',
@@ -48,6 +50,9 @@ const normalizeCategoryName = (value) => {
   return trimmedValue
 }
 
+const normalizeShoppingCategoryKey = (value) =>
+  normalizeIngredientText(String(value || '').trim())
+
 const normalizeIngredientName = (value) => {
   const trimmedValue = String(value || '').trim()
   if (!trimmedValue) return ''
@@ -56,10 +61,13 @@ const normalizeIngredientName = (value) => {
   return INGREDIENT_NAME_ALIASES[normalizedKey] ?? trimmedValue
 }
 
+const normalizeNames = (values) =>
+  [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
+
 const getShoppingCategory = (ingredientName) => {
   const normalizedName = normalizeIngredientText(ingredientName)
 
-  for (const category of SHOPPING_CATEGORY_ORDER) {
+  for (const category of DEFAULT_SHOPPING_CATEGORY_ORDER) {
     if (category === 'annet') continue
     const keywords = SHOPPING_CATEGORY_KEYWORDS[category] ?? []
     if (keywords.some((keyword) => normalizedName.includes(normalizeIngredientText(keyword)))) {
@@ -77,6 +85,45 @@ const resolveShoppingCategory = (ingredientName, storedCategory) => {
   }
 
   return storedCategory ?? 'annet'
+}
+
+const normalizeDefaultPeopleValue = (value) =>
+  Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
+
+const scaleIngredientQuantity = (quantity, factor) =>
+  Math.max(0, Math.round(((Number(quantity) || 0) * factor + Number.EPSILON) * 1000) / 1000)
+
+const getSharedRecipeDisplayName = (recipe) => {
+  const recipeName = String(recipe?.name || '').trim()
+  const sharedRootName = String(recipe?.sharedRootName || '').trim()
+
+  if (recipe?.sharedVersionNumber) {
+    return `${sharedRootName || recipeName} (${recipe.sharedVersionNumber})`
+  }
+
+  return recipeName
+}
+
+const getInitialCollapsedImportGroups = () => {
+  if (typeof window === 'undefined') {
+    return { own: false, existing: false, new: false }
+  }
+
+  try {
+    const savedValue = window.localStorage.getItem(IMPORT_GROUPS_STORAGE_KEY)
+    if (!savedValue) {
+      return { own: false, existing: false, new: false }
+    }
+
+    const parsed = JSON.parse(savedValue)
+    return {
+      own: Boolean(parsed?.own),
+      existing: Boolean(parsed?.existing),
+      new: Boolean(parsed?.new),
+    }
+  } catch {
+    return { own: false, existing: false, new: false }
+  }
 }
 
 function App() {
@@ -108,8 +155,22 @@ function App() {
   const [menuPlan, setMenuPlan] = useState([{ recipeId: null }])
   const [menuCreated, setMenuCreated] = useState(false)
   const [isShoppingStateReady, setIsShoppingStateReady] = useState(false)
+  const [accountDefaultPeople, setAccountDefaultPeople] = useState(DEFAULT_ACCOUNT_PEOPLE)
+  const [accountSettingsMessage, setAccountSettingsMessage] = useState('')
+  const [recipeImportCatalog, setRecipeImportCatalog] = useState([])
+  const [selectedImportRecipeIds, setSelectedImportRecipeIds] = useState({})
+  const [catalogDefaultPeopleByUser, setCatalogDefaultPeopleByUser] = useState({})
+  const [recipeImportMessage, setRecipeImportMessage] = useState('')
+  const [isRecipeImportError, setIsRecipeImportError] = useState(false)
+  const [isRecipeCatalogLoading, setIsRecipeCatalogLoading] = useState(false)
+  const [isImportingRecipes, setIsImportingRecipes] = useState(false)
+  const [recipeImportSearch, setRecipeImportSearch] = useState('')
+  const [showOnlyMissingImports, setShowOnlyMissingImports] = useState(false)
+  const [collapsedImportGroups, setCollapsedImportGroups] = useState(getInitialCollapsedImportGroups)
   const [allCategories, setAllCategories] = useState([])
   const [allTags, setAllTags] = useState([])
+  const [shoppingCategoryOrder, setShoppingCategoryOrder] = useState(DEFAULT_SHOPPING_CATEGORY_ORDER)
+  const [globalIngredientNames, setGlobalIngredientNames] = useState([])
   const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
     name: '',
@@ -117,9 +178,6 @@ function App() {
     typeTags: [],
     occasionTags: [],
   })
-
-  const normalizeNames = (values) =>
-    [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
 
   const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
 
@@ -156,10 +214,10 @@ function App() {
     }))
   }
 
-  const loadData = async (userId) => {
+  const loadData = useCallback(async (userId) => {
     if (!userId) return
 
-    const [{ data: categoryData, error: categoryError }, { data: tagData, error: tagError }, { data: recipeData, error: recipeError }] = await Promise.all([
+    const [{ data: categoryData, error: categoryError }, { data: tagData, error: tagError }, { data: recipeData, error: recipeError }, { data: shoppingCategoryData, error: shoppingCategoryError }, { data: ingredientNameData, error: ingredientNameError }] = await Promise.all([
       supabase.from('categories').select('name').order('name'),
       supabase.from('tags').select('name').order('name'),
       supabase
@@ -169,6 +227,8 @@ function App() {
         )
         .eq('user_id', userId)
         .order('id', { ascending: false }),
+      supabase.from('shopping_categories').select('name,sort_order').order('sort_order', { ascending: true }),
+      supabase.from('ingredients').select('name').order('name', { ascending: true }),
     ])
 
     if (categoryError) {
@@ -186,6 +246,39 @@ function App() {
       setAllTags(tagData.map((row) => row.name))
     }
 
+    if (shoppingCategoryError) {
+      setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
+    } else if (shoppingCategoryData) {
+      const orderedCategoryKeys = [
+        ...new Set(
+          shoppingCategoryData
+            .map((row) => normalizeShoppingCategoryKey(row.name))
+            .filter(Boolean),
+        ),
+      ]
+
+      if (!orderedCategoryKeys.includes('annet')) {
+        orderedCategoryKeys.push('annet')
+      }
+
+      setShoppingCategoryOrder(
+        orderedCategoryKeys.length ? orderedCategoryKeys : DEFAULT_SHOPPING_CATEGORY_ORDER,
+      )
+    }
+
+    if (ingredientNameError) {
+      console.error('Could not load global ingredient names:', ingredientNameError)
+      setGlobalIngredientNames([])
+    } else if (ingredientNameData) {
+      setGlobalIngredientNames(
+        normalizeNames(
+          ingredientNameData
+            .map((row) => normalizeIngredientName(row.name))
+            .filter(Boolean),
+        ),
+      )
+    }
+
     if (recipeError) {
       console.error('Could not load recipes:', recipeError)
       return
@@ -196,6 +289,9 @@ function App() {
         recipeData.map((recipe) => ({
           id: recipe.id,
           name: recipe.name,
+          sharedRootRecipeId: recipe.shared_root_recipe_id,
+          sharedRootName: recipe.shared_root_name,
+          sharedVersionNumber: recipe.shared_version_number,
           ingredients:
             recipe.recipe_ingredients
               ?.map((row) => ({
@@ -216,7 +312,7 @@ function App() {
         })),
       )
     }
-  }
+  }, [])
 
   const getOrCreateRecords = async (table, names) => {
     const normalizedInputNames = table === 'categories'
@@ -313,11 +409,18 @@ function App() {
     const load = async () => {
       await loadData(user.id)
 
-      const { data, error } = await supabase
-        .from('shopping_state')
-        .select('state')
-        .eq('user_id', user.id)
-        .maybeSingle()
+      const [{ data, error }, { data: userSettingsData, error: userSettingsError }] = await Promise.all([
+        supabase
+          .from('shopping_state')
+          .select('state')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('user_settings')
+          .select('default_people')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ])
 
       if (error) {
         console.error('Could not load shopping state:', error)
@@ -325,11 +428,20 @@ function App() {
         return
       }
 
+      if (userSettingsError) {
+        console.error('Could not load user settings:', userSettingsError)
+      }
+
       const state = data?.state
       if (!state || typeof state !== 'object') {
+        setAccountDefaultPeople(normalizeDefaultPeopleValue(userSettingsData?.default_people))
         setIsShoppingStateReady(true)
         return
       }
+
+      const normalizedDefaultPeople = normalizeDefaultPeopleValue(
+        userSettingsData?.default_people ?? state.userSettings?.defaultPeople ?? state.defaultPeople,
+      )
 
       const normalizedMenuDays = Math.max(1, Number(state.menuDays) || 1)
       const normalizedPlan = normalizeMenuPlan(state.menuPlan, normalizedMenuDays)
@@ -355,10 +467,34 @@ function App() {
   setMenuServings(normalizedMenuServings)
       setMenuPlan(normalizedPlan)
       setMenuCreated(Boolean(state.menuCreated))
+      setAccountDefaultPeople(normalizedDefaultPeople)
       setIsShoppingStateReady(true)
     }
     void load()
-  }, [user])
+  }, [user, loadData])
+
+  useEffect(() => {
+    if (!user || !isShoppingStateReady) return
+
+    const persistUserSettings = async () => {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert(
+          {
+            user_id: user.id,
+            default_people: normalizeDefaultPeopleValue(accountDefaultPeople),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        )
+
+      if (error) {
+        console.error('Could not save user settings:', error)
+      }
+    }
+
+    void persistUserSettings()
+  }, [user, isShoppingStateReady, accountDefaultPeople])
 
   useEffect(() => {
     if (!user || !isShoppingStateReady) return
@@ -373,6 +509,10 @@ function App() {
   menuServings,
         menuPlan,
         menuCreated,
+        defaultPeople: accountDefaultPeople,
+        userSettings: {
+          defaultPeople: accountDefaultPeople,
+        },
       }
 
       const { error } = await supabase
@@ -403,6 +543,7 @@ function App() {
     menuServings,
     menuPlan,
     menuCreated,
+    accountDefaultPeople,
   ])
 
   useEffect(() => {
@@ -422,6 +563,15 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.setItem(
+      IMPORT_GROUPS_STORAGE_KEY,
+      JSON.stringify(collapsedImportGroups),
+    )
+  }, [collapsedImportGroups])
+
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
 
   const filteredRecipes = useMemo(() => {
@@ -440,6 +590,117 @@ function App() {
       return nameMatch || typeMatch || occasionMatch || ingredientMatch
     })
   }, [recipes, searchTerm])
+
+  const ingredientNameSuggestions = useMemo(() => {
+    const seen = new Set()
+    const suggestions = []
+
+    globalIngredientNames.forEach((name) => {
+      const trimmedName = String(name || '').trim()
+      if (!trimmedName) return
+
+      const normalizedKey = normalizeIngredientText(trimmedName)
+      if (seen.has(normalizedKey)) return
+
+      seen.add(normalizedKey)
+      suggestions.push(trimmedName)
+    })
+
+    if (suggestions.length === 0) {
+      recipes.forEach((recipe) => {
+        recipe.ingredients.forEach((ingredient) => {
+          const trimmedName = String(ingredient.name || '').trim()
+          if (!trimmedName) return
+
+          const normalizedKey = normalizeIngredientText(trimmedName)
+          if (seen.has(normalizedKey)) return
+
+          seen.add(normalizedKey)
+          suggestions.push(trimmedName)
+        })
+      })
+    }
+
+    return suggestions.sort((a, b) => a.localeCompare(b, 'no', { sensitivity: 'base' }))
+  }, [globalIngredientNames, recipes])
+
+  const sortedRecipeImportCatalog = useMemo(
+    () =>
+      [...recipeImportCatalog].sort((a, b) =>
+        getSharedRecipeDisplayName(a).localeCompare(getSharedRecipeDisplayName(b), 'no', { sensitivity: 'base' }),
+      ),
+    [recipeImportCatalog],
+  )
+
+  const ownedRecipeRootIds = useMemo(() => {
+    const rootIds = new Set()
+
+    recipes.forEach((recipe) => {
+      rootIds.add(recipe.sharedRootRecipeId ?? recipe.id)
+    })
+
+    return rootIds
+  }, [recipes])
+
+  const filteredRecipeImportCatalog = useMemo(() => {
+    const normalizedSearch = normalizeIngredientText(recipeImportSearch)
+
+    return sortedRecipeImportCatalog.filter((recipe) => {
+      const alreadyInProfile = ownedRecipeRootIds.has(recipe.sharedRootRecipeId ?? recipe.id)
+
+      if (showOnlyMissingImports && alreadyInProfile) {
+        return false
+      }
+
+      if (!normalizedSearch) {
+        return true
+      }
+
+      const searchableText = [
+        getSharedRecipeDisplayName(recipe),
+        recipe.name,
+        recipe.sharedRootName,
+        ...(recipe.ingredients || []).map((ingredient) => ingredient.name),
+        ...(recipe.typeTags || []),
+        ...(recipe.occasionTags || []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+
+      return normalizeIngredientText(searchableText).includes(normalizedSearch)
+    })
+  }, [ownedRecipeRootIds, recipeImportSearch, showOnlyMissingImports, sortedRecipeImportCatalog])
+
+  const groupedRecipeImportCatalog = useMemo(() => {
+    const groups = {
+      new: [],
+      existing: [],
+      own: [],
+    }
+
+    filteredRecipeImportCatalog.forEach((recipe) => {
+      const isOwnRecipe = recipe.userId === user?.id
+      const alreadyInProfile = ownedRecipeRootIds.has(recipe.sharedRootRecipeId ?? recipe.id)
+
+      if (isOwnRecipe) {
+        groups.own.push(recipe)
+        return
+      }
+
+      if (alreadyInProfile) {
+        groups.existing.push(recipe)
+        return
+      }
+
+      groups.new.push(recipe)
+    })
+
+    return [
+      { key: 'new', title: 'Nye', recipes: groups.new },
+      { key: 'existing', title: 'Har allerede', recipes: groups.existing },
+      { key: 'own', title: 'Dine', recipes: groups.own },
+    ].filter((group) => group.recipes.length > 0)
+  }, [filteredRecipeImportCatalog, ownedRecipeRootIds, user])
 
   const shoppingRecipes = useMemo(
     () =>
@@ -501,11 +762,11 @@ function App() {
     return items.sort((a, b) => {
       const categoryA = a.shoppingCategory || 'annet'
       const categoryB = b.shoppingCategory || 'annet'
-      const categoryIndexA = SHOPPING_CATEGORY_ORDER.indexOf(categoryA)
-      const categoryIndexB = SHOPPING_CATEGORY_ORDER.indexOf(categoryB)
+      const categoryIndexA = shoppingCategoryOrder.indexOf(categoryA)
+      const categoryIndexB = shoppingCategoryOrder.indexOf(categoryB)
 
-      const safeCategoryIndexA = categoryIndexA >= 0 ? categoryIndexA : SHOPPING_CATEGORY_ORDER.length
-      const safeCategoryIndexB = categoryIndexB >= 0 ? categoryIndexB : SHOPPING_CATEGORY_ORDER.length
+      const safeCategoryIndexA = categoryIndexA >= 0 ? categoryIndexA : shoppingCategoryOrder.length
+      const safeCategoryIndexB = categoryIndexB >= 0 ? categoryIndexB : shoppingCategoryOrder.length
 
       if (safeCategoryIndexA !== safeCategoryIndexB) {
         return safeCategoryIndexA - safeCategoryIndexB
@@ -513,7 +774,7 @@ function App() {
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
     })
-  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems])
+  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder])
 
   const getActiveShoppingIngredientKeys = (recipeCounts, customItems) => {
     const keys = new Set()
@@ -551,8 +812,303 @@ function App() {
 
   const handleMenuSelect = (menuId) => {
     setSelectedMenu(menuId)
+    setAccountSettingsMessage('')
+    setRecipeImportMessage('')
     if (menuId === 'matretter' && isMobile) {
       setMobileRecipePane('list')
+    }
+  }
+
+  const handleOpenAccountSettings = () => {
+    setSelectedMenu('innstillinger')
+    setAccountSettingsMessage('')
+    setRecipeImportMessage('')
+  }
+
+  const loadRecipeImportCatalog = useCallback(async () => {
+    if (!user) return
+
+    setIsRecipeCatalogLoading(true)
+    setIsRecipeImportError(false)
+
+    try {
+      const [{ data: recipeData, error: recipeError }, { data: userSettingsData, error: userSettingsError }] = await Promise.all([
+        supabase
+          .from('recipes')
+          .select(
+            'id,name,user_id,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(quantity,unit,ingredients(name,shopping_category)),recipe_categories(categories(name)),recipe_tags(tags(name))',
+          )
+          .order('id', { ascending: false }),
+        supabase.from('user_settings').select('user_id,default_people'),
+      ])
+
+      if (recipeError) {
+        throw recipeError
+      }
+
+      if (userSettingsError) {
+        console.error('Could not load default people for recipe catalog:', userSettingsError)
+      }
+
+      const defaultPeopleMap = Object.fromEntries(
+        (userSettingsData || []).map((row) => [row.user_id, normalizeDefaultPeopleValue(row.default_people)]),
+      )
+
+      setCatalogDefaultPeopleByUser(defaultPeopleMap)
+      setRecipeImportCatalog(
+        (recipeData || []).map((recipe) => ({
+          id: recipe.id,
+          name: recipe.name,
+          userId: recipe.user_id,
+          sharedRootRecipeId: recipe.shared_root_recipe_id,
+          sharedRootName: recipe.shared_root_name,
+          sharedVersionNumber: recipe.shared_version_number,
+          ingredients:
+            recipe.recipe_ingredients
+              ?.map((row) => ({
+                name: normalizeIngredientName(row.ingredients?.name),
+                quantity: row.quantity ?? 1,
+                unit: row.unit ?? '',
+                shoppingCategory: resolveShoppingCategory(row.ingredients?.name, row.ingredients?.shopping_category),
+              }))
+              .filter((ingredient) => ingredient.name) ?? [],
+          typeTags:
+            normalizeNames(
+              recipe.recipe_categories
+                ?.map((row) => normalizeCategoryName(row.categories?.name))
+                .filter(Boolean) ?? [],
+            ),
+          occasionTags:
+            recipe.recipe_tags?.map((row) => row.tags?.name).filter(Boolean) ?? [],
+        })),
+      )
+      setSelectedImportRecipeIds((current) =>
+        Object.fromEntries(
+          Object.entries(current).filter(([recipeId]) => (recipeData || []).some((recipe) => String(recipe.id) === recipeId)),
+        ),
+      )
+    } catch (catalogError) {
+      console.error('Could not load recipe import catalog:', catalogError)
+      setRecipeImportCatalog([])
+      setRecipeImportMessage('Kunne ikke laste listen over matretter i databasen.')
+      setIsRecipeImportError(true)
+    } finally {
+      setIsRecipeCatalogLoading(false)
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (selectedMenu !== 'innstillinger' || !user) return
+    void loadRecipeImportCatalog()
+  }, [selectedMenu, user, loadRecipeImportCatalog])
+
+  const handleSaveAccountSettings = async (event) => {
+    event.preventDefault()
+
+    const normalizedPeople = normalizeDefaultPeopleValue(accountDefaultPeople)
+    setAccountDefaultPeople(normalizedPeople)
+
+    if (!user) return
+
+    const state = {
+      shoppingListRecipeCounts,
+      customShoppingItems,
+      ingredientHaveCounts,
+      checkedIngredients,
+      menuDays,
+      menuServings,
+      menuPlan,
+      menuCreated,
+      defaultPeople: normalizedPeople,
+      userSettings: {
+        defaultPeople: normalizedPeople,
+      },
+    }
+
+    const [{ error: shoppingStateError }, { error: userSettingsError }] = await Promise.all([
+      supabase
+        .from('shopping_state')
+        .upsert(
+          {
+            user_id: user.id,
+            state,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        ),
+      supabase
+        .from('user_settings')
+        .upsert(
+          {
+            user_id: user.id,
+            default_people: normalizedPeople,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        ),
+    ])
+
+    if (shoppingStateError || userSettingsError) {
+      console.error('Could not save account settings:', shoppingStateError || userSettingsError)
+      setAccountSettingsMessage('Kunne ikke lagre innstillingene akkurat nå. Prøv igjen.')
+      return
+    }
+
+    setAccountSettingsMessage('Innstillingene er lagret.')
+  }
+
+  const handleToggleImportRecipe = (recipeId) => {
+    setSelectedImportRecipeIds((current) => ({
+      ...current,
+      [recipeId]: !current[recipeId],
+    }))
+    setRecipeImportMessage('')
+    setIsRecipeImportError(false)
+  }
+
+  const handleToggleImportGroup = (groupKey) => {
+    setCollapsedImportGroups((current) => ({
+      ...current,
+      [groupKey]: !current[groupKey],
+    }))
+  }
+
+  const handleSelectAllNewImports = () => {
+    setSelectedImportRecipeIds((current) => {
+      const next = { ...current }
+      const newGroup = groupedRecipeImportCatalog.find((group) => group.key === 'new')
+
+      newGroup?.recipes.forEach((recipe) => {
+        next[recipe.id] = true
+      })
+
+      return next
+    })
+    setRecipeImportMessage('')
+    setIsRecipeImportError(false)
+  }
+
+  const handleClearImportSelections = () => {
+    setSelectedImportRecipeIds({})
+    setRecipeImportMessage('')
+    setIsRecipeImportError(false)
+  }
+
+  const getNextSharedVersionNumber = async (rootRecipeId) => {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('shared_version_number')
+      .or(`id.eq.${rootRecipeId},shared_root_recipe_id.eq.${rootRecipeId}`)
+
+    if (error) {
+      throw error
+    }
+
+    const highestVersion = (data || []).reduce(
+      (currentMax, row) => Math.max(currentMax, Number(row.shared_version_number) || 0),
+      0,
+    )
+
+    return highestVersion + 1
+  }
+
+  const handleImportSelectedRecipes = async () => {
+    if (!user) return
+
+    const selectedRecipes = sortedRecipeImportCatalog.filter(
+      (recipe) => selectedImportRecipeIds[recipe.id] && recipe.userId !== user.id,
+    )
+
+    if (!selectedRecipes.length) {
+      setRecipeImportMessage('Velg minst én matrett å importere.')
+      setIsRecipeImportError(true)
+      return
+    }
+
+    setIsImportingRecipes(true)
+    setRecipeImportMessage('')
+    setIsRecipeImportError(false)
+
+    try {
+      const targetDefaultPeople = normalizeDefaultPeopleValue(accountDefaultPeople)
+
+      for (const sourceRecipe of selectedRecipes) {
+        const sourceDefaultPeople = normalizeDefaultPeopleValue(catalogDefaultPeopleByUser[sourceRecipe.userId])
+        const scaleFactor = targetDefaultPeople / sourceDefaultPeople
+        const sharedRootRecipeId = sourceRecipe.sharedRootRecipeId ?? sourceRecipe.id
+        const sharedRootName = String(sourceRecipe.sharedRootName || sourceRecipe.name || '').trim()
+        const sharedVersionNumber = await getNextSharedVersionNumber(sharedRootRecipeId)
+
+        const scaledIngredients = sourceRecipe.ingredients.map((ingredient) => ({
+          name: ingredient.name,
+          unit: ingredient.unit ?? '',
+          quantity: scaleIngredientQuantity(ingredient.quantity, scaleFactor),
+        }))
+
+        const ingredientIds = await getOrCreateIngredients(scaledIngredients.map((ingredient) => ingredient.name))
+        const categoryIds = await getOrCreateRecords('categories', sourceRecipe.typeTags || [])
+        const tagIds = await getOrCreateRecords('tags', sourceRecipe.occasionTags || [])
+
+        const { data: insertedRecipe, error: recipeInsertError } = await supabase
+          .from('recipes')
+          .insert([
+            {
+              name: sourceRecipe.name.trim(),
+              user_id: user.id,
+              shared_root_recipe_id: sharedRootRecipeId,
+              shared_root_name: sharedRootName,
+              shared_version_number: sharedVersionNumber,
+            },
+          ])
+          .select('id')
+          .single()
+
+        if (recipeInsertError || !insertedRecipe) {
+          throw recipeInsertError || new Error('Kunne ikke opprette matrett ved import.')
+        }
+
+        if (ingredientIds.length) {
+          const ingredientRows = ingredientIds.map((ingredientId, index) => ({
+            recipe_id: insertedRecipe.id,
+            ingredient_id: ingredientId,
+            quantity: scaledIngredients[index]?.quantity ?? 1,
+            unit: scaledIngredients[index]?.unit ?? '',
+          }))
+          const { error: ingredientInsertError } = await supabase.from('recipe_ingredients').insert(ingredientRows)
+          if (ingredientInsertError) {
+            throw ingredientInsertError
+          }
+        }
+
+        if (categoryIds.length) {
+          const { error: categoryInsertError } = await supabase
+            .from('recipe_categories')
+            .insert(categoryIds.map((categoryId) => ({ recipe_id: insertedRecipe.id, category_id: categoryId })))
+          if (categoryInsertError) {
+            throw categoryInsertError
+          }
+        }
+
+        if (tagIds.length) {
+          const { error: tagInsertError } = await supabase
+            .from('recipe_tags')
+            .insert(tagIds.map((tagId) => ({ recipe_id: insertedRecipe.id, tag_id: tagId })))
+          if (tagInsertError) {
+            throw tagInsertError
+          }
+        }
+      }
+
+      setSelectedImportRecipeIds({})
+      setRecipeImportMessage('Valgte matretter er importert til din brukerprofil.')
+      await loadData(user.id)
+      await loadRecipeImportCatalog()
+    } catch (importError) {
+      console.error('Could not import recipes:', importError)
+      setRecipeImportMessage('Noe gikk galt under import av matretter.')
+      setIsRecipeImportError(true)
+    } finally {
+      setIsImportingRecipes(false)
     }
   }
 
@@ -596,9 +1152,11 @@ function App() {
       return
     }
 
+    const basePeople = Math.max(1, Number(accountDefaultPeople) || DEFAULT_ACCOUNT_PEOPLE)
+    const factor = menuServings / basePeople
+
     const counts = menuPlan.reduce((acc, dayPlan) => {
       const recipeId = dayPlan.recipeId
-      const factor = menuServings / 4
       acc[recipeId] = (acc[recipeId] ?? 0) + factor
       return acc
     }, {})
@@ -754,6 +1312,18 @@ function App() {
   setMenuServings(4)
   setMenuPlan([{ recipeId: null }])
     setMenuCreated(false)
+    setAccountDefaultPeople(DEFAULT_ACCOUNT_PEOPLE)
+    setAccountSettingsMessage('')
+    setRecipeImportCatalog([])
+    setSelectedImportRecipeIds({})
+    setCatalogDefaultPeopleByUser({})
+    setRecipeImportMessage('')
+    setIsRecipeImportError(false)
+    setRecipeImportSearch('')
+    setShowOnlyMissingImports(false)
+    setCollapsedImportGroups({ own: false, existing: false, new: false })
+    setIsRecipeCatalogLoading(false)
+    setIsImportingRecipes(false)
     setIsShoppingStateReady(false)
     setCustomItemName('')
     setCustomItemQuantity(1)
@@ -1119,8 +1689,21 @@ function App() {
   return (
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
       <div className="user-toolbar">
-        <span>Innlogget som {user?.email}</span>
-        <button type="button" onClick={handleSignOut}>Logg ut</button>
+        <div className="user-toolbar-left">
+          <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
+            Innlogget som {user?.email}
+          </button>
+          <button
+            type="button"
+            className="account-settings-btn"
+            onClick={handleOpenAccountSettings}
+            aria-label="Åpne brukerinnstillinger"
+            title="Brukerinnstillinger"
+          >
+            ⋯
+          </button>
+        </div>
+        <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
       </div>
 
       <h1>Innkjøpsplanlegger</h1>
@@ -1146,6 +1729,164 @@ function App() {
       {!selectedMenu && (
         <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>
           <p>Velg en meny for å åpne siden.</p>
+        </section>
+      )}
+
+      {selectedMenu === 'innstillinger' && (
+        <section className="account-settings-card">
+          <h2>Brukerinnstillinger</h2>
+          <p className="account-settings-help">
+            Disse innstillingene lagres per brukerkonto.
+          </p>
+
+          <form onSubmit={handleSaveAccountSettings} className="account-settings-form">
+            <label>
+              Standard antall personer
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={accountDefaultPeople}
+                onChange={(event) => {
+                  setAccountDefaultPeople(event.target.value)
+                  setAccountSettingsMessage('')
+                }}
+              />
+            </label>
+
+            <button type="submit">Lagre innstillinger</button>
+          </form>
+
+          {accountSettingsMessage && <p className="account-settings-message">{accountSettingsMessage}</p>}
+
+          <div className="account-settings-divider" />
+
+          <div className="account-import-section">
+            <div className="account-import-header">
+              <div>
+                <h3>Importer matretter fra hele databasen</h3>
+                <p className="account-settings-help">
+                  Velg matretter du vil kopiere inn til din profil. Ingrediensmengdene skaleres automatisk fra kildens standard antall personer til dine innstillinger.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="account-import-refresh-btn"
+                onClick={() => void loadRecipeImportCatalog()}
+                disabled={isRecipeCatalogLoading || isImportingRecipes}
+              >
+                Oppdater liste
+              </button>
+            </div>
+
+            <div className="account-import-toolbar">
+              <input
+                type="text"
+                value={recipeImportSearch}
+                onChange={(event) => setRecipeImportSearch(event.target.value)}
+                placeholder="Søk etter matrett, ingrediens eller tag"
+                className="account-import-search"
+              />
+              <label className="account-import-filter-toggle">
+                <input
+                  type="checkbox"
+                  checked={showOnlyMissingImports}
+                  onChange={(event) => setShowOnlyMissingImports(event.target.checked)}
+                />
+                Vis bare matretter jeg ikke har
+              </label>
+            </div>
+
+            <div className="account-import-list">
+              {isRecipeCatalogLoading ? (
+                <p className="account-import-empty">Laster matretter…</p>
+              ) : filteredRecipeImportCatalog.length === 0 ? (
+                <p className="account-import-empty">Ingen matretter funnet i databasen.</p>
+              ) : (
+                groupedRecipeImportCatalog.map((group) => (
+                  <section key={`import-group-${group.key}`} className="account-import-group">
+                    <button
+                      type="button"
+                      className="account-import-group-header"
+                      onClick={() => handleToggleImportGroup(group.key)}
+                      aria-expanded={!collapsedImportGroups[group.key]}
+                    >
+                      <span className="account-import-group-title-wrap">
+                        <span className="account-import-group-chevron">{collapsedImportGroups[group.key] ? '▸' : '▾'}</span>
+                        <h4>{group.title}</h4>
+                      </span>
+                      <span>{group.recipes.length}</span>
+                    </button>
+
+                    {!collapsedImportGroups[group.key] && (
+                      <div className="account-import-group-list">
+                        {group.recipes.map((recipe) => {
+                          const isOwnRecipe = recipe.userId === user?.id
+                          const alreadyInProfile = ownedRecipeRootIds.has(recipe.sharedRootRecipeId ?? recipe.id)
+
+                          return (
+                            <label
+                              key={`import-recipe-${recipe.id}`}
+                              className={`account-import-row ${isOwnRecipe ? 'disabled' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={Boolean(selectedImportRecipeIds[recipe.id])}
+                                disabled={isOwnRecipe || isImportingRecipes}
+                                onChange={() => handleToggleImportRecipe(recipe.id)}
+                              />
+                              <div className="account-import-title-row">
+                                <span className="account-import-name">{getSharedRecipeDisplayName(recipe)}</span>
+                                <span className={`account-import-badge ${isOwnRecipe ? 'own' : alreadyInProfile ? 'existing' : 'new'}`}>
+                                  {isOwnRecipe ? 'Din' : alreadyInProfile ? 'Har allerede' : 'Ny'}
+                                </span>
+                              </div>
+                              <span className="account-import-meta">
+                                {recipe.ingredients.length} ingrediens(er)
+                                {isOwnRecipe ? ' · Din matrett' : alreadyInProfile ? ' · Finnes allerede i din profil' : ' · Kan importeres'}
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </section>
+                ))
+              )}
+            </div>
+
+            <div className="account-import-actions">
+              <button
+                type="button"
+                className="account-import-secondary-btn"
+                onClick={handleSelectAllNewImports}
+                disabled={isRecipeCatalogLoading || isImportingRecipes || !groupedRecipeImportCatalog.some((group) => group.key === 'new' && group.recipes.length > 0)}
+              >
+                Marker alle nye
+              </button>
+              <button
+                type="button"
+                className="account-import-secondary-btn"
+                onClick={handleClearImportSelections}
+                disabled={isRecipeCatalogLoading || isImportingRecipes || !Object.values(selectedImportRecipeIds).some(Boolean)}
+              >
+                Fjern alle markeringer
+              </button>
+              <button
+                type="button"
+                onClick={handleImportSelectedRecipes}
+                disabled={isRecipeCatalogLoading || isImportingRecipes}
+              >
+                {isImportingRecipes ? 'Importerer…' : 'Importer valgte matretter'}
+              </button>
+            </div>
+
+            {recipeImportMessage && (
+              <p className={`account-import-message ${isRecipeImportError ? 'error' : ''}`}>
+                {recipeImportMessage}
+              </p>
+            )}
+          </div>
         </section>
       )}
 
@@ -1307,6 +2048,7 @@ function App() {
                           type="text"
                           placeholder="Ingrediensnavn"
                           value={ingredient.name}
+                          list="ingredient-name-suggestions"
                           onChange={(event) => handleEditIngredientChange(index, 'name', event.target.value)}
                           style={{ width: '100%', padding: '10px', boxSizing: 'border-box', gridColumn: isMobile ? '1 / -1' : undefined }}
                         />
@@ -1468,6 +2210,7 @@ function App() {
                     type="text"
                     placeholder="Navn på ingrediens"
                     value={ingredient.name}
+                    list="ingredient-name-suggestions"
                     onChange={(event) => handleNewIngredientChange(index, 'name', event.target.value)}
                     style={{ width: '100%', padding: '10px', boxSizing: 'border-box', gridColumn: isMobile ? '1 / -1' : undefined }}
                   />
@@ -1713,6 +2456,12 @@ function App() {
         </section>
       )}
 
+      <datalist id="ingredient-name-suggestions">
+        {ingredientNameSuggestions.map((name) => (
+          <option key={`ingredient-suggestion-${name}`} value={name} />
+        ))}
+      </datalist>
+
       {selectedMenu === 'lag-meny' && (
         <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', display: 'grid', gap: '16px' }}>
           <section style={{ marginBottom: '8px' }}>
@@ -1745,7 +2494,7 @@ function App() {
               </select>
             </label>
             <label style={{ display: 'block' }}>
-              Porsjoner for hele menyen (standard er 4)
+              Porsjoner for hele menyen (basis i dine innstillinger: {Math.max(1, Number(accountDefaultPeople) || DEFAULT_ACCOUNT_PEOPLE)})
               <select
                 value={menuServings}
                 onChange={(event) => handleMenuServingsChange(event.target.value)}

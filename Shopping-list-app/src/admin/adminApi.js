@@ -3,19 +3,40 @@ const jsonHeaders = (token) => ({
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 })
 
+const safeFetch = async (url, options) => {
+  try {
+    return await fetch(url, options)
+  } catch {
+    throw new Error(`Kunne ikke kontakte Admin-API. Start "npx vercel dev" og åpne siden på ${window.location.origin}/admin.`)
+  }
+}
+
 const parseJson = async (response) => {
   const text = await response.text()
-  const data = text ? JSON.parse(text) : null
+  let data = null
+
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = null
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(data?.error || 'Noe gikk galt.')
+    if (response.status === 404) {
+      throw new Error('Admin-API finnes ikke i vanlig Vite-dev. Start med "vercel dev" for å teste innlogging lokalt.')
+    }
+
+    const plainTextError = text?.trim()
+    throw new Error(data?.error || plainTextError || `API-feil (${response.status}).`)
   }
 
   return data
 }
 
 export const adminLogin = async (username, password) => {
-  const response = await fetch('/api/admin/login', {
+  const response = await safeFetch('/api/admin/login', {
     method: 'POST',
     headers: jsonHeaders(),
     body: JSON.stringify({ username, password }),
@@ -25,7 +46,7 @@ export const adminLogin = async (username, password) => {
 }
 
 export const listUsers = async (token) => {
-  const response = await fetch('/api/admin/users', {
+  const response = await safeFetch('/api/admin/users', {
     method: 'GET',
     headers: jsonHeaders(token),
   })
@@ -34,7 +55,7 @@ export const listUsers = async (token) => {
 }
 
 export const createUser = async (token, payload) => {
-  const response = await fetch('/api/admin/users', {
+  const response = await safeFetch('/api/admin/users', {
     method: 'POST',
     headers: jsonHeaders(token),
     body: JSON.stringify(payload),
@@ -44,7 +65,7 @@ export const createUser = async (token, payload) => {
 }
 
 export const updateUser = async (token, userId, payload) => {
-  const response = await fetch(`/api/admin/users/${userId}`, {
+  const response = await safeFetch(`/api/admin/users/${userId}`, {
     method: 'PATCH',
     headers: jsonHeaders(token),
     body: JSON.stringify(payload),
@@ -54,7 +75,7 @@ export const updateUser = async (token, userId, payload) => {
 }
 
 export const deleteUser = async (token, userId) => {
-  const response = await fetch(`/api/admin/users/${userId}`, {
+  const response = await safeFetch(`/api/admin/users/${userId}`, {
     method: 'DELETE',
     headers: jsonHeaders(token),
   })
@@ -63,4 +84,52 @@ export const deleteUser = async (token, userId) => {
     const data = await response.json().catch(() => ({}))
     throw new Error(data?.error || 'Kunne ikke slette brukeren.')
   }
+}
+
+export const fetchDashboard = async (token) => {
+  const response = await safeFetch('/api/admin/dashboard', {
+    method: 'GET',
+    headers: jsonHeaders(token),
+  })
+
+  return parseJson(response)
+}
+
+export const listShoppingCategories = async (token) => {
+  const response = await safeFetch('/api/admin/shopping-categories', {
+    method: 'GET',
+    headers: jsonHeaders(token),
+  })
+
+  return parseJson(response)
+}
+
+export const createShoppingCategory = async (token, payload) => {
+  const response = await safeFetch('/api/admin/shopping-categories', {
+    method: 'POST',
+    headers: jsonHeaders(token),
+    body: JSON.stringify(payload),
+  })
+
+  return parseJson(response)
+}
+
+export const updateShoppingCategory = async (token, categoryId, payload) => {
+  const response = await safeFetch(`/api/admin/shopping-categories/${categoryId}`, {
+    method: 'PATCH',
+    headers: jsonHeaders(token),
+    body: JSON.stringify(payload),
+  })
+
+  return parseJson(response)
+}
+
+export const reorderShoppingCategories = async (token, orderedIds) => {
+  const response = await safeFetch('/api/admin/shopping-categories/reorder', {
+    method: 'POST',
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ orderedIds }),
+  })
+
+  return parseJson(response)
 }

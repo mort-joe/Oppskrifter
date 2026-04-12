@@ -1,4 +1,4 @@
-import { getAdminConfigDebugInfo } from '../_lib/adminSession'
+import { getAdminConfigDebugInfo } from '../_lib/adminSession.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
