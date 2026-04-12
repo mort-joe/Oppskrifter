@@ -120,25 +120,9 @@
 
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
-  width: 18%;
+  width: 36%;
 }
 
-.admin-table th:nth-child(6),
-.admin-table td:nth-child(6) {
-  width: 14%;
-}
-
-.admin-actions-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.admin-table th:nth-child(6) {
-  text-align: center;
-}
 
 .admin-more-btn {
   width: 34px;
@@ -175,6 +159,24 @@
   background: #ffecec;
 }
 
+.admin-inline-action-btn-compact {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  line-height: 1;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid #c7d3eb;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.admin-inline-action-btn-compact.danger {
+  border-color: #ff9999;
+  background: #ffecec;
+}
+
 .admin-user-row {
   background: #f4f8ff;
 }
@@ -192,6 +194,13 @@
 .admin-user-email-input {
   width: 100%;
   min-width: 0;
+}
+
+.admin-user-email-display {
+  display: block;
+  padding: 9px 10px;
+  color: #27407d;
+  word-break: break-all;
 }
 
 .admin-user-badge {
