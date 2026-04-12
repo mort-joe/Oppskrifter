@@ -131,9 +131,13 @@
 .admin-actions-cell {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.admin-table th:nth-child(6) {
+  text-align: center;
 }
 
 .admin-more-btn {
@@ -179,13 +183,15 @@
   border-bottom-color: #d9e5ff;
 }
 
-.admin-user-email {
-  display: inline-block;
-  max-width: 100%;
-  margin-right: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.admin-user-email-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-user-email-input {
+  width: 100%;
+  min-width: 0;
 }
 
 .admin-user-badge {

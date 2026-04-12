@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PATCH') {
-    const { password, role } = req.body || {}
+    const { password, role, email } = req.body || {}
     const payload = {}
 
     if (password) {
@@ -39,6 +39,10 @@ export default async function handler(req, res) {
 
     if (role) {
       payload.app_metadata = { role: normalizeRole(role) }
+    }
+
+    if (email) {
+      payload.email = email
     }
 
     if (!Object.keys(payload).length) {

@@ -46,6 +46,7 @@ function AdminApp() {
 
   const [passwordDrafts, setPasswordDrafts] = useState({})
   const [roleDrafts, setRoleDrafts] = useState({})
+  const [emailDrafts, setEmailDrafts] = useState({})
   const [openUserActionsId, setOpenUserActionsId] = useState(null)
 
   const isLoggedIn = Boolean(token)
@@ -125,10 +126,13 @@ function AdminApp() {
       const result = await listUsers(token)
       setUsers(result.users || [])
       const roleMap = {}
+      const emailMap = {}
       ;(result.users || []).forEach((user) => {
         roleMap[user.id] = user.role || 'user'
+        emailMap[user.id] = user.email || ''
       })
       setRoleDrafts(roleMap)
+      setEmailDrafts(emailMap)
     } catch (loadError) {
       setError(loadError.message)
       if (loadError.message === 'Unauthorized') {
@@ -207,8 +211,9 @@ function AdminApp() {
 
     const password = (passwordDrafts[user.id] || '').trim()
     const role = roleDrafts[user.id] || user.role || 'user'
+    const email = (emailDrafts[user.id] || '').trim()
 
-    if (!password && role === user.role) {
+    if (!password && role === user.role && email === user.email) {
       return
     }
 
@@ -219,6 +224,7 @@ function AdminApp() {
       const payload = {}
       if (password) payload.password = password
       if (role !== user.role) payload.role = role
+      if (email && email !== user.email) payload.email = email
       await updateUser(token, user.id, payload)
       setPasswordDrafts((current) => ({ ...current, [user.id]: '' }))
       setOpenUserActionsId(null)
@@ -439,8 +445,22 @@ function AdminApp() {
                 {sortedUsers.map((user) => (
                   <tr key={user.id} className={user.role === 'admin' ? 'admin-user-row' : ''}>
                     <td>
-                      <span className="admin-user-email">{user.email}</span>
-                      {user.role === 'admin' && <span className="admin-user-badge">Administrator</span>}
+                      <div className="admin-user-email-cell">
+                        <input
+                          type="email"
+                          className="admin-user-email-input"
+                          value={emailDrafts[user.id] ?? user.email ?? ''}
+                          disabled={Boolean(user.is_config_admin)}
+                          onChange={(event) =>
+                            setEmailDrafts((current) => ({
+                              ...current,
+                              [user.id]: event.target.value,
+                            }))
+                          }
+                          placeholder="Brukernavn (epost)"
+                        />
+                        {user.role === 'admin' && <span className="admin-user-badge">Administrator</span>}
+                      </div>
                     </td>
                     <td>
                       <select
