@@ -553,6 +553,28 @@
   font-weight: 600;
 }
 
+.auth-notice {
+  margin: 0;
+  color: #1749a6;
+  font-weight: 600;
+}
+
+.auth-link-btn {
+  width: fit-content;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: #1749a6;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.auth-link-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .user-toolbar {
   display: flex;
   justify-content: space-between;
@@ -649,6 +671,45 @@
   margin: 0;
   font-weight: 600;
   color: #1749a6;
+}
+
+.account-password-form {
+  display: grid;
+  gap: 12px;
+  max-width: 380px;
+  margin-top: 6px;
+}
+
+.account-password-form h3 {
+  margin: 0;
+}
+
+.account-password-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.account-password-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.account-password-form button {
+  width: fit-content;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.account-password-message {
+  margin: 0;
+  font-weight: 600;
+  color: #1749a6;
+}
+
+.account-password-message.error {
+  color: #b42318;
 }
 
 .account-settings-divider {

@@ -151,6 +151,8 @@ function App() {
   const [authPassword, setAuthPassword] = useState('')
   const [authSubmitting, setAuthSubmitting] = useState(false)
   const [authError, setAuthError] = useState('')
+  const [authNotice, setAuthNotice] = useState('')
+  const [authResetSubmitting, setAuthResetSubmitting] = useState(false)
   const [recipes, setRecipes] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRecipeId, setSelectedRecipeId] = useState(null)
@@ -175,6 +177,11 @@ function App() {
   const [accountDefaultPeople, setAccountDefaultPeople] = useState(DEFAULT_ACCOUNT_PEOPLE)
   const [accountEmail, setAccountEmail] = useState('')
   const [accountSettingsMessage, setAccountSettingsMessage] = useState('')
+  const [accountPassword, setAccountPassword] = useState('')
+  const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('')
+  const [accountPasswordMessage, setAccountPasswordMessage] = useState('')
+  const [isAccountPasswordError, setIsAccountPasswordError] = useState(false)
+  const [accountPasswordSubmitting, setAccountPasswordSubmitting] = useState(false)
   const [recipeImportCatalog, setRecipeImportCatalog] = useState([])
   const [selectedImportRecipeIds, setSelectedImportRecipeIds] = useState({})
   const [catalogDefaultPeopleByUser, setCatalogDefaultPeopleByUser] = useState({})
@@ -407,10 +414,15 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
       setAuthError('')
+      if (event === 'PASSWORD_RECOVERY') {
+        setSelectedMenu('innstillinger')
+        setAccountPasswordMessage('Du er i gjenopprettingsmodus. Skriv inn nytt passord under og lagre.')
+        setIsAccountPasswordError(false)
+      }
       if (!nextSession) {
         setIsShoppingStateReady(false)
       }
@@ -831,6 +843,7 @@ function App() {
   const handleMenuSelect = (menuId) => {
     setSelectedMenu(menuId)
     setAccountSettingsMessage('')
+    setAccountPasswordMessage('')
     setRecipeImportMessage('')
     if (menuId === 'matretter' && isMobile) {
       setMobileRecipePane('list')
@@ -840,8 +853,12 @@ function App() {
   const handleOpenAccountSettings = () => {
     setSelectedMenu('innstillinger')
     setAccountSettingsMessage('')
+    setAccountPasswordMessage('')
+    setIsAccountPasswordError(false)
     setRecipeImportMessage('')
     setAccountEmail(user?.email ?? '')
+    setAccountPassword('')
+    setAccountPasswordConfirm('')
   }
 
   const loadRecipeImportCatalog = useCallback(async () => {
@@ -1309,6 +1326,7 @@ function App() {
   const handleSignIn = async (event) => {
     event.preventDefault()
     setAuthError('')
+    setAuthNotice('')
     setAuthSubmitting(true)
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -1321,6 +1339,75 @@ function App() {
     }
 
     setAuthSubmitting(false)
+  }
+
+  const handleSendPasswordResetEmail = async () => {
+    const email = authEmail.trim()
+    if (!email) {
+      setAuthError('Skriv inn e-postadressen din først.')
+      return
+    }
+
+    setAuthError('')
+    setAuthNotice('')
+    setAuthResetSubmitting(true)
+
+    const redirectTo = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : undefined
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email,
+      redirectTo ? { redirectTo } : undefined,
+    )
+
+    if (error) {
+      setAuthError(error.message)
+      setAuthResetSubmitting(false)
+      return
+    }
+
+    setAuthNotice('Hvis adressen finnes, er e-post med lenke for passordbytte sendt.')
+    setAuthResetSubmitting(false)
+  }
+
+  const handleSaveAccountPassword = async (event) => {
+    event.preventDefault()
+
+    if (!user) return
+
+    const nextPassword = accountPassword.trim()
+    const confirmPassword = accountPasswordConfirm.trim()
+
+    if (nextPassword.length < 8) {
+      setAccountPasswordMessage('Nytt passord må ha minst 8 tegn.')
+      setIsAccountPasswordError(true)
+      return
+    }
+
+    if (nextPassword !== confirmPassword) {
+      setAccountPasswordMessage('Passordene er ikke like.')
+      setIsAccountPasswordError(true)
+      return
+    }
+
+    setAccountPasswordSubmitting(true)
+    setAccountPasswordMessage('')
+    setIsAccountPasswordError(false)
+
+    const { error } = await supabase.auth.updateUser({ password: nextPassword })
+    if (error) {
+      setAccountPasswordMessage('Kunne ikke oppdatere passord: ' + error.message)
+      setIsAccountPasswordError(true)
+      setAccountPasswordSubmitting(false)
+      return
+    }
+
+    setAccountPassword('')
+    setAccountPasswordConfirm('')
+    setAccountPasswordMessage('Passord er oppdatert.')
+    setIsAccountPasswordError(false)
+    setAccountPasswordSubmitting(false)
   }
 
   const handleSignOut = async () => {
@@ -1359,6 +1446,12 @@ function App() {
     setShowResetOptions(false)
     setResetIngredientsSelected(false)
     setResetCustomItemsSelected(false)
+    setAccountPassword('')
+    setAccountPasswordConfirm('')
+    setAccountPasswordMessage('')
+    setIsAccountPasswordError(false)
+    setAuthNotice('')
+    setAuthResetSubmitting(false)
   }
 
   const parseQuantityValue = (value) => {
@@ -1705,9 +1798,19 @@ function App() {
             </label>
 
             {authError && <p className="auth-error">{authError}</p>}
+            {authNotice && <p className="auth-notice">{authNotice}</p>}
 
             <button type="submit" disabled={authSubmitting}>
               {authSubmitting ? 'Logger inn…' : 'Logg inn'}
+            </button>
+
+            <button
+              type="button"
+              className="auth-link-btn"
+              onClick={() => void handleSendPasswordResetEmail()}
+              disabled={authSubmitting || authResetSubmitting}
+            >
+              {authResetSubmitting ? 'Sender e-post…' : 'Glemt passord? Send e-post med lenke'}
             </button>
           </form>
         </section>
@@ -1799,6 +1902,49 @@ function App() {
           </form>
 
           {accountSettingsMessage && <p className="account-settings-message">{accountSettingsMessage}</p>}
+
+          <form onSubmit={handleSaveAccountPassword} className="account-password-form">
+            <h3>Endre passord</h3>
+            <label>
+              Nytt passord
+              <input
+                type="password"
+                value={accountPassword}
+                onChange={(event) => {
+                  setAccountPassword(event.target.value)
+                  setAccountPasswordMessage('')
+                  setIsAccountPasswordError(false)
+                }}
+                placeholder="Minst 8 tegn"
+                required
+              />
+            </label>
+
+            <label>
+              Bekreft nytt passord
+              <input
+                type="password"
+                value={accountPasswordConfirm}
+                onChange={(event) => {
+                  setAccountPasswordConfirm(event.target.value)
+                  setAccountPasswordMessage('')
+                  setIsAccountPasswordError(false)
+                }}
+                placeholder="Skriv passordet på nytt"
+                required
+              />
+            </label>
+
+            <button type="submit" disabled={accountPasswordSubmitting}>
+              {accountPasswordSubmitting ? 'Lagrer…' : 'Lagre nytt passord'}
+            </button>
+          </form>
+
+          {accountPasswordMessage && (
+            <p className={`account-password-message ${isAccountPasswordError ? 'error' : ''}`}>
+              {accountPasswordMessage}
+            </p>
+          )}
 
           <div className="account-settings-divider" />
 
