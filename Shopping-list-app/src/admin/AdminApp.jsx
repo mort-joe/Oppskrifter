@@ -455,7 +455,7 @@ function AdminApp() {
                   <th>Epost</th>
                   <th>Rolle</th>
                   <th>Opprettet</th>
-                  <th>Sist innlogget</th>
+                  <th>Sist inn</th>
                 </tr>
               </thead>
               <tbody>

@@ -100,12 +100,12 @@
 
 .admin-table th:nth-child(1),
 .admin-table td:nth-child(1) {
-  width: 18%;
+  width: 12%;
 }
 
 .admin-table th:nth-child(2),
 .admin-table td:nth-child(2) {
-  width: 26%;
+  width: 34%;
 }
 
 .admin-table th:nth-child(3),
@@ -115,17 +115,17 @@
 
 .admin-table th:nth-child(4),
 .admin-table td:nth-child(4) {
-  width: 8%;
+  width: 9%;
 }
 
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
-  width: 8%;
+  width: 10%;
 }
 
 .admin-table th:nth-child(6),
 .admin-table td:nth-child(6) {
-  width: 31%;
+  width: 26%;
 }
 
 
