@@ -126,6 +126,23 @@ const getInitialCollapsedImportGroups = () => {
   }
 }
 
+const getRecipeImportErrorMessage = (error) => {
+  const rawMessage = String(error?.message || error?.details || '').toLowerCase()
+
+  if (
+    rawMessage.includes('shared_root_recipe_id') ||
+    rawMessage.includes('shared_root_name') ||
+    rawMessage.includes('shared_version_number') ||
+    rawMessage.includes('user_settings') ||
+    rawMessage.includes('permission denied') ||
+    rawMessage.includes('row-level security')
+  ) {
+    return 'Importlisten krever at oppdatert SQL er kjørt i Supabase. Kjør auth_setup.sql og last siden på nytt.'
+  }
+
+  return 'Kunne ikke laste listen over matretter i databasen.'
+}
+
 function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -890,7 +907,7 @@ function App() {
     } catch (catalogError) {
       console.error('Could not load recipe import catalog:', catalogError)
       setRecipeImportCatalog([])
-      setRecipeImportMessage('Kunne ikke laste listen over matretter i databasen.')
+      setRecipeImportMessage(getRecipeImportErrorMessage(catalogError))
       setIsRecipeImportError(true)
     } finally {
       setIsRecipeCatalogLoading(false)
@@ -1713,7 +1730,7 @@ function App() {
           { id: 'matretter', label: 'Matretter' },
           { id: 'legg-til-matrett', label: 'Legg til matrett' },
           { id: 'lag-meny', label: 'Lag meny' },
-          { id: 'lag-handleliste', label: 'Lag handleliste' },
+          { id: 'lag-handleliste', label: 'Handleliste' },
         ].map((item) => (
           <button
             key={item.id}
@@ -1800,6 +1817,8 @@ function App() {
             <div className="account-import-list">
               {isRecipeCatalogLoading ? (
                 <p className="account-import-empty">Laster matretter…</p>
+              ) : recipeImportMessage && isRecipeImportError ? (
+                <p className="account-import-empty">Importlisten kunne ikke lastes.</p>
               ) : filteredRecipeImportCatalog.length === 0 ? (
                 <p className="account-import-empty">Ingen matretter funnet i databasen.</p>
               ) : (
