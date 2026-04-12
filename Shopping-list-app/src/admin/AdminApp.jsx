@@ -483,7 +483,7 @@ function AdminApp() {
                     <td>{formatDate(user.last_sign_in_at, false)}</td>
                     <td>
                       {openUserActionsId === user.id && !user.is_config_admin ? (
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap' }}>
                           <input
                             type="text"
                             value={passwordDrafts[user.id] || ''}
@@ -494,7 +494,7 @@ function AdminApp() {
                               }))
                             }
                             placeholder="Nytt passord"
-                            style={{ flex: 1, minWidth: 120 }}
+                            style={{ flex: 1, minWidth: 80 }}
                           />
                           <button
                             type="button"
