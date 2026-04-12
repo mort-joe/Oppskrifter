@@ -444,7 +444,7 @@ function AdminApp() {
               <option value="user">Bruker</option>
               <option value="admin">Administrator</option>
             </select>
-            <button type="submit" disabled={loading}>Opprett brukerkonto</button>
+            <button type="submit" disabled={loading}>Opprett</button>
           </form>
 
           <div className="admin-table-wrap admin-users-table-wrap">
