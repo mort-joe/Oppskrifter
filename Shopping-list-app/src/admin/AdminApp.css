@@ -100,7 +100,7 @@
 
 .admin-table th:nth-child(1),
 .admin-table td:nth-child(1) {
-  width: 28%;
+  width: 34%;
 }
 
 .admin-table th:nth-child(2),
@@ -120,7 +120,7 @@
 
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
-  width: 38%;
+  width: 32%;
 }
 
 
@@ -161,8 +161,8 @@
 
 .admin-inline-action-btn-compact {
   flex: 0 0 auto;
-  padding: 4px 6px;
-  font-size: 0.85rem;
+  padding: 3px 6px;
+  font-size: 0.82rem;
   white-space: nowrap;
   line-height: 1;
   box-sizing: border-box;

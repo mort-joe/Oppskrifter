@@ -494,7 +494,7 @@ function AdminApp() {
                               }))
                             }
                             placeholder="Nytt passord"
-                            style={{ flex: 1, minWidth: 80 }}
+                            style={{ flex: 1, minWidth: 68 }}
                           />
                           <button
                             type="button"
