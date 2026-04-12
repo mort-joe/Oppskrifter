@@ -173,6 +173,7 @@ function App() {
   const [menuCreated, setMenuCreated] = useState(false)
   const [isShoppingStateReady, setIsShoppingStateReady] = useState(false)
   const [accountDefaultPeople, setAccountDefaultPeople] = useState(DEFAULT_ACCOUNT_PEOPLE)
+  const [accountEmail, setAccountEmail] = useState('')
   const [accountSettingsMessage, setAccountSettingsMessage] = useState('')
   const [recipeImportCatalog, setRecipeImportCatalog] = useState([])
   const [selectedImportRecipeIds, setSelectedImportRecipeIds] = useState({})
@@ -840,6 +841,7 @@ function App() {
     setSelectedMenu('innstillinger')
     setAccountSettingsMessage('')
     setRecipeImportMessage('')
+    setAccountEmail(user?.email ?? '')
   }
 
   const loadRecipeImportCatalog = useCallback(async () => {
@@ -927,6 +929,8 @@ function App() {
 
     if (!user) return
 
+    const emailTrimmed = accountEmail.trim()
+
     const state = {
       shoppingListRecipeCounts,
       customShoppingItems,
@@ -969,6 +973,14 @@ function App() {
       console.error('Could not save account settings:', shoppingStateError || userSettingsError)
       setAccountSettingsMessage('Kunne ikke lagre innstillingene akkurat nå. Prøv igjen.')
       return
+    }
+
+    if (emailTrimmed && emailTrimmed !== user.email) {
+      const { error: emailError } = await supabase.auth.updateUser({ email: emailTrimmed })
+      if (emailError) {
+        setAccountSettingsMessage('Innstillinger lagret, men epost ble ikke oppdatert: ' + emailError.message)
+        return
+      }
     }
 
     setAccountSettingsMessage('Innstillingene er lagret.')
@@ -1768,6 +1780,18 @@ function App() {
                   setAccountDefaultPeople(event.target.value)
                   setAccountSettingsMessage('')
                 }}
+              />
+            </label>
+            <label>
+              Epostadresse
+              <input
+                type="email"
+                value={accountEmail}
+                onChange={(event) => {
+                  setAccountEmail(event.target.value)
+                  setAccountSettingsMessage('')
+                }}
+                placeholder="Din epostadresse"
               />
             </label>
 

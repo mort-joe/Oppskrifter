@@ -40,12 +40,14 @@ function AdminApp() {
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
-  const [newEmail, setNewEmail] = useState('')
+  const [newUsername, setNewUsername] = useState('')
+  const [newUserEmail, setNewUserEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newRole, setNewRole] = useState('user')
 
   const [passwordDrafts, setPasswordDrafts] = useState({})
   const [roleDrafts, setRoleDrafts] = useState({})
+  const [usernameDrafts, setUsernameDrafts] = useState({})
   const [emailDrafts, setEmailDrafts] = useState({})
   const [openUserActionsId, setOpenUserActionsId] = useState(null)
 
@@ -126,12 +128,15 @@ function AdminApp() {
       const result = await listUsers(token)
       setUsers(result.users || [])
       const roleMap = {}
+      const usernameMap = {}
       const emailMap = {}
       ;(result.users || []).forEach((user) => {
         roleMap[user.id] = user.role || 'user'
+        usernameMap[user.id] = user.username || ''
         emailMap[user.id] = user.email || ''
       })
       setRoleDrafts(roleMap)
+      setUsernameDrafts(usernameMap)
       setEmailDrafts(emailMap)
     } catch (loadError) {
       setError(loadError.message)
@@ -179,6 +184,8 @@ function AdminApp() {
     setUsers([])
     setPasswordDrafts({})
     setRoleDrafts({})
+    setUsernameDrafts({})
+    setEmailDrafts({})
     setOpenUserActionsId(null)
   }
 
@@ -189,11 +196,13 @@ function AdminApp() {
 
     try {
       await createUser(token, {
-        email: newEmail.trim(),
+        username: newUsername.trim(),
+        email: newUserEmail.trim(),
         password: newPassword,
         role: newRole,
       })
-      setNewEmail('')
+      setNewUsername('')
+      setNewUserEmail('')
       setNewPassword('')
       setNewRole('user')
       await loadUsers()
@@ -211,9 +220,10 @@ function AdminApp() {
 
     const password = (passwordDrafts[user.id] || '').trim()
     const role = roleDrafts[user.id] || user.role || 'user'
+    const username = (usernameDrafts[user.id] || '').trim()
     const email = (emailDrafts[user.id] || '').trim()
 
-    if (!password && role === user.role && email === user.email) {
+    if (!password && role === user.role && username === user.username && email === user.email) {
       return
     }
 
@@ -224,6 +234,7 @@ function AdminApp() {
       const payload = {}
       if (password) payload.password = password
       if (role !== user.role) payload.role = role
+      if (username && username !== user.username) payload.username = username
       if (email && email !== user.email) payload.email = email
       await updateUser(token, user.id, payload)
       setPasswordDrafts((current) => ({ ...current, [user.id]: '' }))
@@ -241,7 +252,7 @@ function AdminApp() {
       return
     }
 
-    const confirmed = window.confirm(`Slette brukeren ${user.email}?`)
+    const confirmed = window.confirm(`Slette brukeren ${user.username}?`)
     if (!confirmed) return
 
     setLoading(true)
@@ -410,9 +421,16 @@ function AdminApp() {
           <form onSubmit={handleCreateUser} className="admin-create-form">
             <input
               type="text"
-              value={newEmail}
-              onChange={(event) => setNewEmail(event.target.value)}
+              value={newUsername}
+              onChange={(event) => setNewUsername(event.target.value)}
               placeholder="Brukernavn"
+              required
+            />
+            <input
+              type="email"
+              value={newUserEmail}
+              onChange={(event) => setNewUserEmail(event.target.value)}
+              placeholder="Epostadresse"
               required
             />
             <input
@@ -434,6 +452,7 @@ function AdminApp() {
               <thead>
                 <tr>
                   <th>Brukernavn</th>
+                  <th>Epost</th>
                   <th>Rolle</th>
                   <th>Opprettet</th>
                   <th>Sist innlogget</th>
@@ -445,23 +464,43 @@ function AdminApp() {
                     <td>
                       <div className="admin-user-email-cell">
                         {openUserActionsId === user.id && !user.is_config_admin ? (
-                          <input
-                            type="text"
-                            className="admin-user-email-input"
-                            value={emailDrafts[user.id] ?? user.email ?? ''}
-                            onChange={(event) =>
-                              setEmailDrafts((current) => ({
-                                ...current,
-                                [user.id]: event.target.value,
-                              }))
-                            }
-                            placeholder="Brukernavn"
-                          />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <input
+                              type="text"
+                              className="admin-user-email-input"
+                              value={usernameDrafts[user.id] ?? user.username ?? ''}
+                              onChange={(event) =>
+                                setUsernameDrafts((current) => ({
+                                  ...current,
+                                  [user.id]: event.target.value,
+                                }))
+                              }
+                              placeholder="Brukernavn"
+                            />
+                          </div>
                         ) : (
-                          <span className="admin-user-email-display">{user.email}</span>
+                          <span className="admin-user-email-display">{user.username}</span>
                         )}
                         {user.role === 'admin' && <span className="admin-user-badge">Administrator</span>}
                       </div>
+                    </td>
+                    <td>
+                      {openUserActionsId === user.id && !user.is_config_admin ? (
+                        <input
+                          type="email"
+                          className="admin-user-email-input"
+                          value={emailDrafts[user.id] ?? user.email ?? ''}
+                          onChange={(event) =>
+                            setEmailDrafts((current) => ({
+                              ...current,
+                              [user.id]: event.target.value,
+                            }))
+                          }
+                          placeholder="Epostadresse"
+                        />
+                      ) : (
+                        <span className="admin-user-email-display" style={{ color: '#555', fontSize: '0.92rem' }}>{user.email}</span>
+                      )}
                     </td>
                     <td>
                       <select
@@ -543,7 +582,7 @@ function AdminApp() {
                 ))}
                 {sortedUsers.length === 0 && (
                   <tr>
-                    <td colSpan={4}>Ingen brukere funnet.</td>
+                    <td colSpan={6}>Ingen brukere funnet.</td>
                   </tr>
                 )}
               </tbody>
