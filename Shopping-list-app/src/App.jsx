@@ -1873,7 +1873,7 @@ function App() {
 
           <form onSubmit={handleSaveAccountSettings} className="account-settings-form">
             <label>
-              Standard antall personer i dine handlelister
+              <span className="account-settings-label-text">Standard antall personer i dine handlelister</span>
               <input
                 type="number"
                 min="1"

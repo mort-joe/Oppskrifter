@@ -646,13 +646,17 @@
 .account-settings-form {
   display: grid;
   gap: 12px;
-  max-width: 320px;
+  max-width: 380px;
 }
 
 .account-settings-form label {
   display: grid;
   gap: 6px;
   font-weight: 600;
+}
+
+.account-settings-label-text {
+  white-space: nowrap;
 }
 
 .account-settings-form input {
