@@ -209,16 +209,31 @@
 
 .main-nav-button {
   padding: 14px 18px;
-  border-radius: 14px;
+  border-radius: 18px;
   font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   width: 100%;
   min-width: 0;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid #d7dfef;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  box-shadow: 0 8px 24px rgba(28, 49, 94, 0.08);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.main-nav-button:hover {
+  transform: translateY(-1px);
+  border-color: #bfd0f5;
+  box-shadow: 0 12px 28px rgba(28, 49, 94, 0.12);
+}
+
+.main-nav-button:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 3px;
 }
 
 .main-nav-button.mobile {
@@ -227,8 +242,9 @@
 }
 
 .main-nav-button.active {
-  border: 3px solid #1f6feb;
-  background: #e8f0ff;
+  border: 1px solid #2f6ff2;
+  background: linear-gradient(180deg, #edf4ff 0%, #dfeaff 100%);
+  box-shadow: inset 0 0 0 1px rgba(47, 111, 242, 0.18), 0 14px 30px rgba(31, 111, 235, 0.18);
 }
 
 .shopping-section {
@@ -613,14 +629,22 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid #d7dfef;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  box-shadow: 0 6px 16px rgba(28, 49, 94, 0.08);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   font-size: 1.1rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.account-settings-btn:hover {
+  transform: translateY(-1px);
+  border-color: #bfd0f5;
+  box-shadow: 0 10px 20px rgba(28, 49, 94, 0.12);
 }
 
 .account-settings-btn:focus-visible {
@@ -924,8 +948,25 @@
 }
 
 .toolbar-signout-btn {
-  padding: 6px 10px;
+  padding: 8px 14px;
+  border: 1px solid #d7dfef;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 6px 18px rgba(28, 49, 94, 0.08);
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.toolbar-signout-btn:hover {
+  transform: translateY(-1px);
+  border-color: #bfd0f5;
+  box-shadow: 0 10px 22px rgba(28, 49, 94, 0.12);
+}
+
+.toolbar-signout-btn:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 3px;
 }
 
 @media (max-width: 768px) {
