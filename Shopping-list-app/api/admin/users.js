@@ -26,7 +26,6 @@ export default async function handler(req, res) {
     const users = (data?.users || []).map((user) => ({
       id: user.id,
       email: user.email,
-      username: user.user_metadata?.display_name || user.email,
       role: normalizeRole(user.app_metadata?.role),
       created_at: user.created_at,
       last_sign_in_at: user.last_sign_in_at,
@@ -39,7 +38,6 @@ export default async function handler(req, res) {
       users.unshift({
         id: CONFIG_ADMIN_ID,
         email: adminConfig.effectiveUsername,
-        username: adminConfig.effectiveUsername,
         role: 'admin',
         created_at: null,
         last_sign_in_at: null,
@@ -52,10 +50,10 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { username, email, password, role } = req.body || {}
+    const { email, password, role } = req.body || {}
 
-    if (!username || !email || !password) {
-      res.status(400).json({ error: 'Mangler brukernavn, epost eller passord.' })
+    if (!email || !password) {
+      res.status(400).json({ error: 'Mangler brukernavn eller passord.' })
       return
     }
 
@@ -65,7 +63,7 @@ export default async function handler(req, res) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { display_name: username },
+      user_metadata: {},
       app_metadata: { role: normalizedRole },
     })
 
@@ -78,7 +76,6 @@ export default async function handler(req, res) {
       user: {
         id: data.user.id,
         email: data.user.email,
-        username: username,
         role: normalizedRole,
         created_at: data.user.created_at,
         last_sign_in_at: data.user.last_sign_in_at,
