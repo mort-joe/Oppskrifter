@@ -4,6 +4,15 @@
   padding: 28px;
   box-sizing: border-box;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --button-border: #d7dfef;
+  --button-border-hover: #bfd0f5;
+  --button-bg: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  --button-bg-active: linear-gradient(180deg, #edf4ff 0%, #dfeaff 100%);
+  --button-shadow: 0 8px 24px rgba(28, 49, 94, 0.08);
+  --button-shadow-hover: 0 12px 28px rgba(28, 49, 94, 0.12);
+  --button-danger-bg: linear-gradient(180deg, #fff5f4 0%, #ffe8e6 100%);
+  --button-danger-border: #ffb6ae;
+  --button-danger-border-hover: #ff9386;
 }
 
 .admin-header {
@@ -38,8 +47,9 @@
 }
 
 .admin-menu-tabs button.active {
-  border-color: #1f6feb;
-  box-shadow: inset 0 0 0 1px #1f6feb;
+  border-color: #2f6ff2;
+  background: var(--button-bg-active);
+  box-shadow: inset 0 0 0 1px rgba(47, 111, 242, 0.18), 0 14px 30px rgba(31, 111, 235, 0.18);
 }
 
 .admin-form,
@@ -128,8 +138,9 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  box-shadow: var(--button-shadow);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -155,8 +166,8 @@
 }
 
 .admin-inline-action-btn.danger {
-  border-color: #ff9999;
-  background: #ffecec;
+  border-color: var(--button-danger-border);
+  background: var(--button-danger-bg);
 }
 
 .admin-inline-action-btn-compact {
@@ -167,14 +178,15 @@
   line-height: 1;
   box-sizing: border-box;
   border-radius: 10px;
-  border: 1px solid #c7d3eb;
-  background: #ffffff;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  box-shadow: 0 6px 16px rgba(28, 49, 94, 0.08);
   cursor: pointer;
 }
 
 .admin-inline-action-btn-compact.danger {
-  border-color: #ff9999;
-  background: #ffecec;
+  border-color: var(--button-danger-border);
+  background: var(--button-danger-bg);
 }
 
 .admin-user-row {
@@ -261,8 +273,9 @@
 }
 
 .dashboard-submenu button.active {
-  border-color: #1f6feb;
-  box-shadow: inset 0 0 0 1px #1f6feb;
+  border-color: #2f6ff2;
+  background: var(--button-bg-active);
+  box-shadow: inset 0 0 0 1px rgba(47, 111, 242, 0.18), 0 14px 30px rgba(31, 111, 235, 0.18);
 }
 
 .category-create-form {
@@ -308,12 +321,42 @@
 }
 
 .admin-shell button {
-  background: #ffffff;
+  appearance: none;
+  background: var(--button-bg);
+  border-color: var(--button-border);
+  box-shadow: var(--button-shadow);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
 .admin-shell button:hover {
-  border-color: #4d78d7;
+  transform: translateY(-1px);
+  border-color: var(--button-border-hover);
+  box-shadow: var(--button-shadow-hover);
+}
+
+.admin-shell button:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 3px;
+}
+
+.admin-shell button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.admin-more-btn:hover,
+.admin-inline-action-btn-compact:hover {
+  border-color: var(--button-border-hover);
+}
+
+.admin-inline-action-btn-compact.danger:hover,
+.admin-inline-action-btn.danger:hover {
+  border-color: var(--button-danger-border-hover);
 }
 
 @media (max-width: 900px) {

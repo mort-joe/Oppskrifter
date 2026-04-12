@@ -2301,7 +2301,8 @@ function App() {
                     <button
                       type="button"
                       onClick={handleDeleteRecipe}
-                      style={{ padding: '10px 16px', cursor: 'pointer', background: '#ffe6e6', border: '1px solid #ff9999' }}
+                      className="app-danger-btn"
+                      style={{ padding: '10px 16px', cursor: 'pointer' }}
                     >
                       Slett matrett
                     </button>
@@ -2314,20 +2315,9 @@ function App() {
                     <button
                       type="button"
                       onClick={() => handleStartEditing(selectedRecipe)}
+                      className="app-icon-btn"
                       aria-label="Rediger matrett"
-                      style={{
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '50%',
-                        border: '1px solid #ccc',
-                        background: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0,
-                        fontSize: '1.1rem',
-                      }}
+                      style={{ cursor: 'pointer' }}
                     >
                       ⋯
                     </button>

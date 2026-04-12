@@ -188,10 +188,56 @@
   font-family: system-ui, sans-serif;
   max-width: 1100px;
   margin: 0 auto;
+  --button-border: #d7dfef;
+  --button-border-hover: #bfd0f5;
+  --button-bg: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  --button-bg-active: linear-gradient(180deg, #edf4ff 0%, #dfeaff 100%);
+  --button-shadow: 0 8px 24px rgba(28, 49, 94, 0.08);
+  --button-shadow-hover: 0 12px 28px rgba(28, 49, 94, 0.12);
+  --button-text: #101828;
+  --button-danger-bg: linear-gradient(180deg, #fff5f4 0%, #ffe8e6 100%);
+  --button-danger-border: #ffb6ae;
+  --button-danger-border-hover: #ff9386;
 }
 
 .app-shell.mobile {
   padding: 14px;
+}
+
+.app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header) {
+  appearance: none;
+  border: 1px solid var(--button-border);
+  border-radius: 14px;
+  background: var(--button-bg);
+  box-shadow: var(--button-shadow);
+  color: var(--button-text);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header):hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--button-border-hover);
+  box-shadow: var(--button-shadow-hover);
+}
+
+.app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header):focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 3px;
+}
+
+.app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .main-nav {
@@ -267,11 +313,10 @@
 
 .shopping-reset-btn {
   width: fit-content;
-  padding: 10px 14px;
-  cursor: pointer;
-  background: #ffe6e6;
-  border: 1px solid #ff9999;
-  border-radius: 8px;
+  padding: 9px 13px;
+  min-height: 38px;
+  background: linear-gradient(180deg, #fff7e8 0%, #ffedc8 100%);
+  border-color: #efc46a;
 }
 
 .shopping-reset-btn.mobile {
@@ -313,18 +358,15 @@
 .shopping-reset-confirm-btn,
 .shopping-reset-cancel-btn {
   padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  cursor: pointer;
 }
 
 .shopping-reset-confirm-btn {
-  background: #ffe6e6;
-  border-color: #ff9999;
+  background: var(--button-danger-bg);
+  border-color: var(--button-danger-border);
 }
 
 .shopping-reset-cancel-btn {
-  background: #fff;
+  background: var(--button-bg);
 }
 
 .custom-item-card {
@@ -375,8 +417,9 @@
 }
 
 .custom-item-add-btn {
-  padding: 10px 14px;
-  cursor: pointer;
+  padding: 8px 12px;
+  min-height: 38px;
+  border-radius: 12px !important;
 }
 
 .custom-item-add-btn.mobile {
@@ -395,8 +438,11 @@
 
 .custom-item-remove-btn {
   margin-left: 8px;
-  padding: 2px 8px;
-  cursor: pointer;
+  padding: 3px 9px;
+  min-height: 28px;
+  border-radius: 10px;
+  box-shadow: none !important;
+  font-size: 0.92rem;
 }
 
 .shopping-content {
@@ -419,8 +465,11 @@
 
 .selected-recipes-remove-btn {
   margin-left: 8px;
-  padding: 2px 8px;
-  cursor: pointer;
+  padding: 3px 9px;
+  min-height: 28px;
+  border-radius: 10px;
+  box-shadow: none !important;
+  font-size: 0.92rem;
 }
 
 .shopping-cards {
@@ -556,7 +605,6 @@
 
 .auth-form button {
   padding: 10px 14px;
-  cursor: pointer;
 }
 
 .auth-help {
@@ -692,7 +740,6 @@
 .account-settings-form button {
   width: fit-content;
   padding: 10px 14px;
-  cursor: pointer;
 }
 
 .account-settings-message {
@@ -727,7 +774,6 @@
 .account-password-form button {
   width: fit-content;
   padding: 10px 14px;
-  cursor: pointer;
 }
 
 .account-password-message {
@@ -765,7 +811,6 @@
 .account-import-refresh-btn {
   width: fit-content;
   padding: 10px 14px;
-  cursor: pointer;
 }
 
 .account-import-toolbar {
@@ -930,11 +975,10 @@
 .account-import-actions button {
   width: fit-content;
   padding: 10px 14px;
-  cursor: pointer;
 }
 
 .account-import-secondary-btn {
-  background: #fff;
+  background: var(--button-bg);
 }
 
 .account-import-message {
@@ -967,6 +1011,29 @@
 .toolbar-signout-btn:focus-visible {
   outline: 2px solid #1f6feb;
   outline-offset: 3px;
+}
+
+.app-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  font-size: 1.1rem;
+}
+
+.app-danger-btn {
+  background: var(--button-danger-bg) !important;
+  border-color: var(--button-danger-border) !important;
+}
+
+.app-danger-btn:hover:not(:disabled),
+.shopping-reset-btn:hover:not(:disabled),
+.shopping-reset-confirm-btn:hover:not(:disabled) {
+  border-color: var(--button-danger-border-hover) !important;
+}
+
+.shopping-reset-btn:hover:not(:disabled) {
+  border-color: #d8ab48 !important;
 }
 
 @media (max-width: 768px) {
