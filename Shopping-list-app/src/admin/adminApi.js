@@ -133,3 +133,32 @@ export const reorderShoppingCategories = async (token, orderedIds) => {
 
   return parseJson(response)
 }
+
+export const listIngredients = async (token) => {
+  const response = await safeFetch('/api/admin/ingredients', {
+    method: 'GET',
+    headers: jsonHeaders(token),
+  })
+
+  return parseJson(response)
+}
+
+export const updateIngredientCategory = async (token, ingredientId, payload) => {
+  const response = await safeFetch(`/api/admin/ingredients/${ingredientId}`, {
+    method: 'PATCH',
+    headers: jsonHeaders(token),
+    body: JSON.stringify(payload),
+  })
+
+  return parseJson(response)
+}
+
+export const mergeDuplicateIngredients = async (token, payload) => {
+  const response = await safeFetch('/api/admin/ingredients/merge', {
+    method: 'POST',
+    headers: jsonHeaders(token),
+    body: JSON.stringify(payload),
+  })
+
+  return parseJson(response)
+}

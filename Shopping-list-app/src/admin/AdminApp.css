@@ -358,6 +358,84 @@
   color: #27407d;
 }
 
+.ingredients-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ingredients-table th:nth-child(1),
+.ingredients-table td:nth-child(1) {
+  width: 42%;
+}
+
+.ingredients-table th:nth-child(2),
+.ingredients-table td:nth-child(2) {
+  width: 28%;
+}
+
+.ingredients-table th:nth-child(3),
+.ingredients-table td:nth-child(3) {
+  width: 12%;
+}
+
+.ingredients-table th:nth-child(4),
+.ingredients-table td:nth-child(4) {
+  width: 18%;
+}
+
+.duplicate-groups-section {
+  margin-top: 14px;
+  border-top: 1px solid #d7e0f8;
+  padding-top: 12px;
+}
+
+.duplicate-groups-section h4 {
+  margin: 0 0 10px;
+}
+
+.duplicate-groups-list {
+  display: grid;
+  gap: 10px;
+}
+
+.duplicate-group-card {
+  border: 1px solid #d7e0f8;
+  border-radius: 10px;
+  background: #f8faff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.duplicate-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.duplicate-group-card ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.duplicate-group-card li label {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.duplicate-meta {
+  color: #495772;
+  font-size: 0.9rem;
+}
+
 .admin-shell input,
 .admin-shell select,
 .admin-shell button {
@@ -428,6 +506,19 @@
 
   .category-create-form {
     grid-template-columns: 1fr;
+  }
+
+  .ingredients-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .duplicate-group-card li label {
+    grid-template-columns: auto 1fr;
+  }
+
+  .duplicate-meta {
+    grid-column: 1 / -1;
+    padding-left: 24px;
   }
 
   .dashboard-submenu {

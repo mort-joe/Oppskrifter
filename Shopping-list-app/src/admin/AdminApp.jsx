@@ -6,9 +6,12 @@ import {
   createUser,
   deleteUser,
   fetchDashboard,
+  listIngredients,
   listShoppingCategories,
   listUsers,
+  mergeDuplicateIngredients,
   reorderShoppingCategories,
+  updateIngredientCategory,
   updateShoppingCategory,
   updateUser,
 } from './adminApi'
@@ -36,6 +39,12 @@ function AdminApp() {
   const [shoppingCategories, setShoppingCategories] = useState([])
   const [categoryNameDrafts, setCategoryNameDrafts] = useState({})
   const [newCategoryName, setNewCategoryName] = useState('')
+  const [ingredients, setIngredients] = useState([])
+  const [ingredientCategoryDrafts, setIngredientCategoryDrafts] = useState({})
+  const [ingredientSearch, setIngredientSearch] = useState('')
+  const [duplicateGroups, setDuplicateGroups] = useState([])
+  const [showDuplicateCheckResults, setShowDuplicateCheckResults] = useState(false)
+  const [duplicateKeepByGroup, setDuplicateKeepByGroup] = useState({})
 
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -90,6 +99,29 @@ function AdminApp() {
     [dashboardUsers],
   )
 
+  const shoppingCategoryNames = useMemo(() => {
+    const names = shoppingCategories
+      .map((category) => String(category?.name || '').trim())
+      .filter(Boolean)
+
+    return [...new Set(names)]
+  }, [shoppingCategories])
+
+  const filteredIngredients = useMemo(() => {
+    const normalizedSearch = ingredientSearch.trim().toLowerCase()
+    const sortedIngredients = [...ingredients].sort((a, b) =>
+      String(a.name || '').localeCompare(String(b.name || ''), 'no', { sensitivity: 'base' }),
+    )
+
+    if (!normalizedSearch) {
+      return sortedIngredients
+    }
+
+    return sortedIngredients.filter((ingredient) =>
+      String(ingredient.name || '').toLowerCase().includes(normalizedSearch),
+    )
+  }, [ingredientSearch, ingredients])
+
   const loadDashboard = async () => {
     if (!token) return
 
@@ -114,6 +146,48 @@ function AdminApp() {
       setCategoryNameDrafts(draftMap)
     } catch (dashboardError) {
       setError(dashboardError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadIngredientData = async () => {
+    if (!token) return
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const result = await listIngredients(token)
+      const nextIngredients = result.ingredients || []
+      const nextDuplicateGroups = result.duplicateGroups || []
+      const nextShoppingCategories = result.shoppingCategories || []
+
+      setIngredients(nextIngredients)
+      setDuplicateGroups(nextDuplicateGroups)
+
+      if (nextShoppingCategories.length > 0) {
+        setShoppingCategories(nextShoppingCategories)
+      }
+
+      const nextCategoryDrafts = {}
+      nextIngredients.forEach((ingredient) => {
+        nextCategoryDrafts[ingredient.id] = ingredient.shopping_category || 'annet'
+      })
+      setIngredientCategoryDrafts(nextCategoryDrafts)
+
+      setDuplicateKeepByGroup((current) => {
+        const next = {}
+        nextDuplicateGroups.forEach((group) => {
+          const ids = (group.ingredients || []).map((ingredient) => ingredient.id)
+          if (!ids.length) return
+          const previous = current[group.normalized_key]
+          next[group.normalized_key] = ids.includes(previous) ? previous : ids[0]
+        })
+        return next
+      })
+    } catch (ingredientError) {
+      setError(ingredientError.message)
     } finally {
       setLoading(false)
     }
@@ -342,6 +416,64 @@ function AdminApp() {
       setCategoryNameDrafts(draftMap)
     } catch (categoryError) {
       setError(categoryError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveIngredientCategory = async (ingredientId) => {
+    const shoppingCategory = String(ingredientCategoryDrafts[ingredientId] || '').trim()
+    if (!shoppingCategory) {
+      setError('Velg en sorteringskategori for ingrediensen.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      await updateIngredientCategory(token, ingredientId, { shopping_category: shoppingCategory })
+      await loadIngredientData()
+    } catch (ingredientError) {
+      setError(ingredientError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRunDuplicateCheck = async () => {
+    setShowDuplicateCheckResults(true)
+    await loadIngredientData()
+  }
+
+  const handleMergeDuplicateGroup = async (group) => {
+    const rows = group?.ingredients || []
+    if (rows.length < 2) return
+
+    const keepIngredientId = Number(duplicateKeepByGroup[group.normalized_key] || rows[0]?.id)
+    const mergeIngredientIds = rows
+      .map((row) => Number(row.id))
+      .filter((id) => Number.isFinite(id) && id !== keepIngredientId)
+
+    if (!mergeIngredientIds.length) {
+      setError('Velg en ingrediens som skal beholdes før sammenslaing.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Sla sammen ${mergeIngredientIds.length} duplikat(er) til valgt ingrediens? Dette kan ikke angres.`,
+    )
+    if (!confirmed) return
+
+    setLoading(true)
+    setError('')
+    try {
+      await mergeDuplicateIngredients(token, {
+        keepIngredientId,
+        mergeIngredientIds,
+      })
+      await loadIngredientData()
+    } catch (ingredientError) {
+      setError(ingredientError.message)
     } finally {
       setLoading(false)
     }
@@ -653,6 +785,16 @@ function AdminApp() {
               >
                 Sorteringskategorier
               </button>
+              <button
+                type="button"
+                className={dashboardDetailPage === 'ingredients-check' ? 'active' : ''}
+                onClick={() => {
+                  setDashboardDetailPage('ingredients-check')
+                  void loadIngredientData()
+                }}
+              >
+                Sjekk ingredienser
+              </button>
             </nav>
 
             {dashboardDetailPage === 'all-recipes' && (
@@ -739,6 +881,136 @@ function AdminApp() {
                     <p>Ingen sorteringskategorier funnet. Kjor SQL-oppsettet for dashboard-kategorier.</p>
                   )}
                 </div>
+              </article>
+            )}
+
+            {dashboardDetailPage === 'ingredients-check' && (
+              <article className="dashboard-panel">
+                <h3>Ingredienser i global database</h3>
+
+                <div className="ingredients-toolbar">
+                  <input
+                    type="text"
+                    value={ingredientSearch}
+                    onChange={(event) => setIngredientSearch(event.target.value)}
+                    placeholder="Sok etter ingrediensnavn"
+                  />
+                  <button type="button" onClick={() => void loadIngredientData()} disabled={loading}>
+                    Last pa nytt
+                  </button>
+                  <button type="button" onClick={() => void handleRunDuplicateCheck()} disabled={loading}>
+                    Sjekk for duplikater
+                  </button>
+                </div>
+
+                <div className="admin-table-wrap">
+                  <table className="admin-table ingredients-table">
+                    <thead>
+                      <tr>
+                        <th>Ingrediens</th>
+                        <th>Sorteringskategori</th>
+                        <th>Brukt i</th>
+                        <th>Lagre</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredIngredients.map((ingredient) => (
+                        <tr key={`ingredient-${ingredient.id}`}>
+                          <td>{ingredient.name}</td>
+                          <td>
+                            <select
+                              value={ingredientCategoryDrafts[ingredient.id] ?? ingredient.shopping_category ?? 'annet'}
+                              onChange={(event) =>
+                                setIngredientCategoryDrafts((current) => ({
+                                  ...current,
+                                  [ingredient.id]: event.target.value,
+                                }))
+                              }
+                            >
+                              {shoppingCategoryNames.map((categoryName) => (
+                                <option key={`ingredient-category-${categoryName}`} value={categoryName}>
+                                  {categoryName}
+                                </option>
+                              ))}
+                              {!shoppingCategoryNames.includes('annet') && (
+                                <option value="annet">annet</option>
+                              )}
+                            </select>
+                          </td>
+                          <td>{ingredient.usage_count || 0}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => void handleSaveIngredientCategory(ingredient.id)}
+                              disabled={loading}
+                            >
+                              Lagre
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredIngredients.length === 0 && (
+                        <tr>
+                          <td colSpan={4}>Ingen ingredienser funnet.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {showDuplicateCheckResults && (
+                  <section className="duplicate-groups-section">
+                    <h4>Duplikatsok</h4>
+                    {duplicateGroups.length === 0 ? (
+                      <p>Ingen duplikater funnet.</p>
+                    ) : (
+                      <div className="duplicate-groups-list">
+                        {duplicateGroups.map((group) => {
+                          const rows = group.ingredients || []
+                          const keepId = duplicateKeepByGroup[group.normalized_key] ?? rows[0]?.id
+                          return (
+                            <article key={`duplicate-group-${group.normalized_key}`} className="duplicate-group-card">
+                              <div className="duplicate-group-header">
+                                <strong>{rows[0]?.name || 'Duplikatgruppe'}</strong>
+                                <span>{rows.length} treff</span>
+                              </div>
+
+                              <ul>
+                                {rows.map((row) => (
+                                  <li key={`duplicate-row-${row.id}`}>
+                                    <label>
+                                      <input
+                                        type="radio"
+                                        name={`keep-${group.normalized_key}`}
+                                        checked={Number(keepId) === Number(row.id)}
+                                        onChange={() =>
+                                          setDuplicateKeepByGroup((current) => ({
+                                            ...current,
+                                            [group.normalized_key]: row.id,
+                                          }))
+                                        }
+                                      />
+                                      <span>{row.name}</span>
+                                      <span className="duplicate-meta">kategori: {row.shopping_category || 'annet'} · brukt i {row.usage_count || 0}</span>
+                                    </label>
+                                  </li>
+                                ))}
+                              </ul>
+
+                              <button
+                                type="button"
+                                onClick={() => void handleMergeDuplicateGroup(group)}
+                                disabled={loading || rows.length < 2}
+                              >
+                                Sla sammen duplikater
+                              </button>
+                            </article>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </section>
+                )}
               </article>
             )}
           </div>
