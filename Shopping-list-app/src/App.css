@@ -472,12 +472,12 @@
 }
 
 .menu-page-narrow {
-  width: min(100%, 860px);
+  width: min(100%, 700px);
   margin-inline: auto;
 }
 
 .menu-page-narrow.compact {
-  width: min(100%, 760px);
+  width: min(100%, 700px);
 }
 
 .menu-page-narrow.mobile,
