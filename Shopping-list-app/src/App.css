@@ -202,6 +202,7 @@
 
 .app-shell.mobile {
   padding: 0 0 32px;
+  overflow-x: clip;
 }
 
 .app-shell.mobile .mobile-top-region {
@@ -723,14 +724,20 @@
 .custom-item-list {
   margin: 8px 0 0;
   padding-left: 18px;
+  overflow-x: hidden;
 }
 
 .custom-item-list-row {
   margin-bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .custom-item-remove-btn {
-  margin-left: 8px;
+  margin-left: 0;
   padding: 3px 9px;
   min-height: 28px;
   border-radius: 10px;
@@ -765,10 +772,15 @@
 
 .selected-recipes-list-row {
   margin-bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .selected-recipes-remove-btn {
-  margin-left: 8px;
+  margin-left: 0;
   padding: 3px 9px;
   min-height: 28px;
   border-radius: 10px;
@@ -814,6 +826,7 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .shopping-ingredient-row.mobile {

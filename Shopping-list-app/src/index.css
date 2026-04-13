@@ -34,6 +34,14 @@ body {
   margin: 0;
 }
 
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+}
+
 #root {
   width: 1126px;
   max-width: 100%;
