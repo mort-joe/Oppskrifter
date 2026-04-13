@@ -12,7 +12,7 @@ const buildIngredientPayload = async (supabaseAdmin) => {
   const [{ data: ingredients, error: ingredientsError }, { data: recipeIngredients, error: recipeIngredientsError }, { data: shoppingCategories, error: shoppingCategoriesError }] = await Promise.all([
     supabaseAdmin
       .from('ingredients')
-      .select('id,name,shopping_category,created_at')
+      .select('id,name,shopping_category')
       .order('name', { ascending: true }),
     supabaseAdmin
       .from('recipe_ingredients')

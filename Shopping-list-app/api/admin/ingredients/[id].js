@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     .from('ingredients')
     .update({ shopping_category: shoppingCategory })
     .eq('id', id)
-    .select('id,name,shopping_category,created_at')
+    .select('id,name,shopping_category')
     .single()
 
   if (error) {
