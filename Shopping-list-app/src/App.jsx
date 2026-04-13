@@ -184,7 +184,7 @@ const getRecipeImportFailureMessage = (error) => {
   }
 
   if (rawMessage.includes('duplicate key') || rawMessage.includes('unique')) {
-    return 'En eller flere valgte matretter finnes allerede i profilen din.'
+    return 'Import feilet på grunn av duplikatdata i databasen (for eksempel ingrediens, kategori eller tag med samme navn).'
   }
 
   const diagnosticText = formatSupabaseErrorDetails(error)
@@ -400,29 +400,101 @@ function App() {
     const uniqueNames = normalizeNames(normalizedInputNames)
     if (!uniqueNames.length) return []
 
+    const getLookupKey = (value) => normalizeIngredientText(String(value || '').trim())
+
+    const findRecordIdByName = async (lookupName) => {
+      const { data, error } = await supabase
+        .from(table)
+        .select('id,name')
+        .ilike('name', lookupName)
+        .limit(1)
+      if (error) {
+        throw error
+      }
+      return data?.[0]?.id ?? null
+    }
+
+    const resolveIdsFromMap = (nameToIdMap) => {
+      const resolvedIds = uniqueNames.map((name) => nameToIdMap.get(getLookupKey(name)))
+      if (resolvedIds.some((id) => !id)) {
+        throw new Error(`Could not resolve id(s) in ${table} for one or more names.`)
+      }
+      return resolvedIds
+    }
+
     const { data: existing, error: existingError } = await supabase.from(table).select('id,name').in('name', uniqueNames)
     if (existingError) {
       throw existingError
     }
 
-    const existingMap = new Map(existing.map((row) => [row.name, row.id]))
-    const missingNames = uniqueNames.filter((name) => !existingMap.has(name))
+    const existingMap = new Map(
+      (existing || []).map((row) => [getLookupKey(row.name), row.id]),
+    )
+
+    const missingNames = []
+    for (const name of uniqueNames) {
+      const lookupKey = getLookupKey(name)
+      if (existingMap.has(lookupKey)) {
+        continue
+      }
+
+      const matchingId = await findRecordIdByName(name)
+      if (matchingId) {
+        existingMap.set(lookupKey, matchingId)
+      } else {
+        missingNames.push(name)
+      }
+    }
 
     if (missingNames.length) {
       const { data: inserted, error: insertError } = await supabase.from(table).insert(missingNames.map((name) => ({ name }))).select('id,name')
       if (insertError) {
+        if (insertError.code === '23505') {
+          for (const name of missingNames) {
+            if (existingMap.has(getLookupKey(name))) {
+              continue
+            }
+            const matchingId = await findRecordIdByName(name)
+            if (matchingId) {
+              existingMap.set(getLookupKey(name), matchingId)
+            }
+          }
+          return resolveIdsFromMap(existingMap)
+        }
         throw insertError
       }
-      inserted.forEach((row) => existingMap.set(row.name, row.id))
+      inserted.forEach((row) => existingMap.set(getLookupKey(row.name), row.id))
     }
 
-    return uniqueNames.map((name) => existingMap.get(name))
+    return resolveIdsFromMap(existingMap)
   }
 
   const getOrCreateIngredients = async (names) => {
     const normalizedNames = names.map((name) => normalizeIngredientName(name))
     const uniqueNames = normalizeNames(normalizedNames)
     if (!uniqueNames.length) return []
+
+    const getLookupKey = (value) => normalizeIngredientText(String(value || '').trim())
+
+    const findIngredientIdByName = async (lookupName) => {
+      const { data, error } = await supabase
+        .from('ingredients')
+        .select('id,name')
+        .ilike('name', lookupName)
+        .limit(1)
+      if (error) {
+        throw error
+      }
+      return data?.[0]?.id ?? null
+    }
+
+    const resolveIdsFromMap = (nameToIdMap) => {
+      const resolvedIds = uniqueNames.map((name) => nameToIdMap.get(getLookupKey(name)))
+      if (resolvedIds.some((id) => !id)) {
+        throw new Error('Could not resolve ingredient id(s) for one or more names.')
+      }
+      return resolvedIds
+    }
 
     const { data: existing, error: existingError } = await supabase
       .from('ingredients')
@@ -432,8 +504,24 @@ function App() {
       throw existingError
     }
 
-    const existingMap = new Map(existing.map((row) => [row.name, row.id]))
-    const missingNames = uniqueNames.filter((name) => !existingMap.has(name))
+    const existingMap = new Map(
+      (existing || []).map((row) => [getLookupKey(row.name), row.id]),
+    )
+
+    const missingNames = []
+    for (const name of uniqueNames) {
+      const lookupKey = getLookupKey(name)
+      if (existingMap.has(lookupKey)) {
+        continue
+      }
+
+      const matchingId = await findIngredientIdByName(name)
+      if (matchingId) {
+        existingMap.set(lookupKey, matchingId)
+      } else {
+        missingNames.push(name)
+      }
+    }
 
     if (missingNames.length) {
       const rowsToInsert = missingNames.map((name) => ({
@@ -445,12 +533,24 @@ function App() {
         .insert(rowsToInsert)
         .select('id,name')
       if (insertError) {
+        if (insertError.code === '23505') {
+          for (const name of missingNames) {
+            if (existingMap.has(getLookupKey(name))) {
+              continue
+            }
+            const matchingId = await findIngredientIdByName(name)
+            if (matchingId) {
+              existingMap.set(getLookupKey(name), matchingId)
+            }
+          }
+          return resolveIdsFromMap(existingMap)
+        }
         throw insertError
       }
-      inserted.forEach((row) => existingMap.set(row.name, row.id))
+      inserted.forEach((row) => existingMap.set(getLookupKey(row.name), row.id))
     }
 
-    return uniqueNames.map((name) => existingMap.get(name))
+    return resolveIdsFromMap(existingMap)
   }
 
   useEffect(() => {
@@ -1242,7 +1342,8 @@ function App() {
         const scaleFactor = targetDefaultPeople / sourceDefaultPeople
         const sharedRootRecipeId = sourceRecipe.sharedRootRecipeId ?? sourceRecipe.id
         const sharedRootName = String(sourceRecipe.sharedRootName || sourceRecipe.name || '').trim()
-        const sharedVersionNumber = await getNextSharedVersionNumber(sharedRootRecipeId)
+        // Version number is NOT assigned at import time.
+        // It is only assigned later, if the user edits ingredient names while keeping the recipe name.
 
         const scaledIngredients = sourceRecipe.ingredients.map((ingredient) => ({
           name: ingredient.name,
@@ -1262,7 +1363,7 @@ function App() {
               user_id: user.id,
               shared_root_recipe_id: sharedRootRecipeId,
               shared_root_name: sharedRootName,
-              shared_version_number: sharedVersionNumber,
+              shared_version_number: null,
             },
           ])
           .select('id')
@@ -1776,7 +1877,39 @@ function App() {
       const categoryIds = await getOrCreateRecords('categories', editingRecipe.typeTags || [])
       const tagIds = await getOrCreateRecords('tags', editingRecipe.occasionTags || [])
 
-      await supabase.from('recipes').update({ name: editingRecipe.name.trim() }).eq('id', editingRecipe.id)
+      // Determine if a version number should be assigned:
+      // Conditions: recipe is a shared fork, name is unchanged vs. root name,
+      // ingredient names have changed, and no version number is set yet.
+      let nextSharedVersionNumber = editingRecipe.sharedVersionNumber ?? null
+      if (
+        editingRecipe.sharedRootRecipeId != null &&
+        nextSharedVersionNumber == null
+      ) {
+        const rootName = String(editingRecipe.sharedRootName || '').trim()
+        const currentName = editingRecipe.name.trim()
+        const nameIsUnchanged = rootName !== '' && currentName === rootName
+        if (nameIsUnchanged) {
+          const preEditRecipe = recipes.find((r) => r.id === editingRecipe.id)
+          if (preEditRecipe) {
+            const preEditNames = new Set(preEditRecipe.ingredients.map((i) => normalizeIngredientText(i.name)))
+            const newNames = new Set(uniqueEntries.map((e) => normalizeIngredientText(e.name)))
+            const ingredientNamesChanged =
+              preEditNames.size !== newNames.size ||
+              [...newNames].some((n) => !preEditNames.has(n))
+            if (ingredientNamesChanged) {
+              nextSharedVersionNumber = await getNextSharedVersionNumber(editingRecipe.sharedRootRecipeId)
+            }
+          }
+        }
+      }
+
+      await supabase
+        .from('recipes')
+        .update({
+          name: editingRecipe.name.trim(),
+          shared_version_number: nextSharedVersionNumber,
+        })
+        .eq('id', editingRecipe.id)
 
       await supabase.from('recipe_categories').delete().eq('recipe_id', editingRecipe.id)
       if (categoryIds.length) {
