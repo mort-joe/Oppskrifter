@@ -438,6 +438,8 @@
 .app-content-region {
   width: 100%;
   box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .app-content-region > * {
@@ -445,6 +447,7 @@
   max-width: 100%;
   box-sizing: border-box;
   min-width: 0;
+  justify-self: stretch;
 }
 
 .content-page {
@@ -465,8 +468,9 @@
 
 @media (min-width: 769px) {
   .menu-page {
-    width: min(100%, 1040px);
-    margin-inline: auto;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 12px;
