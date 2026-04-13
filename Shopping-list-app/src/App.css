@@ -205,13 +205,14 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: linear-gradient(135deg, #dbe8ff 0%, #eef3ff 28%, #ffd7dd 72%, #f7a6b4 100%);
-  padding: 14px 14px 18px;
+  background: linear-gradient(135deg, #d9e6ff 0%, #edf3ff 24%, #ffe0e5 68%, #f8b7c0 100%);
+  padding: 14px 14px 20px;
   margin-bottom: 16px;
   border-bottom: 4px solid #4167f4;
-  box-shadow: 0 10px 28px rgba(93, 114, 240, 0.18);
+  box-shadow: 0 12px 30px rgba(83, 102, 216, 0.16);
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.65);
 }
 
 .app-shell.mobile .mobile-header::before {
@@ -242,15 +243,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   position: relative;
   z-index: 1;
-  padding: 2px 2px 0;
+  padding: 4px 4px 0;
 }
 
 .app-shell.mobile .mobile-header-banner {
   position: relative;
-  min-height: 130px;
+  min-height: 136px;
   display: flex;
   align-items: flex-end;
   z-index: 1;
@@ -259,13 +260,13 @@
 .app-shell.mobile .mobile-header-banner::before {
   content: '';
   position: absolute;
-  right: 22px;
-  top: 8px;
-  width: 148px;
-  height: 90px;
+  right: 18px;
+  top: 10px;
+  width: 168px;
+  height: 96px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.06));
-  filter: blur(1px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.04));
+  filter: blur(2px);
 }
 
 .app-shell.mobile .mobile-header-art {
@@ -274,66 +275,115 @@
   pointer-events: none;
 }
 
+.app-shell.mobile .mobile-header-art-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.app-shell.mobile .mobile-header-art-glow-one {
+  right: 36px;
+  top: 6px;
+  width: 126px;
+  height: 126px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.08) 56%, transparent 76%);
+}
+
+.app-shell.mobile .mobile-header-art-glow-two {
+  right: 0;
+  top: 30px;
+  width: 118px;
+  height: 118px;
+  background: radial-gradient(circle, rgba(255, 196, 202, 0.28) 0%, rgba(255, 196, 202, 0.08) 56%, transparent 76%);
+}
+
+.app-shell.mobile .mobile-header-art-spark {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 4px 10px rgba(255, 255, 255, 0.45);
+  line-height: 1;
+}
+
+.app-shell.mobile .mobile-header-art-spark-one {
+  right: 152px;
+  top: 18px;
+  font-size: 0.95rem;
+}
+
+.app-shell.mobile .mobile-header-art-spark-two {
+  right: 46px;
+  top: 82px;
+  font-size: 0.8rem;
+}
+
 .app-shell.mobile .mobile-header-art-item {
   position: absolute;
   line-height: 1;
-  filter: drop-shadow(0 10px 18px rgba(120, 64, 86, 0.16));
+  filter: drop-shadow(0 12px 20px rgba(120, 64, 86, 0.14));
 }
 
 .app-shell.mobile .mobile-header-art-item.bread {
-  top: 2px;
-  left: 56%;
-  font-size: 3rem;
-  transform: rotate(-18deg);
+  top: 4px;
+  left: 57%;
+  font-size: 2.85rem;
+  transform: rotate(-16deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.steak {
   top: 22px;
-  left: 66%;
-  font-size: 2.75rem;
-  transform: rotate(16deg);
+  left: 67%;
+  font-size: 2.65rem;
+  transform: rotate(14deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.tomato {
-  top: 60px;
-  left: 78%;
-  font-size: 2.15rem;
+  top: 62px;
+  left: 79%;
+  font-size: 2.05rem;
 }
 
 .app-shell.mobile .mobile-header-art-item.cheese {
-  top: 52px;
-  left: 86%;
-  font-size: 2.4rem;
+  top: 54px;
+  left: 87%;
+  font-size: 2.25rem;
   transform: rotate(-10deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.broccoli {
-  top: 12px;
-  left: 82%;
-  font-size: 2.35rem;
+  top: 10px;
+  left: 83%;
+  font-size: 2.2rem;
+}
+
+.app-shell.mobile .mobile-header-art-item.lemon {
+  top: 74px;
+  left: 67%;
+  font-size: 1.85rem;
+  transform: rotate(-12deg);
 }
 
 .app-shell.mobile .mobile-header-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 20px;
-  width: min(80%, 420px);
-  border-radius: 22px;
-  background: linear-gradient(135deg, #2f53e5 0%, #4b66f3 46%, #6f57ec 100%);
-  box-shadow: 0 14px 30px rgba(68, 79, 207, 0.32);
+  padding: 19px 20px;
+  width: min(78%, 420px);
+  border-radius: 24px;
+  background: linear-gradient(135deg, #3054e6 0%, #4a67f3 42%, #6659ea 100%);
+  box-shadow: 0 16px 34px rgba(69, 82, 203, 0.26);
   position: relative;
   z-index: 1;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .app-shell.mobile .mobile-header-brand::before {
   content: '';
   position: absolute;
   inset: 1px 1px auto 1px;
-  height: 54%;
+  height: 56%;
   border-radius: 21px 21px 18px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02));
   pointer-events: none;
 }
 
@@ -350,13 +400,15 @@
 }
 
 .app-shell.mobile .mobile-header-icon {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   filter: drop-shadow(0 4px 8px rgba(18, 39, 117, 0.28));
+  position: relative;
+  z-index: 1;
 }
 
 .app-shell.mobile .mobile-header-icon svg {
@@ -366,10 +418,10 @@
 }
 
 .app-shell.mobile .mobile-header-brand h1 {
-  font-size: 1.62rem;
+  font-size: 1.66rem;
   margin: 0;
   color: #ffffff;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.045em;
   font-weight: 800;
   text-shadow: 0 4px 12px rgba(18, 39, 117, 0.28);
   position: relative;
@@ -378,31 +430,32 @@
 
 .app-shell.mobile .mobile-header .toolbar-signout-btn {
   font-size: 0.83rem !important;
-  padding: 5px 12px !important;
-  min-height: 28px !important;
-  color: #4167f4 !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid rgba(65, 103, 244, 0.12) !important;
-  box-shadow: 0 6px 14px rgba(92, 102, 194, 0.08) !important;
+  padding: 5px 13px !important;
+  min-height: 30px !important;
+  color: #4b65df !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(75, 101, 223, 0.1) !important;
+  box-shadow: 0 8px 16px rgba(92, 102, 194, 0.08) !important;
   border-radius: 999px !important;
   white-space: nowrap;
   flex-shrink: 0;
+  font-weight: 700 !important;
 }
 
 .app-shell.mobile .mobile-header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   margin-left: auto;
 }
 
 .app-shell.mobile .mobile-header-avatar {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4f74ff 0%, #6d8cff 100%);
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -415,8 +468,8 @@
 }
 
 .app-shell.mobile .mobile-header-username {
-  font-size: 0.87rem;
-  color: #2c4597;
+  font-size: 0.92rem;
+  color: #274090;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -426,12 +479,12 @@
 }
 
 .app-shell.mobile .mobile-header .account-settings-btn {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   border-color: transparent;
   color: #3657b7;
-  box-shadow: 0 6px 14px rgba(92, 102, 194, 0.08);
-  padding: 2px 8px;
-  min-height: 28px;
+  box-shadow: 0 8px 16px rgba(92, 102, 194, 0.08);
+  padding: 2px 10px;
+  min-height: 30px;
   border-radius: 999px;
 }
 

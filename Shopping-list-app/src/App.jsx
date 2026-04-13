@@ -1914,11 +1914,16 @@ function App() {
           </div>
           <div className="mobile-header-banner">
             <div className="mobile-header-art" aria-hidden="true">
+              <span className="mobile-header-art-glow mobile-header-art-glow-one"></span>
+              <span className="mobile-header-art-glow mobile-header-art-glow-two"></span>
+              <span className="mobile-header-art-spark mobile-header-art-spark-one">✦</span>
+              <span className="mobile-header-art-spark mobile-header-art-spark-two">✦</span>
               <span className="mobile-header-art-item bread">🥖</span>
               <span className="mobile-header-art-item steak">🥩</span>
               <span className="mobile-header-art-item tomato">🍅</span>
               <span className="mobile-header-art-item cheese">🧀</span>
               <span className="mobile-header-art-item broccoli">🥦</span>
+              <span className="mobile-header-art-item lemon">🍋</span>
             </div>
             <div className="mobile-header-brand">
               <span className="mobile-header-icon" aria-hidden="true">
