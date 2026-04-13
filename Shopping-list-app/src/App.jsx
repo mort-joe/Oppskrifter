@@ -2607,6 +2607,7 @@ function App() {
                 type="text"
                 value={customItemName}
                 onChange={(event) => setCustomItemName(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') handleAddCustomShoppingItem() }}
                 placeholder="F.eks. kaffe eller melk"
                 className="custom-item-input"
               />
@@ -2616,6 +2617,7 @@ function App() {
                 step="1"
                 value={customItemQuantity}
                 onChange={(event) => setCustomItemQuantity(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') handleAddCustomShoppingItem() }}
                 className="custom-item-quantity"
               />
               <button
