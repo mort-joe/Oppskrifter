@@ -184,6 +184,10 @@ const getRecipeImportFailureMessage = (error) => {
   }
 
   if (rawMessage.includes('duplicate key') || rawMessage.includes('unique')) {
+    const duplicateDiagnosticText = formatSupabaseErrorDetails(error)
+    if (duplicateDiagnosticText) {
+      return `Import feilet på grunn av duplikatdata i databasen. ${duplicateDiagnosticText}`
+    }
     return 'Import feilet på grunn av duplikatdata i databasen (for eksempel ingrediens, kategori eller tag med samme navn).'
   }
 
@@ -1324,6 +1328,32 @@ function App() {
     return highestVersion + 1
   }
 
+  const getNextAvailableRecipeNameForUser = async (baseName, userId) => {
+    const normalizedBaseName = String(baseName || '').trim()
+    if (!normalizedBaseName) return normalizedBaseName
+
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('name')
+      .eq('user_id', userId)
+
+    if (error) {
+      throw error
+    }
+
+    const existingNames = new Set((data || []).map((row) => String(row.name || '').trim()))
+    if (!existingNames.has(normalizedBaseName)) {
+      return normalizedBaseName
+    }
+
+    let nextIndex = 1
+    while (existingNames.has(`${normalizedBaseName} (${nextIndex})`)) {
+      nextIndex += 1
+    }
+
+    return `${normalizedBaseName} (${nextIndex})`
+  }
+
   const handleImportSelectedRecipes = async () => {
     if (!user) return
 
@@ -1378,19 +1408,39 @@ function App() {
         const categoryIds = await getOrCreateRecords('categories', sourceRecipe.typeTags || [])
         const tagIds = await getOrCreateRecords('tags', sourceRecipe.occasionTags || [])
 
-        const { data: insertedRecipe, error: recipeInsertError } = await supabase
-          .from('recipes')
-          .insert([
-            {
-              name: sourceRecipe.name.trim(),
-              user_id: user.id,
-              shared_root_recipe_id: sharedRootRecipeId,
-              shared_root_name: sharedRootName,
-              shared_version_number: null,
-            },
-          ])
-          .select('id')
-          .single()
+        let recipeNameToInsert = sourceRecipe.name.trim()
+        let insertedRecipe = null
+        let recipeInsertError = null
+
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const { data, error } = await supabase
+            .from('recipes')
+            .insert([
+              {
+                name: recipeNameToInsert,
+                user_id: user.id,
+                shared_root_recipe_id: sharedRootRecipeId,
+                shared_root_name: sharedRootName,
+                shared_version_number: null,
+              },
+            ])
+            .select('id')
+            .single()
+
+          insertedRecipe = data ?? null
+          recipeInsertError = error ?? null
+
+          if (!recipeInsertError && insertedRecipe) {
+            break
+          }
+
+          if (recipeInsertError?.code === '23505' && attempt === 0) {
+            recipeNameToInsert = await getNextAvailableRecipeNameForUser(sourceRecipe.name.trim(), user.id)
+            continue
+          }
+
+          break
+        }
 
         if (recipeInsertError || !insertedRecipe) {
           throw recipeInsertError || new Error('Kunne ikke opprette matrett ved import.')
