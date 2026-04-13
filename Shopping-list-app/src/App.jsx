@@ -1109,6 +1109,7 @@ function App() {
     setIsRecipeCatalogLoading(true)
     setIsRecipeImportError(false)
     setIsRecipeCatalogLoadError(false)
+    setRecipeImportMessage('')
 
     try {
       const [{ data: recipeData, error: recipeError }, { data: userSettingsData, error: userSettingsError }] = await Promise.all([

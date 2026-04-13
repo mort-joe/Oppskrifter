@@ -404,6 +404,56 @@ create policy "recipe_tags_delete_owner"
     )
   );
 
+-- categories (global, shared catalog)
+alter table public.categories enable row level security;
+
+drop policy if exists "categories_select_all_authenticated" on public.categories;
+create policy "categories_select_all_authenticated"
+  on public.categories
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "categories_insert_all_authenticated" on public.categories;
+create policy "categories_insert_all_authenticated"
+  on public.categories
+  for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "categories_update_all_authenticated" on public.categories;
+create policy "categories_update_all_authenticated"
+  on public.categories
+  for update
+  to authenticated
+  using (true)
+  with check (true);
+
+-- tags (global, shared catalog)
+alter table public.tags enable row level security;
+
+drop policy if exists "tags_select_all_authenticated" on public.tags;
+create policy "tags_select_all_authenticated"
+  on public.tags
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "tags_insert_all_authenticated" on public.tags;
+create policy "tags_insert_all_authenticated"
+  on public.tags
+  for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "tags_update_all_authenticated" on public.tags;
+create policy "tags_update_all_authenticated"
+  on public.tags
+  for update
+  to authenticated
+  using (true)
+  with check (true);
+
 -- ingredients (global, shared ingredient catalog)
 drop policy if exists "ingredients_select_all_authenticated" on public.ingredients;
 create policy "ingredients_select_all_authenticated"
