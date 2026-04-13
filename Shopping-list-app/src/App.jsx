@@ -149,8 +149,26 @@ const getRecipeImportErrorMessage = (error) => {
   return 'Kunne ikke laste listen over matretter i databasen.'
 }
 
+const formatSupabaseErrorDetails = (error) => {
+  const code = String(error?.code || '').trim()
+  const message = String(error?.message || '').trim()
+  const details = String(error?.details || '').trim()
+  const hint = String(error?.hint || '').trim()
+
+  const segments = []
+  if (code) segments.push(`kode: ${code}`)
+  if (message) segments.push(`melding: ${message}`)
+  if (details) segments.push(`detaljer: ${details}`)
+  if (hint) segments.push(`hint: ${hint}`)
+
+  return segments.join(' | ')
+}
+
 const getRecipeImportFailureMessage = (error) => {
-  const rawMessage = String(error?.message || error?.details || '').toLowerCase()
+  const rawMessage = [error?.code, error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
 
   if (
     rawMessage.includes('shared_root_recipe_id') ||
@@ -167,6 +185,11 @@ const getRecipeImportFailureMessage = (error) => {
 
   if (rawMessage.includes('duplicate key') || rawMessage.includes('unique')) {
     return 'En eller flere valgte matretter finnes allerede i profilen din.'
+  }
+
+  const diagnosticText = formatSupabaseErrorDetails(error)
+  if (diagnosticText) {
+    return `Import feilet. ${diagnosticText}`
   }
 
   return 'Noe gikk galt under import av matretter.'
