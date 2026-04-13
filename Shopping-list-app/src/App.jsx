@@ -1217,6 +1217,31 @@ function App() {
     void loadRecipeImportCatalog()
   }, [selectedMenu, user, loadRecipeImportCatalog])
 
+  useEffect(() => {
+    if (selectedMenu !== 'innstillinger' || !user) return
+
+    const refreshCatalog = () => {
+      void loadRecipeImportCatalog()
+    }
+
+    const intervalId = window.setInterval(refreshCatalog, 20000)
+    const handleWindowFocus = () => refreshCatalog()
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshCatalog()
+      }
+    }
+
+    window.addEventListener('focus', handleWindowFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', handleWindowFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [selectedMenu, user, loadRecipeImportCatalog])
+
   const handleSaveAccountSettings = async (event) => {
     event.preventDefault()
 
@@ -2405,14 +2430,6 @@ function App() {
                   Velg matretter du vil kopiere inn til din profil. Ingrediensmengdene skaleres automatisk fra kildens standard antall personer til dine innstillinger.
                 </p>
               </div>
-              <button
-                type="button"
-                className="account-import-refresh-btn"
-                onClick={() => void loadRecipeImportCatalog()}
-                disabled={isRecipeCatalogLoading || isImportingRecipes}
-              >
-                Oppdater liste
-              </button>
             </div>
 
             <div className="account-import-toolbar">
