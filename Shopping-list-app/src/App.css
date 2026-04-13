@@ -205,45 +205,70 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: linear-gradient(160deg, #1a3a8f 0%, #2f6ff2 55%, #4f9cf9 100%);
-  padding: 18px 16px 20px;
-  margin-bottom: 20px;
-  border-radius: 0 0 28px 28px;
-  box-shadow: 0 8px 32px rgba(28, 49, 140, 0.22);
+  background: #fff;
+  padding: 16px 16px 14px;
+  margin-bottom: 16px;
+  border-top: 4px solid #2f6ff2;
+  box-shadow: 0 2px 12px rgba(0, 0, 40, 0.08);
 }
 
-.app-shell.mobile .mobile-header .user-toolbar {
-  margin-bottom: 14px;
+.app-shell.mobile .mobile-header-row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
-.app-shell.mobile .mobile-header .account-link-btn {
-  color: rgba(255,255,255,0.88);
-  font-size: 0.88rem;
-}
-
-.app-shell.mobile .mobile-header .account-settings-btn {
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.3);
-  color: #fff;
-  box-shadow: none;
+.app-shell.mobile .mobile-header-row1 h1 {
+  font-size: 1.55rem;
+  margin: 0;
+  color: #111827;
+  letter-spacing: -0.04em;
+  font-weight: 800;
 }
 
 .app-shell.mobile .mobile-header .toolbar-signout-btn {
-  background: rgba(255,255,255,0.15) !important;
-  border-color: rgba(255,255,255,0.3) !important;
-  color: #fff !important;
+  font-size: 0.85rem !important;
+  padding: 5px 11px !important;
+  min-height: 28px !important;
+  color: #555f71 !important;
+  background: #f3f4f6 !important;
+  border-color: #d1d5db !important;
   box-shadow: none !important;
-  font-size: 0.88rem !important;
-  padding: 5px 12px !important;
-  min-height: 30px !important;
+  border-radius: 10px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.app-shell.mobile .mobile-header h1 {
-  color: #fff;
-  font-size: 1.75rem;
-  margin: 0;
-  letter-spacing: -0.03em;
-  text-shadow: 0 2px 8px rgba(0,0,50,0.18);
+.app-shell.mobile .mobile-header-row2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-shell.mobile .mobile-header .account-link-btn {
+  font-size: 0.84rem;
+  color: #2f6ff2;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 46px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.app-shell.mobile .mobile-header .account-settings-btn {
+  background: transparent;
+  border-color: transparent;
+  color: #6b7280;
+  box-shadow: none;
+  font-size: 1rem;
+  padding: 2px 6px;
+  min-height: 24px;
 }
 
 .app-shell.mobile .mobile-content {
