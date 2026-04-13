@@ -1,4 +1,5 @@
 :root {
+  --app-mobile-width: 100dvw;
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -39,9 +40,9 @@ body {
   body,
   #root {
     overflow-x: hidden;
-    width: 100%;
-    min-width: 100%;
-    max-width: 100%;
+    width: var(--app-mobile-width);
+    min-width: var(--app-mobile-width);
+    max-width: var(--app-mobile-width);
   }
 }
 
@@ -63,9 +64,9 @@ body {
   }
 
   #root {
-    width: 100%;
-    max-width: 100%;
-    min-width: 100%;
+    width: var(--app-mobile-width);
+    max-width: var(--app-mobile-width);
+    min-width: var(--app-mobile-width);
     margin: 0;
     border-inline: none;
   }

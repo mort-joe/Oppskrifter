@@ -201,9 +201,9 @@
 }
 
 .app-shell.mobile {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100%;
+  width: var(--app-mobile-width);
+  min-width: var(--app-mobile-width);
+  max-width: var(--app-mobile-width);
   margin: 0;
   padding: 0 0 32px;
   overflow-x: clip;
@@ -211,9 +211,9 @@
 }
 
 .app-shell.mobile .mobile-top-region {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100%;
+  width: var(--app-mobile-width);
+  min-width: var(--app-mobile-width);
+  max-width: var(--app-mobile-width);
   margin-bottom: 14px;
   background: linear-gradient(180deg, #edf3ff 0%, #e7efff 100%);
   border-bottom: 1px solid #d7e2fb;
@@ -425,9 +425,9 @@
 }
 
 .app-shell.mobile .mobile-content {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100%;
+  width: var(--app-mobile-width);
+  min-width: var(--app-mobile-width);
+  max-width: var(--app-mobile-width);
   padding: 0 14px;
   box-sizing: border-box;
   display: grid;

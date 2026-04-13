@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 
@@ -591,6 +591,32 @@ function App() {
 
     return () => {
       mediaQuery.removeEventListener('change', handleMediaChange)
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return
+
+    const rootStyle = document.documentElement.style
+
+    const updateViewportWidth = () => {
+      const measuredWidth = Math.round(window.visualViewport?.width || window.innerWidth || 0)
+      if (!measuredWidth) return
+      rootStyle.setProperty('--app-mobile-width', `${measuredWidth}px`)
+    }
+
+    updateViewportWidth()
+
+    const visualViewport = window.visualViewport
+    window.addEventListener('resize', updateViewportWidth)
+    visualViewport?.addEventListener('resize', updateViewportWidth)
+    visualViewport?.addEventListener('scroll', updateViewportWidth)
+
+    return () => {
+      window.removeEventListener('resize', updateViewportWidth)
+      visualViewport?.removeEventListener('resize', updateViewportWidth)
+      visualViewport?.removeEventListener('scroll', updateViewportWidth)
+      rootStyle.removeProperty('--app-mobile-width')
     }
   }, [])
 
