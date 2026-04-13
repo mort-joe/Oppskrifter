@@ -841,6 +841,26 @@ function App() {
     }
   }
 
+  const refreshCurrentUserFromServer = useCallback(async () => {
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+
+    if (!refreshError && refreshData?.session) {
+      setSession(refreshData.session)
+      setUser(refreshData.session.user ?? null)
+      return refreshData.session.user ?? null
+    }
+
+    const {
+      data: { user: freshUser },
+    } = await supabase.auth.getUser()
+
+    if (freshUser) {
+      setUser(freshUser)
+    }
+
+    return freshUser ?? null
+  }, [])
+
   const handleMenuSelect = (menuId) => {
     setSelectedMenu(menuId)
     setAccountSettingsMessage('')
@@ -851,17 +871,57 @@ function App() {
     }
   }
 
-  const handleOpenAccountSettings = () => {
+  const handleOpenAccountSettings = async () => {
+    const freshUser = await refreshCurrentUserFromServer()
+
+    if (freshUser) {
+      setUser(freshUser)
+      setAccountEmail(freshUser?.email ?? '')
+      setAccountDisplayName(freshUser?.user_metadata?.display_name ?? '')
+    } else {
+      setAccountEmail(user?.email ?? '')
+      setAccountDisplayName(user?.user_metadata?.display_name ?? '')
+    }
+
     setSelectedMenu('innstillinger')
     setAccountSettingsMessage('')
     setAccountPasswordMessage('')
     setIsAccountPasswordError(false)
     setRecipeImportMessage('')
-    setAccountEmail(user?.email ?? '')
-    setAccountDisplayName(user?.user_metadata?.display_name ?? '')
     setAccountPassword('')
     setAccountPasswordConfirm('')
   }
+
+  useEffect(() => {
+    if (!session) return
+
+    const syncUser = async () => {
+      await refreshCurrentUserFromServer()
+    }
+
+    const intervalId = window.setInterval(() => {
+      void syncUser()
+    }, 15000)
+
+    const handleWindowFocus = () => {
+      void syncUser()
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void syncUser()
+      }
+    }
+
+    window.addEventListener('focus', handleWindowFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', handleWindowFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [session, refreshCurrentUserFromServer])
 
   const loadRecipeImportCatalog = useCallback(async () => {
     if (!user) return
@@ -1011,6 +1071,12 @@ function App() {
         setAccountSettingsMessage('Innstillinger lagret, men visningsnavn ble ikke oppdatert: ' + displayNameError.message)
         return
       }
+    }
+
+    // Refresh user data to ensure UI is in sync
+    const freshUser = await refreshCurrentUserFromServer()
+    if (freshUser) {
+      setUser(freshUser)
     }
 
     setAccountSettingsMessage('Innstillingene er lagret.')
