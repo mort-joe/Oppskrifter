@@ -540,6 +540,7 @@
 
 .shopping-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   width: 100%;
   max-width: 100%;
@@ -723,6 +724,7 @@
 
 .shopping-content {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   width: 100%;
   box-sizing: border-box;
@@ -760,6 +762,7 @@
 
 .shopping-cards {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   width: 100%;
   box-sizing: border-box;
