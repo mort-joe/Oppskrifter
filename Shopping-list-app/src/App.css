@@ -768,6 +768,17 @@
   padding: 10px;
 }
 
+.account-settings-readonly-field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #8d98ad;
+  border-radius: 0;
+  background: #f3f4f6;
+  color: #0a0a0a;
+  cursor: default;
+}
+
 .account-settings-form button {
   width: fit-content;
   padding: 10px 14px;

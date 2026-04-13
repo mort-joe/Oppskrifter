@@ -1957,11 +1957,9 @@ function App() {
             </label>
             <label>
               Brukernavn
-              <input
-                type="text"
-                value={accountEmail}
-                readOnly
-              />
+              <div className="account-settings-readonly-field" aria-readonly="true">
+                {accountEmail}
+              </div>
             </label>
 
             <label>
