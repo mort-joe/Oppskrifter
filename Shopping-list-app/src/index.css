@@ -39,6 +39,9 @@ body {
   body,
   #root {
     overflow-x: hidden;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -61,7 +64,7 @@ body {
 
   #root {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
     min-width: 100%;
     margin: 0;
     border-inline: none;
