@@ -921,26 +921,6 @@ function AdminApp() {
               <article className="dashboard-panel">
                 <h3>Ingredienser i global database</h3>
 
-                <nav className="dashboard-submenu ingredients-submenu" aria-label="Ingredienser undermeny">
-                  <button
-                    type="button"
-                    className={ingredientsDetailPage === 'ingredient-list' ? 'active' : ''}
-                    onClick={() => setIngredientsDetailPage('ingredient-list')}
-                  >
-                    Ingrediensliste
-                  </button>
-                  <button
-                    type="button"
-                    className={ingredientsDetailPage === 'duplicate-check' ? 'active' : ''}
-                    onClick={() => {
-                      setIngredientsDetailPage('duplicate-check')
-                      void handleRunDuplicateCheck()
-                    }}
-                  >
-                    Duplikatsok
-                  </button>
-                </nav>
-
                 <div className="ingredients-toolbar">
                   <input
                     type="text"
@@ -950,6 +930,29 @@ function AdminApp() {
                   />
                   <button type="button" onClick={() => void loadIngredientData()} disabled={loading}>
                     Last pa nytt
+                  </button>
+                  <button
+                    type="button"
+                    className={ingredientsDetailPage === 'duplicate-check' ? 'active' : ''}
+                    onClick={() => {
+                      if (ingredientsDetailPage === 'duplicate-check') {
+                        setIngredientsDetailPage('ingredient-list')
+                        return
+                      }
+                      setIngredientsDetailPage('duplicate-check')
+                      void handleRunDuplicateCheck()
+                    }}
+                    disabled={loading}
+                  >
+                    Sjekk for duplikat
+                  </button>
+                  <button
+                    type="button"
+                    className={ingredientsDetailPage === 'ingredient-list' ? 'active' : ''}
+                    onClick={() => setIngredientsDetailPage('ingredient-list')}
+                    disabled={loading}
+                  >
+                    Sorterings kategori ingredienser
                   </button>
                 </div>
 
