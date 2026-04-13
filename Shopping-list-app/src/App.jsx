@@ -397,10 +397,16 @@ function App() {
     const normalizedInputNames = table === 'categories'
       ? names.map((name) => normalizeCategoryName(name))
       : names
-    const uniqueNames = normalizeNames(normalizedInputNames)
-    if (!uniqueNames.length) return []
-
     const getLookupKey = (value) => normalizeIngredientText(String(value || '').trim())
+
+    const _seenKeys = new Set()
+    const uniqueNames = normalizeNames(normalizedInputNames).filter((name) => {
+      const key = getLookupKey(name)
+      if (_seenKeys.has(key)) return false
+      _seenKeys.add(key)
+      return true
+    })
+    if (!uniqueNames.length) return []
 
     const findRecordIdByName = async (lookupName) => {
       const { data, error } = await supabase
@@ -471,10 +477,16 @@ function App() {
 
   const getOrCreateIngredients = async (names) => {
     const normalizedNames = names.map((name) => normalizeIngredientName(name))
-    const uniqueNames = normalizeNames(normalizedNames)
-    if (!uniqueNames.length) return []
-
     const getLookupKey = (value) => normalizeIngredientText(String(value || '').trim())
+
+    const _seenIngredientKeys = new Set()
+    const uniqueNames = normalizeNames(normalizedNames).filter((name) => {
+      const key = getLookupKey(name)
+      if (_seenIngredientKeys.has(key)) return false
+      _seenIngredientKeys.add(key)
+      return true
+    })
+    if (!uniqueNames.length) return []
 
     const findIngredientIdByName = async (lookupName) => {
       const { data, error } = await supabase
@@ -1352,6 +1364,16 @@ function App() {
           quantity: scaleIngredientQuantity(ingredient.quantity, scaleFactor),
         }))
 
+        // Build a deduplicated list mirroring getOrCreateIngredients' internal dedup,
+        // so quantity/unit can be looked up by position after getting IDs back.
+        const _seenImportKeys = new Set()
+        const uniqueScaledIngredients = scaledIngredients.filter((ingredient) => {
+          const key = normalizeIngredientText(normalizeIngredientName(ingredient.name))
+          if (_seenImportKeys.has(key)) return false
+          _seenImportKeys.add(key)
+          return true
+        })
+
         const ingredientIds = await getOrCreateIngredients(scaledIngredients.map((ingredient) => ingredient.name))
         const categoryIds = await getOrCreateRecords('categories', sourceRecipe.typeTags || [])
         const tagIds = await getOrCreateRecords('tags', sourceRecipe.occasionTags || [])
@@ -1378,8 +1400,8 @@ function App() {
           const ingredientRows = ingredientIds.map((ingredientId, index) => ({
             recipe_id: insertedRecipe.id,
             ingredient_id: ingredientId,
-            quantity: scaledIngredients[index]?.quantity ?? 1,
-            unit: scaledIngredients[index]?.unit ?? '',
+            quantity: uniqueScaledIngredients[index]?.quantity ?? 1,
+            unit: uniqueScaledIngredients[index]?.unit ?? '',
           }))
           const { error: ingredientInsertError } = await supabase.from('recipe_ingredients').insert(ingredientRows)
           if (ingredientInsertError) {
@@ -1390,7 +1412,7 @@ function App() {
         if (categoryIds.length) {
           const { error: categoryInsertError } = await supabase
             .from('recipe_categories')
-            .insert(categoryIds.map((categoryId) => ({ recipe_id: insertedRecipe.id, category_id: categoryId })))
+            .insert([...new Set(categoryIds)].map((categoryId) => ({ recipe_id: insertedRecipe.id, category_id: categoryId })))
           if (categoryInsertError) {
             throw categoryInsertError
           }
@@ -1399,7 +1421,7 @@ function App() {
         if (tagIds.length) {
           const { error: tagInsertError } = await supabase
             .from('recipe_tags')
-            .insert(tagIds.map((tagId) => ({ recipe_id: insertedRecipe.id, tag_id: tagId })))
+            .insert([...new Set(tagIds)].map((tagId) => ({ recipe_id: insertedRecipe.id, tag_id: tagId })))
           if (tagInsertError) {
             throw tagInsertError
           }
