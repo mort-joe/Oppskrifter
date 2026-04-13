@@ -225,6 +225,18 @@
   pointer-events: none;
 }
 
+.app-shell.mobile .mobile-header::after {
+  content: '';
+  position: absolute;
+  right: -36px;
+  top: 18px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 48%, transparent 72%);
+  pointer-events: none;
+}
+
 .app-shell.mobile .mobile-header-top {
   display: flex;
   align-items: center;
@@ -233,14 +245,27 @@
   margin-bottom: 12px;
   position: relative;
   z-index: 1;
+  padding: 2px 2px 0;
 }
 
 .app-shell.mobile .mobile-header-banner {
   position: relative;
-  min-height: 122px;
+  min-height: 130px;
   display: flex;
   align-items: flex-end;
   z-index: 1;
+}
+
+.app-shell.mobile .mobile-header-banner::before {
+  content: '';
+  position: absolute;
+  right: 22px;
+  top: 8px;
+  width: 148px;
+  height: 90px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.06));
+  filter: blur(1px);
 }
 
 .app-shell.mobile .mobile-header-art {
@@ -252,53 +277,76 @@
 .app-shell.mobile .mobile-header-art-item {
   position: absolute;
   line-height: 1;
-  filter: drop-shadow(0 10px 18px rgba(120, 64, 86, 0.18));
+  filter: drop-shadow(0 10px 18px rgba(120, 64, 86, 0.16));
 }
 
 .app-shell.mobile .mobile-header-art-item.bread {
-  top: 4px;
-  left: 58%;
-  font-size: 3.2rem;
+  top: 2px;
+  left: 56%;
+  font-size: 3rem;
   transform: rotate(-18deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.steak {
-  top: 24px;
-  left: 68%;
-  font-size: 2.9rem;
+  top: 22px;
+  left: 66%;
+  font-size: 2.75rem;
   transform: rotate(16deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.tomato {
-  top: 54px;
-  left: 80%;
-  font-size: 2.3rem;
+  top: 60px;
+  left: 78%;
+  font-size: 2.15rem;
 }
 
 .app-shell.mobile .mobile-header-art-item.cheese {
-  top: 48px;
-  left: 88%;
-  font-size: 2.6rem;
+  top: 52px;
+  left: 86%;
+  font-size: 2.4rem;
   transform: rotate(-10deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.broccoli {
-  top: 16px;
-  left: 84%;
-  font-size: 2.5rem;
+  top: 12px;
+  left: 82%;
+  font-size: 2.35rem;
 }
 
 .app-shell.mobile .mobile-header-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 18px 20px;
-  width: min(82%, 420px);
+  padding: 20px 20px;
+  width: min(80%, 420px);
   border-radius: 22px;
   background: linear-gradient(135deg, #2f53e5 0%, #4b66f3 46%, #6f57ec 100%);
   box-shadow: 0 14px 30px rgba(68, 79, 207, 0.32);
   position: relative;
   z-index: 1;
+  overflow: hidden;
+}
+
+.app-shell.mobile .mobile-header-brand::before {
+  content: '';
+  position: absolute;
+  inset: 1px 1px auto 1px;
+  height: 54%;
+  border-radius: 21px 21px 18px 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
+  pointer-events: none;
+}
+
+.app-shell.mobile .mobile-header-brand::after {
+  content: '';
+  position: absolute;
+  right: -18px;
+  bottom: -22px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, transparent 68%);
+  pointer-events: none;
 }
 
 .app-shell.mobile .mobile-header-icon {
@@ -324,6 +372,8 @@
   letter-spacing: -0.04em;
   font-weight: 800;
   text-shadow: 0 4px 12px rgba(18, 39, 117, 0.28);
+  position: relative;
+  z-index: 1;
 }
 
 .app-shell.mobile .mobile-header .toolbar-signout-btn {
@@ -333,7 +383,7 @@
   color: #4167f4 !important;
   background: rgba(255, 255, 255, 0.92) !important;
   border: 1px solid rgba(65, 103, 244, 0.12) !important;
-  box-shadow: none !important;
+  box-shadow: 0 6px 14px rgba(92, 102, 194, 0.08) !important;
   border-radius: 999px !important;
   white-space: nowrap;
   flex-shrink: 0;
@@ -361,6 +411,7 @@
   cursor: pointer;
   user-select: none;
   box-shadow: 0 6px 16px rgba(47, 99, 244, 0.22);
+  border: 2px solid rgba(255, 255, 255, 0.72);
 }
 
 .app-shell.mobile .mobile-header-username {
@@ -378,7 +429,7 @@
   background: rgba(255, 255, 255, 0.88);
   border-color: transparent;
   color: #3657b7;
-  box-shadow: none;
+  box-shadow: 0 6px 14px rgba(92, 102, 194, 0.08);
   padding: 2px 8px;
   min-height: 28px;
   border-radius: 999px;
