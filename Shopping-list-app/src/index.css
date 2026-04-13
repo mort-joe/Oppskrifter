@@ -31,8 +31,18 @@
   }
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
+}
+
+@media (min-width: 769px) {
+  body {
+    overflow-y: scroll;
+  }
 }
 
 @media (max-width: 768px) {
