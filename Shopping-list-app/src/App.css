@@ -550,6 +550,16 @@
 .shopping-section.mobile {
   gap: 16px;
   width: 100%;
+  justify-items: stretch;
+  align-items: stretch;
+  padding-inline: 0;
+}
+
+.shopping-section.mobile > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  justify-self: stretch;
 }
 
 .shopping-reset-row {
@@ -645,6 +655,12 @@
   padding: 12px;
   border-radius: 10px;
   gap: 8px;
+}
+
+.shopping-section.mobile .custom-item-card.mobile,
+.shopping-section.mobile .shopping-reset-panel.mobile,
+.shopping-section.mobile .shopping-ingredient-card.mobile {
+  margin: 0;
 }
 
 .custom-item-title {
