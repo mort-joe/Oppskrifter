@@ -44,6 +44,15 @@ body {
     min-width: var(--app-mobile-width);
     max-width: var(--app-mobile-width);
   }
+
+  body {
+    background: #fff;
+  }
+
+  #root {
+    margin: 0;
+    border-inline: none;
+  }
 }
 
 #root {
@@ -56,20 +65,6 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  body {
-    background: #fff;
-  }
-
-  #root {
-    width: var(--app-mobile-width);
-    max-width: var(--app-mobile-width);
-    min-width: var(--app-mobile-width);
-    margin: 0;
-    border-inline: none;
-  }
 }
 
 h1,

@@ -200,25 +200,26 @@
   --button-danger-border-hover: #ff9386;
 }
 
-.app-shell.mobile {
+.app-shell.mobile,
+.app-shell.mobile .mobile-top-region,
+.app-shell.mobile .mobile-content {
   width: var(--app-mobile-width);
   min-width: var(--app-mobile-width);
   max-width: var(--app-mobile-width);
-  margin: 0;
-  padding: 0 0 32px;
-  overflow-x: clip;
   box-sizing: border-box;
 }
 
+.app-shell.mobile {
+  margin: 0;
+  padding: 0 0 32px;
+  overflow-x: clip;
+}
+
 .app-shell.mobile .mobile-top-region {
-  width: var(--app-mobile-width);
-  min-width: var(--app-mobile-width);
-  max-width: var(--app-mobile-width);
   margin-bottom: 14px;
   background: linear-gradient(180deg, #edf3ff 0%, #e7efff 100%);
   border-bottom: 1px solid #d7e2fb;
   box-shadow: 0 8px 20px rgba(59, 90, 194, 0.08);
-  box-sizing: border-box;
 }
 
 .app-shell.mobile .mobile-header {
@@ -425,11 +426,7 @@
 }
 
 .app-shell.mobile .mobile-content {
-  width: var(--app-mobile-width);
-  min-width: var(--app-mobile-width);
-  max-width: var(--app-mobile-width);
   padding: 0 14px;
-  box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
@@ -451,14 +448,6 @@
 .content-page.mobile > div,
 .content-page.mobile > form {
   width: 100%;
-  box-sizing: border-box;
-}
-
-.content-page.shopping-section,
-.content-page.shopping-section.mobile {
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
   box-sizing: border-box;
 }
 

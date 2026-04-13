@@ -5,6 +5,12 @@ import { supabase } from './supabaseClient'
 const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske', 'fed']
 const DEFAULT_ACCOUNT_PEOPLE = 4
 const IMPORT_GROUPS_STORAGE_KEY = 'recipe_import_collapsed_groups'
+const MENU_ITEMS = [
+  { id: 'matretter', label: 'Matretter' },
+  { id: 'legg-til-matrett', label: 'Legg til matrett' },
+  { id: 'lag-meny', label: 'Lag meny' },
+  { id: 'lag-handleliste', label: 'Handleliste' },
+]
 
 const DEFAULT_SHOPPING_CATEGORY_ORDER = [
   'gronnsaker',
@@ -630,6 +636,7 @@ function App() {
   }, [collapsedImportGroups])
 
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
+  const currentUserLabel = user?.user_metadata?.display_name || user?.email || '?'
 
   const filteredRecipes = useMemo(() => {
     const filter = searchTerm.trim().toLowerCase()
@@ -1921,10 +1928,10 @@ function App() {
           <div className="mobile-header">
             <div className="mobile-header-top">
               <div className="mobile-header-avatar" onClick={handleOpenAccountSettings}>
-                {(user?.user_metadata?.display_name || user?.email || '?')[0].toUpperCase()}
+                {currentUserLabel[0].toUpperCase()}
               </div>
               <span className="mobile-header-username" onClick={handleOpenAccountSettings}>
-                {user?.user_metadata?.display_name || user?.email}
+                {currentUserLabel}
               </span>
               <div className="mobile-header-actions">
                 <button
@@ -1955,12 +1962,7 @@ function App() {
           </div>
 
           <nav className="main-nav mobile">
-            {[
-              { id: 'matretter', label: 'Matretter' },
-              { id: 'legg-til-matrett', label: 'Legg til matrett' },
-              { id: 'lag-meny', label: 'Lag meny' },
-              { id: 'lag-handleliste', label: 'Handleliste' },
-            ].map((item) => (
+            {MENU_ITEMS.map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -1977,7 +1979,7 @@ function App() {
           <div className="user-toolbar">
             <div className="user-toolbar-left">
               <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
-                Innlogget som {user?.user_metadata?.display_name || user?.email}
+                Innlogget som {currentUserLabel}
               </button>
               <button
                 type="button"
@@ -1998,12 +2000,7 @@ function App() {
       <div className={isMobile ? 'mobile-content' : ''}>
       {!isMobile && (
         <nav className="main-nav">
-          {[
-            { id: 'matretter', label: 'Matretter' },
-            { id: 'legg-til-matrett', label: 'Legg til matrett' },
-            { id: 'lag-meny', label: 'Lag meny' },
-            { id: 'lag-handleliste', label: 'Handleliste' },
-          ].map((item) => (
+          {MENU_ITEMS.map((item) => (
             <button
               key={item.id}
               type="button"
