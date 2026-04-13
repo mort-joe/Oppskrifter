@@ -59,6 +59,7 @@ function AdminApp() {
   const [ingredientNameDrafts, setIngredientNameDrafts] = useState({})
   const [ingredientCategoryDrafts, setIngredientCategoryDrafts] = useState({})
   const [ingredientSearch, setIngredientSearch] = useState('')
+  const [ingredientsDetailPage, setIngredientsDetailPage] = useState('ingredient-list')
   const [duplicateGroups, setDuplicateGroups] = useState([])
   const [showDuplicateCheckResults, setShowDuplicateCheckResults] = useState(false)
   const [duplicateKeepByGroup, setDuplicateKeepByGroup] = useState({})
@@ -821,6 +822,7 @@ function AdminApp() {
                 className={dashboardDetailPage === 'ingredients-check' ? 'active' : ''}
                 onClick={() => {
                   setDashboardDetailPage('ingredients-check')
+                  setIngredientsDetailPage('ingredient-list')
                   void loadIngredientData()
                 }}
               >
@@ -919,6 +921,26 @@ function AdminApp() {
               <article className="dashboard-panel">
                 <h3>Ingredienser i global database</h3>
 
+                <nav className="dashboard-submenu ingredients-submenu" aria-label="Ingredienser undermeny">
+                  <button
+                    type="button"
+                    className={ingredientsDetailPage === 'ingredient-list' ? 'active' : ''}
+                    onClick={() => setIngredientsDetailPage('ingredient-list')}
+                  >
+                    Ingrediensliste
+                  </button>
+                  <button
+                    type="button"
+                    className={ingredientsDetailPage === 'duplicate-check' ? 'active' : ''}
+                    onClick={() => {
+                      setIngredientsDetailPage('duplicate-check')
+                      void handleRunDuplicateCheck()
+                    }}
+                  >
+                    Duplikatsok
+                  </button>
+                </nav>
+
                 <div className="ingredients-toolbar">
                   <input
                     type="text"
@@ -929,78 +951,77 @@ function AdminApp() {
                   <button type="button" onClick={() => void loadIngredientData()} disabled={loading}>
                     Last pa nytt
                   </button>
-                  <button type="button" onClick={() => void handleRunDuplicateCheck()} disabled={loading}>
-                    Sjekk for duplikater
-                  </button>
                 </div>
 
-                <div className="admin-table-wrap">
-                  <table className="admin-table ingredients-table">
-                    <thead>
-                      <tr>
-                        <th>Ingrediens</th>
-                        <th>Sorteringskategori</th>
-                        <th>Brukt i</th>
-                        <th>Lagre</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredIngredients.map((ingredient) => (
-                        <tr key={`ingredient-${ingredient.id}`}>
-                          <td>
-                            <input
-                              type="text"
-                              value={ingredientNameDrafts[ingredient.id] ?? ingredient.name ?? ''}
-                              onChange={(event) =>
-                                setIngredientNameDrafts((current) => ({
-                                  ...current,
-                                  [ingredient.id]: event.target.value,
-                                }))
-                              }
-                            />
-                          </td>
-                          <td>
-                            <select
-                              value={ingredientCategoryDrafts[ingredient.id] ?? ingredient.shopping_category ?? 'annet'}
-                              onChange={(event) =>
-                                setIngredientCategoryDrafts((current) => ({
-                                  ...current,
-                                  [ingredient.id]: event.target.value,
-                                }))
-                              }
-                            >
-                              {shoppingCategoryNames.map((categoryName) => (
-                                <option key={`ingredient-category-${categoryName}`} value={categoryName}>
-                                  {categoryName}
-                                </option>
-                              ))}
-                              {!shoppingCategoryNames.includes('annet') && (
-                                <option value="annet">annet</option>
-                              )}
-                            </select>
-                          </td>
-                          <td>{ingredient.usage_count || 0}</td>
-                          <td>
-                            <button
-                              type="button"
-                              onClick={() => void handleSaveIngredientCategory(ingredient.id)}
-                              disabled={loading}
-                            >
-                              Lagre
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredIngredients.length === 0 && (
+                {ingredientsDetailPage === 'ingredient-list' && (
+                  <div className="admin-table-wrap">
+                    <table className="admin-table ingredients-table">
+                      <thead>
                         <tr>
-                          <td colSpan={4}>Ingen ingredienser funnet.</td>
+                          <th>Ingrediens</th>
+                          <th>Sorteringskategori</th>
+                          <th>Brukt i</th>
+                          <th>Lagre</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {filteredIngredients.map((ingredient) => (
+                          <tr key={`ingredient-${ingredient.id}`}>
+                            <td>
+                              <input
+                                type="text"
+                                value={ingredientNameDrafts[ingredient.id] ?? ingredient.name ?? ''}
+                                onChange={(event) =>
+                                  setIngredientNameDrafts((current) => ({
+                                    ...current,
+                                    [ingredient.id]: event.target.value,
+                                  }))
+                                }
+                              />
+                            </td>
+                            <td>
+                              <select
+                                value={ingredientCategoryDrafts[ingredient.id] ?? ingredient.shopping_category ?? 'annet'}
+                                onChange={(event) =>
+                                  setIngredientCategoryDrafts((current) => ({
+                                    ...current,
+                                    [ingredient.id]: event.target.value,
+                                  }))
+                                }
+                              >
+                                {shoppingCategoryNames.map((categoryName) => (
+                                  <option key={`ingredient-category-${categoryName}`} value={categoryName}>
+                                    {categoryName}
+                                  </option>
+                                ))}
+                                {!shoppingCategoryNames.includes('annet') && (
+                                  <option value="annet">annet</option>
+                                )}
+                              </select>
+                            </td>
+                            <td>{ingredient.usage_count || 0}</td>
+                            <td>
+                              <button
+                                type="button"
+                                onClick={() => void handleSaveIngredientCategory(ingredient.id)}
+                                disabled={loading}
+                              >
+                                Lagre
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredIngredients.length === 0 && (
+                          <tr>
+                            <td colSpan={4}>Ingen ingredienser funnet.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
-                {showDuplicateCheckResults && (
+                {ingredientsDetailPage === 'duplicate-check' && showDuplicateCheckResults && (
                   <section className="duplicate-groups-section">
                     <h4>Duplikatsok</h4>
                     {duplicateGroups.length === 0 ? (
