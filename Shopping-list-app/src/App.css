@@ -442,6 +442,11 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.desktop-main-region {
+  width: min(100%, 1040px);
+  margin-inline: auto;
+}
+
 .app-content-region > * {
   width: 100%;
   max-width: 100%;
@@ -454,6 +459,15 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.menu-workspace > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .content-page {
@@ -473,11 +487,6 @@
 }
 
 @media (min-width: 769px) {
-  .menu-workspace {
-    width: min(100%, 1040px);
-    margin-inline: auto;
-  }
-
   .menu-page {
     width: 100%;
     max-width: 100%;

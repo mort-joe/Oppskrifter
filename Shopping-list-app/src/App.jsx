@@ -2283,7 +2283,7 @@ function App() {
         </>
       )}
 
-      <div className={`app-content-region ${isMobile ? 'mobile-content' : ''}`}>
+      <div className={`app-content-region ${isMobile ? 'mobile-content' : 'desktop-main-region'}`}>
       {!isMobile && (
         <nav className="main-nav">
           {MENU_ITEMS.map((item) => (
