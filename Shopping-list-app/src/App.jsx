@@ -2923,6 +2923,7 @@ function App() {
         <section className={`content-page menu-page shopping-section ${isMobile ? 'mobile' : ''}`}>
           <h2>Lag handleliste</h2>
           <p>{shoppingRecipeCount} matrett(er) er valgt for handlelisten.</p>
+          <div className={`menu-page-narrow ${isMobile ? 'mobile' : ''}`}>
           <div className="shopping-reset-row">
             <button
               type="button"
@@ -3083,6 +3084,7 @@ function App() {
               </div>
             </div>
           )}
+          </div>
         </section>
       )}
 
@@ -3107,6 +3109,7 @@ function App() {
               style={{ width: '100%', padding: '10px', fontSize: '16px', boxSizing: 'border-box' }}
             />
           </section>
+          <div className={`menu-page-narrow compact ${isMobile ? 'mobile' : ''}`}>
           <h2>Lag meny</h2>
           <div style={{ display: 'grid', gap: '12px' }}>
             <label style={{ display: 'block' }}>
@@ -3180,6 +3183,7 @@ function App() {
               <p>Alle dager er beregnet med {menuServings} porsjoner.</p>
             </div>
           )}
+          </div>
         </section>
       )}
       </div>

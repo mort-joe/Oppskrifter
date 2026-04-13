@@ -471,6 +471,20 @@
   min-width: 0;
 }
 
+.menu-page-narrow {
+  width: min(100%, 860px);
+  margin-inline: auto;
+}
+
+.menu-page-narrow.compact {
+  width: min(100%, 760px);
+}
+
+.menu-page-narrow.mobile,
+.menu-page-narrow.compact.mobile {
+  width: 100%;
+}
+
 .content-page {
   width: 100%;
 }
