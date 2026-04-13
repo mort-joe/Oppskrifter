@@ -54,6 +54,20 @@ body {
   box-sizing: border-box;
 }
 
+@media (max-width: 768px) {
+  body {
+    background: #fff;
+  }
+
+  #root {
+    width: 100%;
+    max-width: none;
+    min-width: 100%;
+    margin: 0;
+    border-inline: none;
+  }
+}
+
 h1,
 h2 {
   font-family: var(--heading);
