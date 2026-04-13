@@ -176,6 +176,7 @@ function App() {
   const [isShoppingStateReady, setIsShoppingStateReady] = useState(false)
   const [accountDefaultPeople, setAccountDefaultPeople] = useState(DEFAULT_ACCOUNT_PEOPLE)
   const [accountEmail, setAccountEmail] = useState('')
+  const [accountDisplayName, setAccountDisplayName] = useState('')
   const [accountSettingsMessage, setAccountSettingsMessage] = useState('')
   const [accountPassword, setAccountPassword] = useState('')
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('')
@@ -857,6 +858,7 @@ function App() {
     setIsAccountPasswordError(false)
     setRecipeImportMessage('')
     setAccountEmail(user?.email ?? '')
+    setAccountDisplayName(user?.user_metadata?.display_name ?? '')
     setAccountPassword('')
     setAccountPasswordConfirm('')
   }
@@ -947,6 +949,7 @@ function App() {
     if (!user) return
 
     const emailTrimmed = accountEmail.trim()
+    const displayNameTrimmed = accountDisplayName.trim()
 
     const state = {
       shoppingListRecipeCounts,
@@ -996,6 +999,16 @@ function App() {
       const { error: emailError } = await supabase.auth.updateUser({ email: emailTrimmed })
       if (emailError) {
         setAccountSettingsMessage('Innstillinger lagret, men epost ble ikke oppdatert: ' + emailError.message)
+        return
+      }
+    }
+
+    if (displayNameTrimmed !== (user.user_metadata?.display_name || '')) {
+      const { error: displayNameError } = await supabase.auth.updateUser({
+        data: { display_name: displayNameTrimmed },
+      })
+      if (displayNameError) {
+        setAccountSettingsMessage('Innstillinger lagret, men visningsnavn ble ikke oppdatert: ' + displayNameError.message)
         return
       }
     }
@@ -1823,7 +1836,7 @@ function App() {
       <div className="user-toolbar">
         <div className="user-toolbar-left">
           <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
-            Innlogget som {user?.email}
+            Innlogget som {user?.user_metadata?.display_name || user?.email}
           </button>
           <button
             type="button"
@@ -1895,6 +1908,19 @@ function App() {
                   setAccountSettingsMessage('')
                 }}
                 placeholder="Din epostadresse"
+              />
+            </label>
+
+            <label>
+              Visningsnavn
+              <input
+                type="text"
+                value={accountDisplayName}
+                onChange={(event) => {
+                  setAccountDisplayName(event.target.value)
+                  setAccountSettingsMessage('')
+                }}
+                placeholder="Ditt visningsnavn"
               />
             </label>
 

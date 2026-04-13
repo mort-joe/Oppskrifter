@@ -29,6 +29,7 @@ export default async function handler(req, res) {
       role: normalizeRole(user.app_metadata?.role),
       created_at: user.created_at,
       last_sign_in_at: user.last_sign_in_at,
+      display_name: user.user_metadata?.display_name || '',
     }))
 
     const adminConfig = getAdminConfigDebugInfo()
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { email, password, role } = req.body || {}
+    const { email, password, role, username } = req.body || {}
 
     if (!email || !password) {
       res.status(400).json({ error: 'Mangler brukernavn eller passord.' })
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
       email,
       password,
       email_confirm: true,
-      user_metadata: {},
+      user_metadata: { display_name: username || '' },
       app_metadata: { role: normalizedRole },
     })
 
@@ -79,6 +80,7 @@ export default async function handler(req, res) {
         role: normalizedRole,
         created_at: data.user.created_at,
         last_sign_in_at: data.user.last_sign_in_at,
+        display_name: username || '',
       },
     })
     return

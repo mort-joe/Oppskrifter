@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import './AdminApp.css'
 import {
   adminLogin,
@@ -43,10 +43,12 @@ function AdminApp() {
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newRole, setNewRole] = useState('user')
+  const [newUsername, setNewUsername] = useState('')
 
   const [passwordDrafts, setPasswordDrafts] = useState({})
   const [roleDrafts, setRoleDrafts] = useState({})
   const [emailDrafts, setEmailDrafts] = useState({})
+  const [displayNameDrafts, setDisplayNameDrafts] = useState({})
   const [openUserActionsId, setOpenUserActionsId] = useState(null)
 
   const isLoggedIn = Boolean(token)
@@ -193,10 +195,12 @@ function AdminApp() {
         email: newEmail.trim(),
         password: newPassword,
         role: newRole,
+        username: newUsername.trim(),
       })
       setNewEmail('')
       setNewPassword('')
       setNewRole('user')
+      setNewUsername('')
       await loadUsers()
     } catch (createError) {
       setError(createError.message)
@@ -213,8 +217,9 @@ function AdminApp() {
     const password = (passwordDrafts[user.id] || '').trim()
     const role = roleDrafts[user.id] || user.role || 'user'
     const email = (emailDrafts[user.id] || '').trim()
+    const displayName = (displayNameDrafts[user.id] || '').trim()
 
-    if (!password && role === user.role && email === user.email) {
+    if (!password && role === user.role && email === user.email && displayName === user.display_name) {
       return
     }
 
@@ -226,6 +231,7 @@ function AdminApp() {
       if (password) payload.password = password
       if (role !== user.role) payload.role = role
       if (email && email !== user.email) payload.email = email
+      if (displayName !== user.display_name) payload.username = displayName
       await updateUser(token, user.id, payload)
       setPasswordDrafts((current) => ({ ...current, [user.id]: '' }))
       setOpenUserActionsId(null)
@@ -423,6 +429,12 @@ function AdminApp() {
               placeholder="Passord"
               required
             />
+            <input
+              type="text"
+              value={newUsername}
+              onChange={(event) => setNewUsername(event.target.value)}
+              placeholder="Visningsnavn"
+            />
             <select value={newRole} onChange={(event) => setNewRole(event.target.value)}>
               <option value="user">Bruker</option>
               <option value="admin">Administrator</option>
@@ -435,6 +447,7 @@ function AdminApp() {
               <thead>
                 <tr>
                   <th>Brukernavn (epost)</th>
+                  <th>Visningsnavn</th>
                   <th>Rolle</th>
                   <th>Opprettet</th>
                   <th>Sist inn</th>
@@ -442,90 +455,33 @@ function AdminApp() {
               </thead>
               <tbody>
                 {sortedUsers.map((user) => (
-                  <tr key={user.id} className={user.role === 'admin' ? 'admin-user-row' : ''}>
-                    <td>
-                      <div className="admin-user-email-cell">
-                        {openUserActionsId === user.id && !user.is_config_admin ? (
-                          <input
-                            type="email"
-                            className="admin-user-email-input"
-                            value={emailDrafts[user.id] ?? user.email ?? ''}
-                            onChange={(event) =>
-                              setEmailDrafts((current) => ({
-                                ...current,
-                                [user.id]: event.target.value,
-                              }))
-                            }
-                            placeholder="Brukernavn (epost)"
-                          />
-                        ) : (
-                          <span className="admin-user-email-display">{user.email}</span>
-                        )}
+                  <React.Fragment key={user.id}>
+                    <tr className={user.role === 'admin' ? 'admin-user-row' : ''}>
+                      <td>
+                        <span className="admin-user-email-display">{user.email}</span>
                         {user.role === 'admin' && <span className="admin-user-badge">Administrator</span>}
-                      </div>
-                    </td>
-                    <td>
-                      <select
-                        value={roleDrafts[user.id] || user.role || 'user'}
-                        disabled={Boolean(user.is_config_admin)}
-                        onChange={(event) =>
-                          setRoleDrafts((current) => ({
-                            ...current,
-                            [user.id]: event.target.value,
-                          }))
-                        }
-                      >
-                        <option value="user">Bruker</option>
-                        <option value="admin">Administrator</option>
-                      </select>
-                    </td>
-                    <td>{formatDate(user.created_at, false)}</td>
-                    <td>{formatDate(user.last_sign_in_at, false)}</td>
-                    <td>
-                      {openUserActionsId === user.id && !user.is_config_admin ? (
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap' }}>
-                          <input
-                            type="text"
-                            value={passwordDrafts[user.id] || ''}
-                            onChange={(event) =>
-                              setPasswordDrafts((current) => ({
-                                ...current,
-                                [user.id]: event.target.value,
-                              }))
-                            }
-                            placeholder="Nytt passord"
-                            style={{ flex: 1, minWidth: 68 }}
-                          />
-                          <button
-                            type="button"
-                            className="admin-inline-action-btn-compact"
-                            onClick={() => handleSaveUser(user)}
-                            disabled={loading}
-                          >
-                            Lagre
-                          </button>
-                          <button
-                            type="button"
-                            className="admin-inline-action-btn-compact danger"
-                            onClick={() => handleDeleteUser(user)}
-                            disabled={loading}
-                          >
-                            Slett
-                          </button>
-                          <button
-                            type="button"
-                            className="admin-more-btn"
-                            onClick={() =>
-                              setOpenUserActionsId((current) => (current === user.id ? null : user.id))
-                            }
-                            disabled={loading || Boolean(user.is_config_admin)}
-                            aria-label="Lukk handlinger"
-                            title="Lukk"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
+                      </td>
+                      <td>
+                        <span>{user.display_name || '-'}</span>
+                      </td>
+                      <td>
+                        <select
+                          value={roleDrafts[user.id] || user.role || 'user'}
+                          disabled={Boolean(user.is_config_admin) || openUserActionsId === user.id}
+                          onChange={(event) =>
+                            setRoleDrafts((current) => ({
+                              ...current,
+                              [user.id]: event.target.value,
+                            }))
+                          }
+                        >
+                          <option value="user">Bruker</option>
+                          <option value="admin">Administrator</option>
+                        </select>
+                      </td>
+                      <td>{formatDate(user.created_at, false)}</td>
+                      <td>{formatDate(user.last_sign_in_at, false)}</td>
+                      <td>
                         <button
                           type="button"
                           className="admin-more-btn"
@@ -533,18 +489,92 @@ function AdminApp() {
                             setOpenUserActionsId((current) => (current === user.id ? null : user.id))
                           }
                           disabled={loading || Boolean(user.is_config_admin)}
-                          aria-label="Vis handlinger"
-                          title="Rediger"
+                          aria-label={openUserActionsId === user.id ? 'Lukk handlinger' : 'Vis handlinger'}
+                          title={openUserActionsId === user.id ? 'Lukk' : 'Rediger'}
                         >
-                          ⋯
+                          {openUserActionsId === user.id ? '✕' : '⋯'}
                         </button>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+
+                    {openUserActionsId === user.id && !user.is_config_admin && (
+                      <tr className="admin-user-edit-row">
+                        <td colSpan={6}>
+                          <div className="admin-user-edit-fields">
+                            <div className="admin-edit-field">
+                              <label>Epostadresse</label>
+                              <input
+                                type="email"
+                                className="admin-user-email-input"
+                                value={emailDrafts[user.id] ?? user.email ?? ''}
+                                onChange={(event) =>
+                                  setEmailDrafts((current) => ({
+                                    ...current,
+                                    [user.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Brukernavn (epost)"
+                              />
+                            </div>
+
+                            <div className="admin-edit-field">
+                              <label>Visningsnavn</label>
+                              <input
+                                type="text"
+                                className="admin-user-email-input"
+                                value={displayNameDrafts[user.id] ?? user.display_name ?? ''}
+                                onChange={(event) =>
+                                  setDisplayNameDrafts((current) => ({
+                                    ...current,
+                                    [user.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Visningsnavn"
+                              />
+                            </div>
+
+                            <div className="admin-edit-field">
+                              <label>Nytt passord</label>
+                              <input
+                                type="text"
+                                value={passwordDrafts[user.id] || ''}
+                                onChange={(event) =>
+                                  setPasswordDrafts((current) => ({
+                                    ...current,
+                                    [user.id]: event.target.value,
+                                  }))
+                                }
+                                placeholder="Nytt passord (hvis nødvendig)"
+                              />
+                            </div>
+
+                            <div className="admin-edit-actions">
+                              <button
+                                type="button"
+                                className="admin-inline-action-btn-compact"
+                                onClick={() => handleSaveUser(user)}
+                                disabled={loading}
+                              >
+                                Lagre
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-inline-action-btn-compact danger"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={loading}
+                              >
+                                Slett
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
                 {sortedUsers.length === 0 && (
                   <tr>
-                    <td colSpan={4}>Ingen brukere funnet.</td>
+                    <td colSpan={6}>Ingen brukere funnet.</td>
                   </tr>
                 )}
               </tbody>

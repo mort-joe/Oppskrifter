@@ -319,6 +319,14 @@
   border-color: #efc46a;
 }
 
+.app-shell .shopping-reset-btn {
+  padding: 9px 13px !important;
+  min-height: 38px !important;
+  background: linear-gradient(180deg, #fff7e8 0%, #ffedc8 100%) !important;
+  border-color: #efc46a !important;
+  border-radius: 12px !important;
+}
+
 .shopping-reset-btn.mobile {
   width: 100%;
   padding: 8px 12px;
@@ -422,6 +430,13 @@
   border-radius: 12px !important;
 }
 
+.app-shell .custom-item-add-btn {
+  padding: 6px 11px !important;
+  min-height: 32px !important;
+  border-radius: 12px !important;
+  font-size: 0.95rem !important;
+}
+
 .custom-item-add-btn.mobile {
   grid-column: 1 / -1;
   padding: 8px 12px;
@@ -443,6 +458,14 @@
   border-radius: 10px;
   box-shadow: none !important;
   font-size: 0.92rem;
+}
+
+.app-shell .custom-item-remove-btn {
+  padding: 2px 8px !important;
+  min-height: 24px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-size: 0.9rem !important;
 }
 
 .shopping-content {
@@ -470,6 +493,14 @@
   border-radius: 10px;
   box-shadow: none !important;
   font-size: 0.92rem;
+}
+
+.app-shell .selected-recipes-remove-btn {
+  padding: 2px 8px !important;
+  min-height: 24px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-size: 0.9rem !important;
 }
 
 .shopping-cards {
@@ -992,14 +1023,16 @@
 }
 
 .toolbar-signout-btn {
-  padding: 8px 14px;
+  padding: 6px 12px !important;
+  min-height: 34px !important;
   border: 1px solid #d7dfef;
-  border-radius: 12px;
+  border-radius: 10px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   box-shadow: 0 6px 18px rgba(28, 49, 94, 0.08);
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  font-size: 0.95rem;
 }
 
 .toolbar-signout-btn:hover {

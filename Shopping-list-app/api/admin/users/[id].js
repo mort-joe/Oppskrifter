@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PATCH') {
-    const { password, role, email } = req.body || {}
+    const { password, role, email, username } = req.body || {}
     const payload = {}
 
     if (password) {
@@ -43,6 +43,10 @@ export default async function handler(req, res) {
 
     if (email) {
       payload.email = email
+    }
+
+    if (username !== undefined) {
+      payload.user_metadata = { display_name: username || '' }
     }
 
     if (!Object.keys(payload).length) {
@@ -63,6 +67,7 @@ export default async function handler(req, res) {
         role: normalizeRole(data.user.app_metadata?.role),
         created_at: data.user.created_at,
         last_sign_in_at: data.user.last_sign_in_at,
+        display_name: data.user.user_metadata?.display_name || '',
       },
     })
     return

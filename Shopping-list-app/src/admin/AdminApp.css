@@ -75,7 +75,7 @@
 }
 
 .admin-table-wrap {
-  overflow-x: hidden;
+  overflow-x: auto;
   margin-top: 26px;
 }
 
@@ -110,27 +110,32 @@
 
 .admin-table th:nth-child(1),
 .admin-table td:nth-child(1) {
-  width: 34%;
+  width: 38%;
 }
 
 .admin-table th:nth-child(2),
 .admin-table td:nth-child(2) {
-  width: 14%;
+  width: 18%;
 }
 
 .admin-table th:nth-child(3),
 .admin-table td:nth-child(3) {
-  width: 10%;
+  width: 9%;
 }
 
 .admin-table th:nth-child(4),
 .admin-table td:nth-child(4) {
-  width: 10%;
+  width: 9%;
 }
 
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
-  width: 32%;
+  width: 9%;
+}
+
+.admin-table th:nth-child(6),
+.admin-table td:nth-child(6) {
+  width: 17%;
 }
 
 
@@ -191,6 +196,55 @@
 
 .admin-user-row {
   background: #f4f8ff;
+}
+
+.admin-user-edit-row {
+  background: #f0f6ff;
+  border-top: 2px solid #dfeaff;
+}
+
+.admin-user-edit-row td {
+  padding: 16px 8px;
+}
+
+.admin-user-edit-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto auto;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.admin-edit-field {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-edit-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334;
+}
+
+.admin-edit-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #c7d3eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.admin-edit-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.admin-edit-actions button {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .admin-user-row td {
