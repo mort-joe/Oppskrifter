@@ -1892,14 +1892,20 @@ function App() {
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
       {isMobile ? (
         <div className="mobile-header">
-          <div className="mobile-header-row1">
-            <h1>Innkjøpsplanlegger</h1>
+          <div className="mobile-header-top">
+            <div className="mobile-header-brand">
+              <span className="mobile-header-icon">🛒</span>
+              <h1>Innkjøpsplanlegger</h1>
+            </div>
             <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
           </div>
-          <div className="mobile-header-row2">
-            <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
+          <div className="mobile-header-user">
+            <div className="mobile-header-avatar" onClick={handleOpenAccountSettings}>
+              {(user?.user_metadata?.display_name || user?.email || '?')[0].toUpperCase()}
+            </div>
+            <span className="mobile-header-username" onClick={handleOpenAccountSettings}>
               {user?.user_metadata?.display_name || user?.email}
-            </button>
+            </span>
             <button
               type="button"
               className="account-settings-btn"

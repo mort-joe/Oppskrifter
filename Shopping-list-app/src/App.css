@@ -205,59 +205,82 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: #fff;
+  background: #f0f5ff;
   padding: 16px 16px 14px;
   margin-bottom: 16px;
-  border-top: 4px solid #2f6ff2;
-  box-shadow: 0 2px 12px rgba(0, 0, 40, 0.08);
+  border-bottom: 3px solid #4361ee;
+  box-shadow: 0 2px 16px rgba(67, 97, 238, 0.1);
 }
 
-.app-shell.mobile .mobile-header-row1 {
+.app-shell.mobile .mobile-header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
-.app-shell.mobile .mobile-header-row1 h1 {
-  font-size: 1.55rem;
+.app-shell.mobile .mobile-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-shell.mobile .mobile-header-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.app-shell.mobile .mobile-header-brand h1 {
+  font-size: 1.45rem;
   margin: 0;
-  color: #111827;
+  color: #1a1a2e;
   letter-spacing: -0.04em;
   font-weight: 800;
 }
 
 .app-shell.mobile .mobile-header .toolbar-signout-btn {
-  font-size: 0.85rem !important;
-  padding: 5px 11px !important;
+  font-size: 0.83rem !important;
+  padding: 5px 12px !important;
   min-height: 28px !important;
-  color: #555f71 !important;
-  background: #f3f4f6 !important;
-  border-color: #d1d5db !important;
+  color: #4361ee !important;
+  background: transparent !important;
+  border: 1.5px solid #4361ee !important;
   box-shadow: none !important;
-  border-radius: 10px !important;
+  border-radius: 20px !important;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.app-shell.mobile .mobile-header-row2 {
+.app-shell.mobile .mobile-header-user {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.app-shell.mobile .mobile-header .account-link-btn {
+.app-shell.mobile .mobile-header-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4361ee 0%, #7c3aed 100%);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.app-shell.mobile .mobile-header-username {
   font-size: 0.84rem;
-  color: #2f6ff2;
-  font-weight: 500;
+  color: #374151;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 46px);
-  padding: 0;
-  border: none;
-  background: transparent;
+  flex: 1;
   cursor: pointer;
 }
 
@@ -266,7 +289,6 @@
   border-color: transparent;
   color: #6b7280;
   box-shadow: none;
-  font-size: 1rem;
   padding: 2px 6px;
   min-height: 24px;
 }
