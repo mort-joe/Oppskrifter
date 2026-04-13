@@ -1890,25 +1890,51 @@ function App() {
 
   return (
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
-      <div className="user-toolbar">
-        <div className="user-toolbar-left">
-          <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
-            Innlogget som {user?.user_metadata?.display_name || user?.email}
-          </button>
-          <button
-            type="button"
-            className="account-settings-btn"
-            onClick={handleOpenAccountSettings}
-            aria-label="Åpne brukerinnstillinger"
-            title="Brukerinnstillinger"
-          >
-            ⋯
-          </button>
+      {isMobile ? (
+        <div className="mobile-header">
+          <div className="user-toolbar">
+            <div className="user-toolbar-left">
+              <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
+                Innlogget som {user?.user_metadata?.display_name || user?.email}
+              </button>
+              <button
+                type="button"
+                className="account-settings-btn"
+                onClick={handleOpenAccountSettings}
+                aria-label="Åpne brukerinnstillinger"
+                title="Brukerinnstillinger"
+              >
+                ⋯
+              </button>
+            </div>
+            <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
+          </div>
+          <h1>Innkjøpsplanlegger</h1>
         </div>
-        <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
-      </div>
+      ) : (
+        <>
+          <div className="user-toolbar">
+            <div className="user-toolbar-left">
+              <button type="button" className="account-link-btn" onClick={handleOpenAccountSettings}>
+                Innlogget som {user?.user_metadata?.display_name || user?.email}
+              </button>
+              <button
+                type="button"
+                className="account-settings-btn"
+                onClick={handleOpenAccountSettings}
+                aria-label="Åpne brukerinnstillinger"
+                title="Brukerinnstillinger"
+              >
+                ⋯
+              </button>
+            </div>
+            <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
+          </div>
+          <h1>Innkjøpsplanlegger</h1>
+        </>
+      )}
 
-      <h1>Innkjøpsplanlegger</h1>
+      <div className={isMobile ? 'mobile-content' : ''}>
 
       <nav className={`main-nav ${isMobile ? 'mobile' : ''}`}>
         {[
@@ -2810,6 +2836,7 @@ function App() {
           )}
         </section>
       )}
+      </div>
     </div>
   )
 }
