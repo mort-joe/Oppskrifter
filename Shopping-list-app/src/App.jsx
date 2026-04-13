@@ -149,6 +149,29 @@ const getRecipeImportErrorMessage = (error) => {
   return 'Kunne ikke laste listen over matretter i databasen.'
 }
 
+const getRecipeImportFailureMessage = (error) => {
+  const rawMessage = String(error?.message || error?.details || '').toLowerCase()
+
+  if (
+    rawMessage.includes('shared_root_recipe_id') ||
+    rawMessage.includes('shared_root_name') ||
+    rawMessage.includes('shared_version_number') ||
+    rawMessage.includes('user_settings')
+  ) {
+    return 'Import krever at oppdatert SQL er kjørt i Supabase. Kjør auth_setup.sql og last siden på nytt.'
+  }
+
+  if (rawMessage.includes('permission denied') || rawMessage.includes('row-level security')) {
+    return 'Import feilet på grunn av manglende database-tilgang (RLS-policy). Kjør auth_setup.sql i Supabase.'
+  }
+
+  if (rawMessage.includes('duplicate key') || rawMessage.includes('unique')) {
+    return 'En eller flere valgte matretter finnes allerede i profilen din.'
+  }
+
+  return 'Noe gikk galt under import av matretter.'
+}
+
 function App() {
   const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
@@ -194,6 +217,7 @@ function App() {
   const [catalogDefaultPeopleByUser, setCatalogDefaultPeopleByUser] = useState({})
   const [recipeImportMessage, setRecipeImportMessage] = useState('')
   const [isRecipeImportError, setIsRecipeImportError] = useState(false)
+  const [isRecipeCatalogLoadError, setIsRecipeCatalogLoadError] = useState(false)
   const [isRecipeCatalogLoading, setIsRecipeCatalogLoading] = useState(false)
   const [isImportingRecipes, setIsImportingRecipes] = useState(false)
   const [recipeImportSearch, setRecipeImportSearch] = useState('')
@@ -961,6 +985,7 @@ function App() {
 
     setIsRecipeCatalogLoading(true)
     setIsRecipeImportError(false)
+    setIsRecipeCatalogLoadError(false)
 
     try {
       const [{ data: recipeData, error: recipeError }, { data: userSettingsData, error: userSettingsError }] = await Promise.all([
@@ -1018,11 +1043,13 @@ function App() {
           Object.entries(current).filter(([recipeId]) => (recipeData || []).some((recipe) => String(recipe.id) === recipeId)),
         ),
       )
+      setIsRecipeCatalogLoadError(false)
     } catch (catalogError) {
       console.error('Could not load recipe import catalog:', catalogError)
       setRecipeImportCatalog([])
       setRecipeImportMessage(getRecipeImportErrorMessage(catalogError))
       setIsRecipeImportError(true)
+      setIsRecipeCatalogLoadError(true)
     } finally {
       setIsRecipeCatalogLoading(false)
     }
@@ -1164,6 +1191,12 @@ function App() {
   const handleImportSelectedRecipes = async () => {
     if (!user) return
 
+    if (isRecipeCatalogLoadError || !recipeImportCatalog.length) {
+      setRecipeImportMessage('Importlisten må lastes uten feil før du kan importere matretter.')
+      setIsRecipeImportError(true)
+      return
+    }
+
     const selectedRecipes = sortedRecipeImportCatalog.filter(
       (recipe) => selectedImportRecipeIds[recipe.id] && recipe.userId !== user.id,
     )
@@ -1268,7 +1301,7 @@ function App() {
       await loadRecipeImportCatalog()
     } catch (importError) {
       console.error('Could not import recipes:', importError)
-      setRecipeImportMessage('Noe gikk galt under import av matretter.')
+      setRecipeImportMessage(getRecipeImportFailureMessage(importError))
       setIsRecipeImportError(true)
     } finally {
       setIsImportingRecipes(false)
@@ -2163,8 +2196,8 @@ function App() {
             <div className="account-import-list">
               {isRecipeCatalogLoading ? (
                 <p className="account-import-empty">Laster matretter…</p>
-              ) : recipeImportMessage && isRecipeImportError ? (
-                <p className="account-import-empty">Importlisten kunne ikke lastes.</p>
+              ) : isRecipeCatalogLoadError ? (
+                <p className="account-import-empty">{recipeImportMessage || 'Importlisten kunne ikke lastes.'}</p>
               ) : filteredRecipeImportCatalog.length === 0 ? (
                 <p className="account-import-empty">Ingen matretter funnet i databasen.</p>
               ) : (
@@ -2225,7 +2258,7 @@ function App() {
                 type="button"
                 className="account-import-secondary-btn"
                 onClick={handleSelectAllNewImports}
-                disabled={isRecipeCatalogLoading || isImportingRecipes || !groupedRecipeImportCatalog.some((group) => group.key === 'new' && group.recipes.length > 0)}
+                disabled={isRecipeCatalogLoading || isRecipeCatalogLoadError || isImportingRecipes || !groupedRecipeImportCatalog.some((group) => group.key === 'new' && group.recipes.length > 0)}
               >
                 Marker alle nye
               </button>
@@ -2233,14 +2266,14 @@ function App() {
                 type="button"
                 className="account-import-secondary-btn"
                 onClick={handleClearImportSelections}
-                disabled={isRecipeCatalogLoading || isImportingRecipes || !Object.values(selectedImportRecipeIds).some(Boolean)}
+                disabled={isRecipeCatalogLoading || isRecipeCatalogLoadError || isImportingRecipes || !Object.values(selectedImportRecipeIds).some(Boolean)}
               >
                 Fjern alle markeringer
               </button>
               <button
                 type="button"
                 onClick={handleImportSelectedRecipes}
-                disabled={isRecipeCatalogLoading || isImportingRecipes}
+                disabled={isRecipeCatalogLoading || isRecipeCatalogLoadError || isImportingRecipes}
               >
                 {isImportingRecipes ? 'Importerer…' : 'Importer valgte matretter'}
               </button>
