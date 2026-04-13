@@ -1913,7 +1913,11 @@ function App() {
               </div>
             </div>
             <div className="mobile-header-brand">
-              <span className="mobile-header-icon">🛒</span>
+              <span className="mobile-header-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M3 4h2.2a1 1 0 0 1 .98.8L6.6 7H20a1 1 0 0 1 .97 1.24l-1.5 6A1 1 0 0 1 18.5 15H8.2a1 1 0 0 1-.98-.8L5.1 5.99H3a1 1 0 1 1 0-2Zm5.98 9h8.74l1-4H7.98l1 4ZM10 20a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm8 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+                </svg>
+              </span>
               <h1>Innkjøpsplanlegger</h1>
           </div>
         </div>

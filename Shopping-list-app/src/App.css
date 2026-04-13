@@ -205,11 +205,11 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: linear-gradient(180deg, #eef4ff 0%, #e0ebff 100%);
+  background: linear-gradient(180deg, #e3edff 0%, #cadeff 100%);
   padding: 14px 16px 18px;
   margin-bottom: 16px;
   border-bottom: 4px solid #2f63f4;
-  box-shadow: 0 8px 24px rgba(47, 99, 244, 0.16);
+  box-shadow: 0 8px 24px rgba(47, 99, 244, 0.2);
 }
 
 .app-shell.mobile .mobile-header-top {
@@ -227,14 +227,24 @@
   gap: 10px;
   padding: 12px 14px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #2f63f4 0%, #4e88ff 52%, #73a9ff 100%);
+  background: linear-gradient(135deg, #2457e8 0%, #3f79ff 50%, #68a0ff 100%);
   box-shadow: 0 10px 26px rgba(47, 99, 244, 0.28);
 }
 
 .app-shell.mobile .mobile-header-icon {
-  font-size: 1.65rem;
-  line-height: 1;
+  width: 24px;
+  height: 24px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.16));
+}
+
+.app-shell.mobile .mobile-header-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
 }
 
 .app-shell.mobile .mobile-header-brand h1 {
