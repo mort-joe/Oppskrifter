@@ -450,6 +450,12 @@
   justify-self: stretch;
 }
 
+.menu-workspace {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .content-page {
   width: 100%;
 }
@@ -467,10 +473,15 @@
 }
 
 @media (min-width: 769px) {
+  .menu-workspace {
+    width: min(100%, 1040px);
+    margin-inline: auto;
+  }
+
   .menu-page {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 12px;

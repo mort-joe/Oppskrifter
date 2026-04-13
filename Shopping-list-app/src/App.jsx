@@ -2299,6 +2299,7 @@ function App() {
         </nav>
       )}
 
+      <div className={`menu-workspace ${isMobile ? 'mobile' : ''}`}>
       {!selectedMenu && (
         <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>
           <p>Velg en meny for å åpne siden.</p>
@@ -3181,6 +3182,7 @@ function App() {
           )}
         </section>
       )}
+      </div>
       </div>
     </div>
   )
