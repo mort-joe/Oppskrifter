@@ -1891,14 +1891,15 @@ function App() {
   return (
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
       {isMobile ? (
-        <div className="mobile-header">
-          <div className="mobile-header-top">
-            <div className="mobile-header-avatar" onClick={handleOpenAccountSettings}>
-              {(user?.user_metadata?.display_name || user?.email || '?')[0].toUpperCase()}
-            </div>
-            <span className="mobile-header-username" onClick={handleOpenAccountSettings}>
-              {user?.user_metadata?.display_name || user?.email}
-            </span>
+        <div className="mobile-top-region">
+          <div className="mobile-header">
+            <div className="mobile-header-top">
+              <div className="mobile-header-avatar" onClick={handleOpenAccountSettings}>
+                {(user?.user_metadata?.display_name || user?.email || '?')[0].toUpperCase()}
+              </div>
+              <span className="mobile-header-username" onClick={handleOpenAccountSettings}>
+                {user?.user_metadata?.display_name || user?.email}
+              </span>
               <div className="mobile-header-actions">
                 <button
                   type="button"
@@ -1911,20 +1912,39 @@ function App() {
                 </button>
                 <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
               </div>
-          </div>
-          <div className="mobile-header-banner">
-            <div className="mobile-header-brand">
-              <span className="mobile-header-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M3 4h2.2a1 1 0 0 1 .98.8L6.6 7H20a1 1 0 0 1 .97 1.24l-1.5 6A1 1 0 0 1 18.5 15H8.2a1 1 0 0 1-.98-.8L5.1 5.99H3a1 1 0 1 1 0-2Zm5.98 9h8.74l1-4H7.98l1 4ZM10 20a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm8 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-                </svg>
-              </span>
-              <div className="mobile-header-brand-copy">
-                <h1>Innkjøpsplanlegger</h1>
-                <p>Planlegg ukemenyen smartere</p>
+            </div>
+            <div className="mobile-header-banner">
+              <div className="mobile-header-brand">
+                <span className="mobile-header-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M3 4h2.2a1 1 0 0 1 .98.8L6.6 7H20a1 1 0 0 1 .97 1.24l-1.5 6A1 1 0 0 1 18.5 15H8.2a1 1 0 0 1-.98-.8L5.1 5.99H3a1 1 0 1 1 0-2Zm5.98 9h8.74l1-4H7.98l1 4ZM10 20a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm8 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+                  </svg>
+                </span>
+                <div className="mobile-header-brand-copy">
+                  <h1>Innkjøpsplanlegger</h1>
+                  <p>Planlegg handleturen smartere</p>
+                </div>
               </div>
             </div>
           </div>
+
+          <nav className="main-nav mobile">
+            {[
+              { id: 'matretter', label: 'Matretter' },
+              { id: 'legg-til-matrett', label: 'Legg til matrett' },
+              { id: 'lag-meny', label: 'Lag meny' },
+              { id: 'lag-handleliste', label: 'Handleliste' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleMenuSelect(item.id)}
+                className={`main-nav-button mobile ${selectedMenu === item.id ? 'active' : ''}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
         </div>
       ) : (
         <>
@@ -1950,24 +1970,25 @@ function App() {
       )}
 
       <div className={isMobile ? 'mobile-content' : ''}>
-
-      <nav className={`main-nav ${isMobile ? 'mobile' : ''}`}>
-        {[
-          { id: 'matretter', label: 'Matretter' },
-          { id: 'legg-til-matrett', label: 'Legg til matrett' },
-          { id: 'lag-meny', label: 'Lag meny' },
-          { id: 'lag-handleliste', label: 'Handleliste' },
-        ].map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => handleMenuSelect(item.id)}
-            className={`main-nav-button ${isMobile ? 'mobile' : ''} ${selectedMenu === item.id ? 'active' : ''}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      {!isMobile && (
+        <nav className="main-nav">
+          {[
+            { id: 'matretter', label: 'Matretter' },
+            { id: 'legg-til-matrett', label: 'Legg til matrett' },
+            { id: 'lag-meny', label: 'Lag meny' },
+            { id: 'lag-handleliste', label: 'Handleliste' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleMenuSelect(item.id)}
+              className={`main-nav-button ${selectedMenu === item.id ? 'active' : ''}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {!selectedMenu && (
         <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>

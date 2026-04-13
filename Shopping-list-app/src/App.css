@@ -204,10 +204,17 @@
   padding: 0 0 32px;
 }
 
+.app-shell.mobile .mobile-top-region {
+  margin-bottom: 14px;
+  background: linear-gradient(180deg, #edf3ff 0%, #e7efff 100%);
+  border-bottom: 1px solid #d7e2fb;
+  box-shadow: 0 8px 20px rgba(59, 90, 194, 0.08);
+}
+
 .app-shell.mobile .mobile-header {
   background: linear-gradient(140deg, #dce8ff 0%, #edf3ff 40%, #e4f1ff 100%);
   padding: 14px 14px 18px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   border-bottom: 4px solid #3f63ea;
   box-shadow: 0 14px 30px rgba(55, 86, 198, 0.16);
   position: relative;
@@ -482,8 +489,9 @@
 .main-nav.mobile {
   grid-template-columns: 1fr 1fr;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   gap: 12px;
+  padding: 12px 14px 14px;
 }
 
 .main-nav-button {
