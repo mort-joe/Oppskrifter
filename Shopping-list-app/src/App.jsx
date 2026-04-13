@@ -1008,7 +1008,6 @@ function App() {
 
     if (!user) return
 
-    const emailTrimmed = accountEmail.trim()
     const displayNameTrimmed = accountDisplayName.trim()
 
     const state = {
@@ -1053,14 +1052,6 @@ function App() {
       console.error('Could not save account settings:', shoppingStateError || userSettingsError)
       setAccountSettingsMessage('Kunne ikke lagre innstillingene akkurat nå. Prøv igjen.')
       return
-    }
-
-    if (emailTrimmed && emailTrimmed !== user.email) {
-      const { error: emailError } = await supabase.auth.updateUser({ email: emailTrimmed })
-      if (emailError) {
-        setAccountSettingsMessage('Innstillinger lagret, men epost ble ikke oppdatert: ' + emailError.message)
-        return
-      }
     }
 
     if (displayNameTrimmed !== (user.user_metadata?.display_name || '')) {
@@ -1965,15 +1956,11 @@ function App() {
               />
             </label>
             <label>
-              Epostadresse
+              Brukernavn
               <input
-                type="email"
+                type="text"
                 value={accountEmail}
-                onChange={(event) => {
-                  setAccountEmail(event.target.value)
-                  setAccountSettingsMessage('')
-                }}
-                placeholder="Din epostadresse"
+                readOnly
               />
             </label>
 
