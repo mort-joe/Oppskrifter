@@ -1334,6 +1334,28 @@ function App() {
     return attempt === 0 ? normalizedBaseName : `${normalizedBaseName} (${attempt})`
   }
 
+  const getNextAvailableRecipeNameGlobal = async (baseName) => {
+    const normalizedBaseName = String(baseName || '').trim()
+    if (!normalizedBaseName) return normalizedBaseName
+
+    const { data, error } = await supabase.from('recipes').select('name')
+    if (error) {
+      throw error
+    }
+
+    const existingNames = new Set((data || []).map((row) => String(row.name || '').trim()))
+    if (!existingNames.has(normalizedBaseName)) {
+      return normalizedBaseName
+    }
+
+    let attempt = 1
+    while (existingNames.has(getImportRecipeNameCandidate(normalizedBaseName, attempt))) {
+      attempt += 1
+    }
+
+    return getImportRecipeNameCandidate(normalizedBaseName, attempt)
+  }
+
   const handleImportSelectedRecipes = async () => {
     if (!user) return
 
@@ -1388,11 +1410,11 @@ function App() {
         const categoryIds = await getOrCreateRecords('categories', sourceRecipe.typeTags || [])
         const tagIds = await getOrCreateRecords('tags', sourceRecipe.occasionTags || [])
 
+        let recipeNameToInsert = await getNextAvailableRecipeNameGlobal(sourceRecipe.name)
         let insertedRecipe = null
         let recipeInsertError = null
 
         for (let attempt = 0; attempt < 25; attempt += 1) {
-          const recipeNameToInsert = getImportRecipeNameCandidate(sourceRecipe.name, attempt)
           const { data, error } = await supabase
             .from('recipes')
             .insert([
@@ -1420,6 +1442,7 @@ function App() {
             (conflictTarget.includes('recipes_name_unique') || conflictTarget.includes('name'))
 
           if (isNameUniqueConflict) {
+            recipeNameToInsert = await getNextAvailableRecipeNameGlobal(sourceRecipe.name)
             continue
           }
 
