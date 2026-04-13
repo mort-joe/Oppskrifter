@@ -427,6 +427,14 @@
   box-sizing: border-box;
 }
 
+.content-page.shopping-section,
+.content-page.shopping-section.mobile {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
 .app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header) {
   appearance: none;
   border: 1px solid var(--button-border);
@@ -533,10 +541,14 @@
 .shopping-section {
   display: grid;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .shopping-section.mobile {
   gap: 16px;
+  width: 100%;
 }
 
 .shopping-reset-row {
@@ -582,6 +594,8 @@
   border-radius: 10px;
   padding: 12px;
   text-align: left;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .shopping-reset-panel.mobile {
@@ -622,6 +636,8 @@
   display: grid;
   gap: 12px;
   text-align: left;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .custom-item-card.mobile {
@@ -708,6 +724,8 @@
 .shopping-content {
   display: grid;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .selected-recipes-summary {
@@ -743,6 +761,8 @@
 .shopping-cards {
   display: grid;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .shopping-ingredient-card {
@@ -752,6 +772,8 @@
   border: 1px solid #ddd;
   border-radius: 10px;
   background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .shopping-ingredient-card.mobile {
