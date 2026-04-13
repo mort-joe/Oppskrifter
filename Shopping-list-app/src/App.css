@@ -205,11 +205,24 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: linear-gradient(180deg, #e3edff 0%, #cadeff 100%);
-  padding: 14px 16px 18px;
+  background: linear-gradient(135deg, #dbe8ff 0%, #eef3ff 28%, #ffd7dd 72%, #f7a6b4 100%);
+  padding: 14px 14px 18px;
   margin-bottom: 16px;
-  border-bottom: 4px solid #2f63f4;
-  box-shadow: 0 8px 24px rgba(47, 99, 244, 0.2);
+  border-bottom: 4px solid #4167f4;
+  box-shadow: 0 10px 28px rgba(93, 114, 240, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+.app-shell.mobile .mobile-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 76%, rgba(255, 255, 255, 0.55), transparent 30%),
+    radial-gradient(circle at 64% 18%, rgba(255, 255, 255, 0.6), transparent 20%),
+    radial-gradient(circle at 86% 82%, rgba(255, 255, 255, 0.24), transparent 18%);
+  pointer-events: none;
 }
 
 .app-shell.mobile .mobile-header-top {
@@ -218,27 +231,84 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell.mobile .mobile-header-banner {
+  position: relative;
+  min-height: 122px;
+  display: flex;
+  align-items: flex-end;
+  z-index: 1;
+}
+
+.app-shell.mobile .mobile-header-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.app-shell.mobile .mobile-header-art-item {
+  position: absolute;
+  line-height: 1;
+  filter: drop-shadow(0 10px 18px rgba(120, 64, 86, 0.18));
+}
+
+.app-shell.mobile .mobile-header-art-item.bread {
+  top: 4px;
+  left: 58%;
+  font-size: 3.2rem;
+  transform: rotate(-18deg);
+}
+
+.app-shell.mobile .mobile-header-art-item.steak {
+  top: 24px;
+  left: 68%;
+  font-size: 2.9rem;
+  transform: rotate(16deg);
+}
+
+.app-shell.mobile .mobile-header-art-item.tomato {
+  top: 54px;
+  left: 80%;
+  font-size: 2.3rem;
+}
+
+.app-shell.mobile .mobile-header-art-item.cheese {
+  top: 48px;
+  left: 88%;
+  font-size: 2.6rem;
+  transform: rotate(-10deg);
+}
+
+.app-shell.mobile .mobile-header-art-item.broccoli {
+  top: 16px;
+  left: 84%;
+  font-size: 2.5rem;
 }
 
 .app-shell.mobile .mobile-header-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #2457e8 0%, #3f79ff 50%, #68a0ff 100%);
-  box-shadow: 0 10px 26px rgba(47, 99, 244, 0.28);
+  gap: 12px;
+  padding: 18px 20px;
+  width: min(82%, 420px);
+  border-radius: 22px;
+  background: linear-gradient(135deg, #2f53e5 0%, #4b66f3 46%, #6f57ec 100%);
+  box-shadow: 0 14px 30px rgba(68, 79, 207, 0.32);
+  position: relative;
+  z-index: 1;
 }
 
 .app-shell.mobile .mobile-header-icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.16));
+  filter: drop-shadow(0 4px 8px rgba(18, 39, 117, 0.28));
 }
 
 .app-shell.mobile .mobile-header-icon svg {
@@ -248,23 +318,23 @@
 }
 
 .app-shell.mobile .mobile-header-brand h1 {
-  font-size: 1.6rem;
+  font-size: 1.62rem;
   margin: 0;
   color: #ffffff;
   letter-spacing: -0.04em;
   font-weight: 800;
-  text-shadow: 0 2px 10px rgba(18, 39, 117, 0.24);
+  text-shadow: 0 4px 12px rgba(18, 39, 117, 0.28);
 }
 
 .app-shell.mobile .mobile-header .toolbar-signout-btn {
   font-size: 0.83rem !important;
   padding: 5px 12px !important;
   min-height: 28px !important;
-  color: #2f63f4 !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  border: 1px solid rgba(47, 99, 244, 0.2) !important;
+  color: #4167f4 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(65, 103, 244, 0.12) !important;
   box-shadow: none !important;
-  border-radius: 20px !important;
+  border-radius: 999px !important;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -280,7 +350,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2f63f4 0%, #5b8dff 100%);
+  background: linear-gradient(135deg, #4f74ff 0%, #6d8cff 100%);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
@@ -295,7 +365,7 @@
 
 .app-shell.mobile .mobile-header-username {
   font-size: 0.87rem;
-  color: #15306f;
+  color: #2c4597;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -305,7 +375,7 @@
 }
 
 .app-shell.mobile .mobile-header .account-settings-btn {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.88);
   border-color: transparent;
   color: #3657b7;
   box-shadow: none;

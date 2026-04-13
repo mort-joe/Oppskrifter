@@ -1892,7 +1892,7 @@ function App() {
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
       {isMobile ? (
         <div className="mobile-header">
-            <div className="mobile-header-top">
+          <div className="mobile-header-top">
             <div className="mobile-header-avatar" onClick={handleOpenAccountSettings}>
               {(user?.user_metadata?.display_name || user?.email || '?')[0].toUpperCase()}
             </div>
@@ -1911,6 +1911,14 @@ function App() {
                 </button>
                 <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
               </div>
+          </div>
+          <div className="mobile-header-banner">
+            <div className="mobile-header-art" aria-hidden="true">
+              <span className="mobile-header-art-item bread">🥖</span>
+              <span className="mobile-header-art-item steak">🥩</span>
+              <span className="mobile-header-art-item tomato">🍅</span>
+              <span className="mobile-header-art-item cheese">🧀</span>
+              <span className="mobile-header-art-item broccoli">🥦</span>
             </div>
             <div className="mobile-header-brand">
               <span className="mobile-header-icon" aria-hidden="true">
@@ -1919,6 +1927,7 @@ function App() {
                 </svg>
               </span>
               <h1>Innkjøpsplanlegger</h1>
+            </div>
           </div>
         </div>
       ) : (
