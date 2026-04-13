@@ -1167,9 +1167,18 @@ function App() {
     const selectedRecipes = sortedRecipeImportCatalog.filter(
       (recipe) => selectedImportRecipeIds[recipe.id] && recipe.userId !== user.id,
     )
+    const importableRecipes = selectedRecipes.filter(
+      (recipe) => !ownedRecipeRootIds.has(recipe.sharedRootRecipeId ?? recipe.id),
+    )
 
     if (!selectedRecipes.length) {
       setRecipeImportMessage('Velg minst én matrett å importere.')
+      setIsRecipeImportError(true)
+      return
+    }
+
+    if (!importableRecipes.length) {
+      setRecipeImportMessage('Valgte matretter finnes allerede i din profil.')
       setIsRecipeImportError(true)
       return
     }
@@ -1181,7 +1190,7 @@ function App() {
     try {
       const targetDefaultPeople = normalizeDefaultPeopleValue(accountDefaultPeople)
 
-      for (const sourceRecipe of selectedRecipes) {
+      for (const sourceRecipe of importableRecipes) {
         const sourceDefaultPeople = normalizeDefaultPeopleValue(catalogDefaultPeopleByUser[sourceRecipe.userId])
         const scaleFactor = targetDefaultPeople / sourceDefaultPeople
         const sharedRootRecipeId = sourceRecipe.sharedRootRecipeId ?? sourceRecipe.id
@@ -1249,7 +1258,12 @@ function App() {
       }
 
       setSelectedImportRecipeIds({})
-      setRecipeImportMessage('Valgte matretter er importert til din brukerprofil.')
+      const skippedCount = selectedRecipes.length - importableRecipes.length
+      setRecipeImportMessage(
+        skippedCount > 0
+          ? `${importableRecipes.length} matrett(er) importert. ${skippedCount} ble hoppet over fordi de allerede finnes i profilen din.`
+          : 'Valgte matretter er importert til din brukerprofil.',
+      )
       await loadData(user.id)
       await loadRecipeImportCatalog()
     } catch (importError) {
@@ -2178,12 +2192,12 @@ function App() {
                           return (
                             <label
                               key={`import-recipe-${recipe.id}`}
-                              className={`account-import-row ${isOwnRecipe ? 'disabled' : ''}`}
+                              className={`account-import-row ${isOwnRecipe || alreadyInProfile ? 'disabled' : ''}`}
                             >
                               <input
                                 type="checkbox"
                                 checked={Boolean(selectedImportRecipeIds[recipe.id])}
-                                disabled={isOwnRecipe || isImportingRecipes}
+                                disabled={isOwnRecipe || alreadyInProfile || isImportingRecipes}
                                 onChange={() => handleToggleImportRecipe(recipe.id)}
                               />
                               <div className="account-import-title-row">
