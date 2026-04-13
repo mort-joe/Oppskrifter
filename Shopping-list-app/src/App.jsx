@@ -2528,7 +2528,7 @@ function App() {
       )}
 
       {selectedMenu === 'matretter' && (
-        <div className={`content-page ${isMobile ? 'mobile' : ''}`}>
+        <div className={`content-page menu-page ${isMobile ? 'mobile' : ''}`}>
           <section style={{ marginBottom: '24px' }}>
             <label htmlFor="search" style={{ display: 'block', marginBottom: '8px' }}>
               Søk etter tag eller ingrediens:
@@ -2817,7 +2817,7 @@ function App() {
       )}
 
       {selectedMenu === 'legg-til-matrett' && (
-        <section className={`content-page ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '12px' }}>
+        <section className={`content-page menu-page ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '12px' }}>
           <h2>Legg til matrett</h2>
           <form onSubmit={handleAddRecipe} style={{ display: 'grid', gap: '12px', padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>
             <label>
@@ -2919,7 +2919,7 @@ function App() {
       )}
 
       {selectedMenu === 'lag-handleliste' && (
-        <section className={`content-page shopping-section ${isMobile ? 'mobile' : ''}`}>
+        <section className={`content-page menu-page shopping-section ${isMobile ? 'mobile' : ''}`}>
           <h2>Lag handleliste</h2>
           <p>{shoppingRecipeCount} matrett(er) er valgt for handlelisten.</p>
           <div className="shopping-reset-row">
@@ -3092,7 +3092,7 @@ function App() {
       </datalist>
 
       {selectedMenu === 'lag-meny' && (
-        <section className={`content-page ${isMobile ? 'mobile' : ''}`} style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', display: 'grid', gap: '16px' }}>
+        <section className={`content-page menu-page ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '16px' }}>
           <section style={{ marginBottom: '8px' }}>
             <label htmlFor="menu-search" style={{ display: 'block', marginBottom: '8px' }}>
               Søk etter tag eller ingrediens:

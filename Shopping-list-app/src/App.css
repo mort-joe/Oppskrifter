@@ -463,6 +463,15 @@
   box-sizing: border-box;
 }
 
+@media (min-width: 769px) {
+  .menu-page {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fafafa;
+  }
+}
+
 .app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header) {
   appearance: none;
   border: 1px solid var(--button-border);
