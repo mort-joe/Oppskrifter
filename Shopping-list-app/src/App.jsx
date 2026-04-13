@@ -1918,12 +1918,47 @@ function App() {
               <span className="mobile-header-art-glow mobile-header-art-glow-two"></span>
               <span className="mobile-header-art-spark mobile-header-art-spark-one">✦</span>
               <span className="mobile-header-art-spark mobile-header-art-spark-two">✦</span>
-              <span className="mobile-header-art-item bread">🥖</span>
-              <span className="mobile-header-art-item steak">🥩</span>
-              <span className="mobile-header-art-item tomato">🍅</span>
-              <span className="mobile-header-art-item cheese">🧀</span>
-              <span className="mobile-header-art-item broccoli">🥦</span>
-              <span className="mobile-header-art-item lemon">🍋</span>
+              <span className="mobile-header-art-item bread">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path d="M12 36c0-10 8-20 22-20s22 10 22 20c0 7-5 12-12 12H24c-7 0-12-5-12-12Z" fill="#f6b74d" />
+                  <path d="M21 32c2-2 4-2 6 0m6 0c2-2 4-2 6 0m6 0c2-2 4-2 6 0" stroke="#dd9731" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="mobile-header-art-item steak">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path d="M30 14c14 0 24 9 24 22S43 58 29 58 8 47 8 34s8-20 22-20Z" fill="#e56f73" />
+                  <path d="M29 22c8 0 14 5 14 12s-6 12-14 12-13-5-13-12 5-12 13-12Z" fill="#ffd1cb" />
+                  <circle cx="20" cy="30" r="3" fill="#ffd1cb" />
+                </svg>
+              </span>
+              <span className="mobile-header-art-item tomato">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <circle cx="32" cy="36" r="18" fill="#f05559" />
+                  <path d="M32 16c5 0 9 2 12 6-4 0-7-1-10-4-3 3-6 4-10 4 3-4 7-6 8-6Z" fill="#4ca658" />
+                </svg>
+              </span>
+              <span className="mobile-header-art-item cheese">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path d="M12 46 48 24l8 18-36 8Z" fill="#ffd45c" />
+                  <circle cx="35" cy="36" r="3" fill="#f1b73d" />
+                  <circle cx="44" cy="41" r="2.8" fill="#f1b73d" />
+                  <circle cx="27" cy="42" r="2.5" fill="#f1b73d" />
+                </svg>
+              </span>
+              <span className="mobile-header-art-item broccoli">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path d="M30 34h6v16h-6z" fill="#4da95b" />
+                  <circle cx="24" cy="30" r="9" fill="#63bf6f" />
+                  <circle cx="33" cy="26" r="11" fill="#5ab768" />
+                  <circle cx="42" cy="31" r="9" fill="#63bf6f" />
+                </svg>
+              </span>
+              <span className="mobile-header-art-item lemon">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <ellipse cx="32" cy="36" rx="14" ry="10" fill="#ffd95f" />
+                  <path d="M20 36h24" stroke="#f2b739" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </span>
             </div>
             <div className="mobile-header-brand">
               <span className="mobile-header-icon" aria-hidden="true">

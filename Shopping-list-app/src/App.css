@@ -205,10 +205,10 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: linear-gradient(135deg, #d9e6ff 0%, #edf3ff 24%, #ffe0e5 68%, #f8b7c0 100%);
+  background: linear-gradient(135deg, #d5e4ff 0%, #e8f0ff 22%, #fbdbe3 64%, #f2b8c8 100%);
   padding: 14px 14px 20px;
   margin-bottom: 16px;
-  border-bottom: 4px solid #4167f4;
+  border-bottom: 4px solid #4a62e8;
   box-shadow: 0 12px 30px rgba(83, 102, 216, 0.16);
   position: relative;
   overflow: hidden;
@@ -318,47 +318,58 @@
 
 .app-shell.mobile .mobile-header-art-item {
   position: absolute;
-  line-height: 1;
   filter: drop-shadow(0 12px 20px rgba(120, 64, 86, 0.14));
+}
+
+.app-shell.mobile .mobile-header-art-item svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .app-shell.mobile .mobile-header-art-item.bread {
   top: 4px;
   left: 57%;
-  font-size: 2.85rem;
+  width: 62px;
+  height: 62px;
   transform: rotate(-16deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.steak {
   top: 22px;
   left: 67%;
-  font-size: 2.65rem;
+  width: 58px;
+  height: 58px;
   transform: rotate(14deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.tomato {
   top: 62px;
   left: 79%;
-  font-size: 2.05rem;
+  width: 44px;
+  height: 44px;
 }
 
 .app-shell.mobile .mobile-header-art-item.cheese {
   top: 54px;
   left: 87%;
-  font-size: 2.25rem;
+  width: 50px;
+  height: 50px;
   transform: rotate(-10deg);
 }
 
 .app-shell.mobile .mobile-header-art-item.broccoli {
   top: 10px;
   left: 83%;
-  font-size: 2.2rem;
+  width: 52px;
+  height: 52px;
 }
 
 .app-shell.mobile .mobile-header-art-item.lemon {
   top: 74px;
   left: 67%;
-  font-size: 1.85rem;
+  width: 36px;
+  height: 36px;
   transform: rotate(-12deg);
 }
 
@@ -369,7 +380,7 @@
   padding: 19px 20px;
   width: min(78%, 420px);
   border-radius: 24px;
-  background: linear-gradient(135deg, #3054e6 0%, #4a67f3 42%, #6659ea 100%);
+  background: linear-gradient(135deg, #2f4fdc 0%, #475fe4 42%, #5f52dc 100%);
   box-shadow: 0 16px 34px rgba(69, 82, 203, 0.26);
   position: relative;
   z-index: 1;
@@ -540,7 +551,7 @@
   grid-template-columns: 1fr 1fr;
   margin-top: 0;
   margin-bottom: 20px;
-  gap: 10px;
+  gap: 12px;
 }
 
 .main-nav-button {
@@ -573,18 +584,20 @@
 }
 
 .main-nav-button.mobile {
-  padding: 13px 10px;
-  font-size: 0.95rem;
+  padding: 14px 10px;
+  font-size: 0.96rem;
   border-radius: 16px;
-  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
-  box-shadow: 0 4px 14px rgba(28, 49, 140, 0.1);
+  border: 1px solid #ced8f5;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f6ff 100%);
+  box-shadow: 0 8px 18px rgba(57, 73, 168, 0.12);
+  color: #36406d;
 }
 
 .main-nav-button.mobile.active {
-  background: linear-gradient(160deg, #2558e0 0%, #4f9cf9 100%) !important;
-  border-color: #2558e0 !important;
+  background: linear-gradient(140deg, #3557e5 0%, #4a6ff0 58%, #5f87ff 100%) !important;
+  border-color: #3a5eea !important;
   color: #fff !important;
-  box-shadow: 0 6px 20px rgba(37, 88, 224, 0.35) !important;
+  box-shadow: 0 12px 24px rgba(53, 87, 229, 0.34) !important;
 }
 
 .main-nav-button.active {
