@@ -1328,30 +1328,10 @@ function App() {
     return highestVersion + 1
   }
 
-  const getNextAvailableRecipeNameForUser = async (baseName, userId) => {
+  const getImportRecipeNameCandidate = (baseName, attempt) => {
     const normalizedBaseName = String(baseName || '').trim()
     if (!normalizedBaseName) return normalizedBaseName
-
-    const { data, error } = await supabase
-      .from('recipes')
-      .select('name')
-      .eq('user_id', userId)
-
-    if (error) {
-      throw error
-    }
-
-    const existingNames = new Set((data || []).map((row) => String(row.name || '').trim()))
-    if (!existingNames.has(normalizedBaseName)) {
-      return normalizedBaseName
-    }
-
-    let nextIndex = 1
-    while (existingNames.has(`${normalizedBaseName} (${nextIndex})`)) {
-      nextIndex += 1
-    }
-
-    return `${normalizedBaseName} (${nextIndex})`
+    return attempt === 0 ? normalizedBaseName : `${normalizedBaseName} (${attempt})`
   }
 
   const handleImportSelectedRecipes = async () => {
@@ -1408,11 +1388,11 @@ function App() {
         const categoryIds = await getOrCreateRecords('categories', sourceRecipe.typeTags || [])
         const tagIds = await getOrCreateRecords('tags', sourceRecipe.occasionTags || [])
 
-        let recipeNameToInsert = sourceRecipe.name.trim()
         let insertedRecipe = null
         let recipeInsertError = null
 
-        for (let attempt = 0; attempt < 2; attempt += 1) {
+        for (let attempt = 0; attempt < 25; attempt += 1) {
+          const recipeNameToInsert = getImportRecipeNameCandidate(sourceRecipe.name, attempt)
           const { data, error } = await supabase
             .from('recipes')
             .insert([
@@ -1434,8 +1414,12 @@ function App() {
             break
           }
 
-          if (recipeInsertError?.code === '23505' && attempt === 0) {
-            recipeNameToInsert = await getNextAvailableRecipeNameForUser(sourceRecipe.name.trim(), user.id)
+          const conflictTarget = String(recipeInsertError?.message || recipeInsertError?.details || '').toLowerCase()
+          const isNameUniqueConflict =
+            recipeInsertError?.code === '23505' &&
+            (conflictTarget.includes('recipes_name_unique') || conflictTarget.includes('name'))
+
+          if (isNameUniqueConflict) {
             continue
           }
 
