@@ -323,7 +323,7 @@ function App() {
       supabase
         .from('recipes')
         .select(
-          'id,name,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
+          'id,name,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
         )
         .eq('user_id', userId)
         .order('id', { ascending: false }),
