@@ -99,6 +99,23 @@ const normalizeDefaultPeopleValue = (value) =>
 const scaleIngredientQuantity = (quantity, factor) =>
   Math.max(0, Math.round(((Number(quantity) || 0) * factor + Number.EPSILON) * 1000) / 1000)
 
+const RECIPE_NAME_SUFFIX_PATTERN = /\s\(\d+\)$/
+
+const getRecipeDisplayName = (recipe) => {
+  const recipeName = String(recipe?.name || '').trim()
+  const sharedRootName = String(recipe?.sharedRootName || '').trim()
+
+  if (recipe?.sharedVersionNumber) {
+    return sharedRootName || recipeName.replace(RECIPE_NAME_SUFFIX_PATTERN, '')
+  }
+
+  if (recipe?.sharedRootRecipeId && RECIPE_NAME_SUFFIX_PATTERN.test(recipeName)) {
+    return recipeName.replace(RECIPE_NAME_SUFFIX_PATTERN, '')
+  }
+
+  return recipeName
+}
+
 const getSharedRecipeDisplayName = (recipe) => {
   const recipeName = String(recipe?.name || '').trim()
   const sharedRootName = String(recipe?.sharedRootName || '').trim()
@@ -804,13 +821,13 @@ function App() {
   const filteredRecipes = useMemo(() => {
     const filter = searchTerm.trim().toLowerCase()
     const sortedRecipes = [...recipes].sort((a, b) =>
-      a.name.localeCompare(b.name, 'no', { sensitivity: 'base' }),
+      getRecipeDisplayName(a).localeCompare(getRecipeDisplayName(b), 'no', { sensitivity: 'base' }),
     )
 
     if (!filter) return sortedRecipes
 
     return sortedRecipes.filter((recipe) => {
-      const nameMatch = recipe.name.toLowerCase().includes(filter)
+      const nameMatch = getRecipeDisplayName(recipe).toLowerCase().includes(filter) || recipe.name.toLowerCase().includes(filter)
       const typeMatch = recipe.typeTags.some((tag) => tag.toLowerCase().includes(filter))
       const occasionMatch = recipe.occasionTags.some((tag) => tag.toLowerCase().includes(filter))
       const ingredientMatch = recipe.ingredients.some((ingredient) => ingredient.name.toLowerCase().includes(filter))
@@ -1902,7 +1919,7 @@ function App() {
 
   const handleDeleteRecipe = async () => {
     if (!editingRecipe) return
-    if (!window.confirm(`Er du sikker på at du vil slette matretten "${editingRecipe.name}"?`)) {
+    if (!window.confirm(`Er du sikker på at du vil slette matretten "${getRecipeDisplayName(editingRecipe)}"?`)) {
       return
     }
 
@@ -2548,7 +2565,7 @@ function App() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <strong style={{ minWidth: 0, flex: '1 1 auto' }}>{recipe.name}</strong>
+                        <strong style={{ minWidth: 0, flex: '1 1 auto' }}>{getRecipeDisplayName(recipe)}</strong>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: '1 1 auto' }}>
                           {recipe.typeTags.map((tag) => (
                             <span
@@ -2742,7 +2759,7 @@ function App() {
               ) : selectedRecipe ? (
                 <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', textAlign: 'left' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
-                    <h3 style={{ margin: 0 }}>{selectedRecipe.name}</h3>
+                    <h3 style={{ margin: 0 }}>{getRecipeDisplayName(selectedRecipe)}</h3>
                     <button
                       type="button"
                       onClick={() => handleStartEditing(selectedRecipe)}
@@ -3013,7 +3030,7 @@ function App() {
                     {shoppingRecipes.map((recipe) => (
                       <li key={`shopping-recipe-${recipe.id}`} className="selected-recipes-list-row">
                         <span>
-                          {recipe.name} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
+                          {getRecipeDisplayName(recipe)} {recipe.count > 1 ? `(${recipe.count} ganger)` : ''}
                         </span>
                         <button
                           type="button"
@@ -3133,7 +3150,7 @@ function App() {
                     <option value="">Velg en rett</option>
                     {filteredRecipes.map((recipe) => (
                       <option key={recipe.id} value={recipe.id}>
-                        {recipe.name}
+                        {getRecipeDisplayName(recipe)}
                       </option>
                     ))}
                   </select>
@@ -3154,7 +3171,7 @@ function App() {
                   return (
                     <div key={`menu-summary-${index}`} className="menu-created-day-row" role="row">
                       <span className="menu-created-day-label" role="cell">Dag {index + 1}:</span>
-                      <span className="menu-created-day-recipe" role="cell">{recipe?.name || 'Ingen rett valgt'}</span>
+                      <span className="menu-created-day-recipe" role="cell">{recipe ? getRecipeDisplayName(recipe) : 'Ingen rett valgt'}</span>
                     </div>
                   )
                 })}
