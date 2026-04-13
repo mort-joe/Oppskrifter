@@ -205,14 +205,14 @@
 }
 
 .app-shell.mobile .mobile-header {
-  background: linear-gradient(135deg, #d5e4ff 0%, #e8f0ff 22%, #fbdbe3 64%, #f2b8c8 100%);
-  padding: 14px 14px 20px;
+  background: linear-gradient(140deg, #dce8ff 0%, #edf3ff 40%, #e4f1ff 100%);
+  padding: 14px 14px 18px;
   margin-bottom: 16px;
-  border-bottom: 4px solid #4a62e8;
-  box-shadow: 0 12px 30px rgba(83, 102, 216, 0.16);
+  border-bottom: 4px solid #3f63ea;
+  box-shadow: 0 14px 30px rgba(55, 86, 198, 0.16);
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.72);
 }
 
 .app-shell.mobile .mobile-header::before {
@@ -220,21 +220,21 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 18% 76%, rgba(255, 255, 255, 0.55), transparent 30%),
-    radial-gradient(circle at 64% 18%, rgba(255, 255, 255, 0.6), transparent 20%),
-    radial-gradient(circle at 86% 82%, rgba(255, 255, 255, 0.24), transparent 18%);
+    radial-gradient(circle at 15% 12%, rgba(255, 255, 255, 0.66), transparent 34%),
+    radial-gradient(circle at 82% 76%, rgba(117, 157, 255, 0.26), transparent 36%),
+    radial-gradient(circle at 92% 24%, rgba(255, 255, 255, 0.35), transparent 18%);
   pointer-events: none;
 }
 
 .app-shell.mobile .mobile-header::after {
   content: '';
   position: absolute;
-  right: -36px;
-  top: 18px;
-  width: 190px;
-  height: 190px;
+  right: -58px;
+  top: -24px;
+  width: 210px;
+  height: 210px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 48%, transparent 72%);
+  background: radial-gradient(circle, rgba(96, 131, 247, 0.22) 0%, rgba(96, 131, 247, 0.04) 52%, transparent 74%);
   pointer-events: none;
 }
 
@@ -243,15 +243,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   position: relative;
   z-index: 1;
-  padding: 4px 4px 0;
+  padding: 2px 2px 0;
 }
 
 .app-shell.mobile .mobile-header-banner {
   position: relative;
-  min-height: 136px;
+  min-height: 112px;
   display: flex;
   align-items: flex-end;
   z-index: 1;
@@ -260,164 +260,58 @@
 .app-shell.mobile .mobile-header-banner::before {
   content: '';
   position: absolute;
-  right: 18px;
-  top: 10px;
-  width: 168px;
-  height: 96px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.04));
-  filter: blur(2px);
-}
-
-.app-shell.mobile .mobile-header-art {
-  position: absolute;
   inset: 0;
-  pointer-events: none;
-}
-
-.app-shell.mobile .mobile-header-art-glow {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.app-shell.mobile .mobile-header-art-glow-one {
-  right: 36px;
-  top: 6px;
-  width: 126px;
-  height: 126px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.08) 56%, transparent 76%);
-}
-
-.app-shell.mobile .mobile-header-art-glow-two {
-  right: 0;
-  top: 30px;
-  width: 118px;
-  height: 118px;
-  background: radial-gradient(circle, rgba(255, 196, 202, 0.28) 0%, rgba(255, 196, 202, 0.08) 56%, transparent 76%);
-}
-
-.app-shell.mobile .mobile-header-art-spark {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 4px 10px rgba(255, 255, 255, 0.45);
-  line-height: 1;
-}
-
-.app-shell.mobile .mobile-header-art-spark-one {
-  right: 152px;
-  top: 18px;
-  font-size: 0.95rem;
-}
-
-.app-shell.mobile .mobile-header-art-spark-two {
-  right: 46px;
-  top: 82px;
-  font-size: 0.8rem;
-}
-
-.app-shell.mobile .mobile-header-art-item {
-  position: absolute;
-  filter: drop-shadow(0 12px 20px rgba(120, 64, 86, 0.14));
-}
-
-.app-shell.mobile .mobile-header-art-item svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.app-shell.mobile .mobile-header-art-item.bread {
-  top: 4px;
-  left: 57%;
-  width: 62px;
-  height: 62px;
-  transform: rotate(-16deg);
-}
-
-.app-shell.mobile .mobile-header-art-item.steak {
-  top: 22px;
-  left: 67%;
-  width: 58px;
-  height: 58px;
-  transform: rotate(14deg);
-}
-
-.app-shell.mobile .mobile-header-art-item.tomato {
-  top: 62px;
-  left: 79%;
-  width: 44px;
-  height: 44px;
-}
-
-.app-shell.mobile .mobile-header-art-item.cheese {
-  top: 54px;
-  left: 87%;
-  width: 50px;
-  height: 50px;
-  transform: rotate(-10deg);
-}
-
-.app-shell.mobile .mobile-header-art-item.broccoli {
-  top: 10px;
-  left: 83%;
-  width: 52px;
-  height: 52px;
-}
-
-.app-shell.mobile .mobile-header-art-item.lemon {
-  top: 74px;
-  left: 67%;
-  width: 36px;
-  height: 36px;
-  transform: rotate(-12deg);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(57, 92, 221, 0.24), rgba(114, 157, 255, 0.1) 42%, rgba(255, 255, 255, 0) 75%),
+    radial-gradient(circle at 84% 18%, rgba(255, 255, 255, 0.32), transparent 24%),
+    radial-gradient(circle at 92% 78%, rgba(255, 255, 255, 0.24), transparent 32%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .app-shell.mobile .mobile-header-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 19px 20px;
-  width: min(78%, 420px);
-  border-radius: 24px;
-  background: linear-gradient(135deg, #2f4fdc 0%, #475fe4 42%, #5f52dc 100%);
-  box-shadow: 0 16px 34px rgba(69, 82, 203, 0.26);
+  gap: 14px;
+  padding: 18px 18px;
+  width: 100%;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #2f50dd 0%, #3f60e8 44%, #486fe9 100%);
+  box-shadow: 0 14px 30px rgba(44, 74, 189, 0.3);
   position: relative;
   z-index: 1;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .app-shell.mobile .mobile-header-brand::before {
   content: '';
   position: absolute;
-  inset: 1px 1px auto 1px;
-  height: 56%;
-  border-radius: 21px 21px 18px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02));
+  inset: 0;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02) 34%, rgba(255, 255, 255, 0.2) 100%);
   pointer-events: none;
 }
 
 .app-shell.mobile .mobile-header-brand::after {
   content: '';
   position: absolute;
-  right: -18px;
-  bottom: -22px;
-  width: 88px;
-  height: 88px;
+  right: -20px;
+  bottom: -26px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, transparent 68%);
   pointer-events: none;
 }
 
 .app-shell.mobile .mobile-header-icon {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 4px 8px rgba(18, 39, 117, 0.28));
+  filter: drop-shadow(0 4px 9px rgba(16, 36, 110, 0.3));
   position: relative;
   z-index: 1;
 }
@@ -429,24 +323,38 @@
 }
 
 .app-shell.mobile .mobile-header-brand h1 {
-  font-size: 1.66rem;
+  font-size: 1.6rem;
   margin: 0;
   color: #ffffff;
   letter-spacing: -0.045em;
   font-weight: 800;
-  text-shadow: 0 4px 12px rgba(18, 39, 117, 0.28);
+  text-shadow: 0 4px 12px rgba(16, 36, 110, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell.mobile .mobile-header-brand-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.app-shell.mobile .mobile-header-brand-copy p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
   position: relative;
   z-index: 1;
 }
 
 .app-shell.mobile .mobile-header .toolbar-signout-btn {
   font-size: 0.83rem !important;
-  padding: 5px 13px !important;
+  padding: 5px 12px !important;
   min-height: 30px !important;
-  color: #4b65df !important;
+  color: #3c5ddc !important;
   background: rgba(255, 255, 255, 0.96) !important;
-  border: 1px solid rgba(75, 101, 223, 0.1) !important;
-  box-shadow: 0 8px 16px rgba(92, 102, 194, 0.08) !important;
+  border: 1px solid rgba(60, 93, 220, 0.12) !important;
+  box-shadow: 0 8px 14px rgba(73, 95, 188, 0.1) !important;
   border-radius: 999px !important;
   white-space: nowrap;
   flex-shrink: 0;
@@ -464,7 +372,7 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4f74ff 0%, #6d8cff 100%);
+  background: linear-gradient(135deg, #3f63ea 0%, #6087f7 100%);
   color: #fff;
   font-size: 0.86rem;
   font-weight: 700;
@@ -480,7 +388,7 @@
 
 .app-shell.mobile .mobile-header-username {
   font-size: 0.92rem;
-  color: #274090;
+  color: #233f93;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -492,7 +400,7 @@
 .app-shell.mobile .mobile-header .account-settings-btn {
   background: rgba(255, 255, 255, 0.94);
   border-color: transparent;
-  color: #3657b7;
+  color: #3558c2;
   box-shadow: 0 8px 16px rgba(92, 102, 194, 0.08);
   padding: 2px 10px;
   min-height: 30px;
@@ -501,6 +409,22 @@
 
 .app-shell.mobile .mobile-content {
   padding: 0 14px;
+}
+
+.content-page {
+  width: 100%;
+}
+
+.content-page.mobile {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.content-page.mobile > section,
+.content-page.mobile > div,
+.content-page.mobile > form {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .app-shell button:not(.account-link-btn):not(.auth-link-btn):not(.account-import-group-header) {
@@ -586,18 +510,18 @@
 .main-nav-button.mobile {
   padding: 14px 10px;
   font-size: 0.96rem;
-  border-radius: 16px;
-  border: 1px solid #ced8f5;
-  background: linear-gradient(180deg, #ffffff 0%, #f3f6ff 100%);
-  box-shadow: 0 8px 18px rgba(57, 73, 168, 0.12);
-  color: #36406d;
+  border-radius: 15px;
+  border: 1px solid #d4def7;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f8ff 100%);
+  box-shadow: 0 6px 14px rgba(61, 84, 173, 0.1);
+  color: #2f3f77;
 }
 
 .main-nav-button.mobile.active {
-  background: linear-gradient(140deg, #3557e5 0%, #4a6ff0 58%, #5f87ff 100%) !important;
-  border-color: #3a5eea !important;
+  background: linear-gradient(140deg, #3659e8 0%, #4f71f0 60%, #648cff 100%) !important;
+  border-color: #3d62ea !important;
   color: #fff !important;
-  box-shadow: 0 12px 24px rgba(53, 87, 229, 0.34) !important;
+  box-shadow: 0 10px 20px rgba(55, 89, 232, 0.3) !important;
 }
 
 .main-nav-button.active {
