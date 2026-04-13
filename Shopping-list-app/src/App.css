@@ -751,11 +751,11 @@
 
 .custom-item-title {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
 }
 
 .custom-item-title.mobile {
-  font-size: 1.45rem;
+  font-size: 1.3rem;
 }
 
 .custom-item-form {
