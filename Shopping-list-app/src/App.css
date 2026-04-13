@@ -443,7 +443,8 @@
 }
 
 .desktop-main-region {
-  width: min(100%, 1040px);
+  --desktop-content-width: min(980px, calc(100vw - 64px));
+  width: var(--desktop-content-width);
   margin-inline: auto;
 }
 
@@ -487,6 +488,13 @@
 }
 
 @media (min-width: 769px) {
+  .desktop-main-region > .main-nav,
+  .desktop-main-region > .menu-workspace {
+    width: var(--desktop-content-width);
+    max-width: var(--desktop-content-width);
+    margin-inline: auto;
+  }
+
   .menu-page {
     width: 100%;
     max-width: 100%;
