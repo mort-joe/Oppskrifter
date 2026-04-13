@@ -435,6 +435,18 @@
   min-width: 0;
 }
 
+.app-content-region {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.app-content-region > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
 .content-page {
   width: 100%;
 }
