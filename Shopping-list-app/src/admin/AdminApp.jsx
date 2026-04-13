@@ -27,6 +27,22 @@ const formatDate = (value, includeTime = true) => {
   return includeTime ? parsed.toLocaleString('no-NO') : parsed.toLocaleDateString('no-NO')
 }
 
+const pickRecommendedDuplicateIngredient = (rows) => {
+  const candidates = Array.isArray(rows) ? rows : []
+  if (!candidates.length) return null
+
+  return [...candidates].sort((a, b) => {
+    const usageDiff = (Number(b?.usage_count) || 0) - (Number(a?.usage_count) || 0)
+    if (usageDiff !== 0) return usageDiff
+
+    const aStartsUpper = /^[A-ZÆØÅ]/.test(String(a?.name || '').trim()) ? 1 : 0
+    const bStartsUpper = /^[A-ZÆØÅ]/.test(String(b?.name || '').trim()) ? 1 : 0
+    if (bStartsUpper !== aStartsUpper) return bStartsUpper - aStartsUpper
+
+    return String(a?.name || '').localeCompare(String(b?.name || ''), 'no', { sensitivity: 'base' })
+  })[0]
+}
+
 function AdminApp() {
   const [token, setToken] = useState(getStoredToken)
   const [loading, setLoading] = useState(false)
@@ -40,6 +56,7 @@ function AdminApp() {
   const [categoryNameDrafts, setCategoryNameDrafts] = useState({})
   const [newCategoryName, setNewCategoryName] = useState('')
   const [ingredients, setIngredients] = useState([])
+  const [ingredientNameDrafts, setIngredientNameDrafts] = useState({})
   const [ingredientCategoryDrafts, setIngredientCategoryDrafts] = useState({})
   const [ingredientSearch, setIngredientSearch] = useState('')
   const [duplicateGroups, setDuplicateGroups] = useState([])
@@ -171,9 +188,12 @@ function AdminApp() {
       }
 
       const nextCategoryDrafts = {}
+      const nextNameDrafts = {}
       nextIngredients.forEach((ingredient) => {
+        nextNameDrafts[ingredient.id] = ingredient.name || ''
         nextCategoryDrafts[ingredient.id] = ingredient.shopping_category || 'annet'
       })
+      setIngredientNameDrafts(nextNameDrafts)
       setIngredientCategoryDrafts(nextCategoryDrafts)
 
       setDuplicateKeepByGroup((current) => {
@@ -181,8 +201,11 @@ function AdminApp() {
         nextDuplicateGroups.forEach((group) => {
           const ids = (group.ingredients || []).map((ingredient) => ingredient.id)
           if (!ids.length) return
+          const recommendedId = pickRecommendedDuplicateIngredient(group.ingredients)?.id
           const previous = current[group.normalized_key]
-          next[group.normalized_key] = ids.includes(previous) ? previous : ids[0]
+          next[group.normalized_key] = ids.includes(previous)
+            ? previous
+            : (ids.includes(recommendedId) ? recommendedId : ids[0])
         })
         return next
       })
@@ -422,7 +445,12 @@ function AdminApp() {
   }
 
   const handleSaveIngredientCategory = async (ingredientId) => {
+    const name = String(ingredientNameDrafts[ingredientId] || '').trim()
     const shoppingCategory = String(ingredientCategoryDrafts[ingredientId] || '').trim()
+    if (!name) {
+      setError('Ingrediensnavn ma fylles ut.')
+      return
+    }
     if (!shoppingCategory) {
       setError('Velg en sorteringskategori for ingrediensen.')
       return
@@ -431,7 +459,10 @@ function AdminApp() {
     setLoading(true)
     setError('')
     try {
-      await updateIngredientCategory(token, ingredientId, { shopping_category: shoppingCategory })
+      await updateIngredientCategory(token, ingredientId, {
+        name,
+        shopping_category: shoppingCategory,
+      })
       await loadIngredientData()
     } catch (ingredientError) {
       setError(ingredientError.message)
@@ -916,7 +947,18 @@ function AdminApp() {
                     <tbody>
                       {filteredIngredients.map((ingredient) => (
                         <tr key={`ingredient-${ingredient.id}`}>
-                          <td>{ingredient.name}</td>
+                          <td>
+                            <input
+                              type="text"
+                              value={ingredientNameDrafts[ingredient.id] ?? ingredient.name ?? ''}
+                              onChange={(event) =>
+                                setIngredientNameDrafts((current) => ({
+                                  ...current,
+                                  [ingredient.id]: event.target.value,
+                                }))
+                              }
+                            />
+                          </td>
                           <td>
                             <select
                               value={ingredientCategoryDrafts[ingredient.id] ?? ingredient.shopping_category ?? 'annet'}
@@ -968,6 +1010,7 @@ function AdminApp() {
                         {duplicateGroups.map((group) => {
                           const rows = group.ingredients || []
                           const keepId = duplicateKeepByGroup[group.normalized_key] ?? rows[0]?.id
+                          const recommendedKeepId = pickRecommendedDuplicateIngredient(rows)?.id
                           return (
                             <article key={`duplicate-group-${group.normalized_key}`} className="duplicate-group-card">
                               <div className="duplicate-group-header">
@@ -991,7 +1034,10 @@ function AdminApp() {
                                         }
                                       />
                                       <span>{row.name}</span>
-                                      <span className="duplicate-meta">kategori: {row.shopping_category || 'annet'} · brukt i {row.usage_count || 0}</span>
+                                      <span className="duplicate-meta">
+                                        kategori: {row.shopping_category || 'annet'} · brukt i {row.usage_count || 0} · id: {row.id}
+                                        {Number(recommendedKeepId) === Number(row.id) ? ' · anbefalt' : ''}
+                                      </span>
                                     </label>
                                   </li>
                                 ))}

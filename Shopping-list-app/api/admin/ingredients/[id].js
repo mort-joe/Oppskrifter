@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     query: { id },
   } = req
 
+  const name = String(req.body?.name || '').trim()
   const shoppingCategory = String(req.body?.shopping_category || '').trim()
 
   if (!id) {
@@ -29,14 +30,18 @@ export default async function handler(req, res) {
     return
   }
 
-  if (!shoppingCategory) {
-    res.status(400).json({ error: 'Mangler sorteringskategori.' })
+  if (!name && !shoppingCategory) {
+    res.status(400).json({ error: 'Mangler felter som skal oppdateres.' })
     return
   }
 
+  const updates = {}
+  if (name) updates.name = name
+  if (shoppingCategory) updates.shopping_category = shoppingCategory
+
   const { data, error } = await supabaseAdmin
     .from('ingredients')
-    .update({ shopping_category: shoppingCategory })
+    .update(updates)
     .eq('id', id)
     .select('id,name,shopping_category')
     .single()
