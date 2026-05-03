@@ -29,6 +29,20 @@ export default async function handler(req, res) {
       return
     }
 
+    // Get the current category name before updating
+    const { data: currentCategory, error: fetchError } = await supabaseAdmin
+      .from('shopping_categories')
+      .select('name')
+      .eq('id', id)
+      .single()
+
+    if (fetchError) {
+      res.status(400).json({ error: fetchError.message })
+      return
+    }
+
+    const oldName = currentCategory.name
+
     const { data, error } = await supabaseAdmin
       .from('shopping_categories')
       .update({ name })
@@ -39,6 +53,19 @@ export default async function handler(req, res) {
     if (error) {
       res.status(400).json({ error: error.message })
       return
+    }
+
+    // Update all ingredients with the old category name to the new name
+    if (oldName !== name) {
+      const { error: updateIngredientsError } = await supabaseAdmin
+        .from('ingredients')
+        .update({ shopping_category: name })
+        .eq('shopping_category', oldName)
+
+      if (updateIngredientsError) {
+        // Log the error but don't fail the request since the category was updated
+        console.error('Failed to update ingredients shopping_category:', updateIngredientsError.message)
+      }
     }
 
     res.status(200).json({ category: data })
