@@ -57,8 +57,13 @@ const normalizeIngredientName = (value) => {
 const normalizeNames = (values) =>
   [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
 
+const normalizeShoppingCategory = (value) => {
+  const normalizedCategory = normalizeShoppingCategoryKey(value)
+  return normalizedCategory || 'annet'
+}
+
 const resolveShoppingCategory = (_ingredientName, storedCategory) =>
-  storedCategory || 'annet'
+  normalizeShoppingCategory(storedCategory)
 
 const normalizeDefaultPeopleValue = (value) =>
   Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
@@ -962,7 +967,7 @@ function App() {
         key,
         name: item.name,
         unit: item.unit,
-        shoppingCategory: item.shoppingCategory ?? 'annet',
+        shoppingCategory: normalizeShoppingCategory(item.shoppingCategory),
         requiredQuantity: item.requiredQuantity,
         haveQuantity,
         neededQuantity: Math.max(item.requiredQuantity - haveQuantity, 0),
@@ -970,8 +975,8 @@ function App() {
     })
 
     return items.sort((a, b) => {
-      const categoryA = a.shoppingCategory || 'annet'
-      const categoryB = b.shoppingCategory || 'annet'
+      const categoryA = normalizeShoppingCategory(a.shoppingCategory)
+      const categoryB = normalizeShoppingCategory(b.shoppingCategory)
       const categoryIndexA = shoppingCategoryOrder.indexOf(categoryA)
       const categoryIndexB = shoppingCategoryOrder.indexOf(categoryB)
 
