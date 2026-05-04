@@ -62,8 +62,10 @@ const normalizeShoppingCategory = (value) => {
   return normalizedCategory || 'annet'
 }
 
-const resolveShoppingCategory = (_ingredientName, storedCategory) =>
-  normalizeShoppingCategory(storedCategory)
+const resolveShoppingCategory = (ingredientName, storedCategory, globalIngredientCategories = {}) => {
+  const globalCategory = globalIngredientCategories[normalizeIngredientText(String(ingredientName || '').trim())]
+  return globalCategory || normalizeShoppingCategory(storedCategory)
+}
 
 const normalizeDefaultPeopleValue = (value) =>
   Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
@@ -345,6 +347,13 @@ function App() {
       )
     }
 
+    const ingredientCategoryMap = Object.fromEntries(
+      (ingredientNameData || []).map((row) => [
+        normalizeIngredientText(String(row.name || '').trim()),
+        normalizeShoppingCategory(row.shopping_category),
+      ]),
+    )
+
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
       setGlobalIngredientNames([])
@@ -357,14 +366,7 @@ function App() {
             .filter(Boolean),
         ),
       )
-      setGlobalIngredientCategories(
-        Object.fromEntries(
-          (ingredientNameData || []).map((row) => [
-            normalizeIngredientText(String(row.name || '').trim()),
-            normalizeShoppingCategory(row.shopping_category),
-          ]),
-        ),
-      )
+      setGlobalIngredientCategories(ingredientCategoryMap)
     }
 
     if (recipeError) {
@@ -386,7 +388,11 @@ function App() {
                 name: normalizeIngredientName(row.ingredients?.name),
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
-                shoppingCategory: resolveShoppingCategory(row.ingredients?.name, row.ingredients?.shopping_category),
+                shoppingCategory: resolveShoppingCategory(
+                  row.ingredients?.name,
+                  row.ingredients?.shopping_category,
+                  ingredientCategoryMap,
+                ),
               }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
