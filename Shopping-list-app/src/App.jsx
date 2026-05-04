@@ -26,19 +26,6 @@ const DEFAULT_SHOPPING_CATEGORY_ORDER = [
   'annet',
 ]
 
-const SHOPPING_CATEGORY_KEYWORDS = {
-  gronnsaker: ['brokkoli', 'gulrot', 'potet', 'lok', 'purre', 'salat', 'tomat', 'agurk', 'paprika', 'spinat', 'blomkal', 'hvitlok', 'ingefaer', 'squash', 'avokado', 'sopp', 'rukkola', 'chili'],
-  frukt: ['eple', 'banan', 'appelsin', 'pare', 'druer', 'sitron', 'lime', 'melon', 'ananas', 'kiwi', 'mango', 'jordbaer', 'bringebaer', 'blabaer'],
-  kjott: ['kjott', 'biff', 'svin', 'kylling', 'karbonade', 'kjottdeig', 'kotelett', 'pylse', 'bacon', 'skinke', 'lam', 'rein', 'kalv', 'filet'],
-  fisk: ['fisk', 'laks', 'torsk', 'sei', 'makrell', 'sild', 'reker', 'scampi', 'tunfisk', 'kveite', 'orsret', 'dorade'],
-  kjolevarer: ['yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr', 'ost', 'kebabdressing'],
-  pasta: ['pasta', 'spagetti', 'penne', 'fusilli', 'lasagne', 'tagliatelle', 'makaroni', 'nudler', 'risnudler', 'lefse', 'lefser', 'tray', 'tortilla'],
-  bakevarer: ['hvetemel', 'sammalt mel', 'speltmel', 'rugmel', 'byggmel', 'maismel', 'rismel', 'potetmel', 'kokosmel', 'mandelmel', 'gjaer', 'bakepulver', 'sukker', 'vaniljesukker', 'sirup', 'kakao', 'havregryn', 'smor', 'egg', 'brod', 'rundstykke', 'tortilla', 'lompe'],
-  frosenvarer: ['frossen', 'fryst', 'fryse', 'is', 'fryste', 'frossne', 'rosenkal'],
-  melkeprodukter: ['melk', 'flote', 'yoghurt', 'romme', 'creme fraiche', 'smoreost', 'kefir', 'skyr'],
-  mineralvann: ['mineralvann', 'brus', 'cola', 'fanta', 'sprite', 'pepsi', 'sitronbrus', 'sodavann', 'tonic'],
-}
-
 const INGREDIENT_NAME_ALIASES = {
   soyasaus2: 'Soyasaus',
 }
@@ -70,28 +57,8 @@ const normalizeIngredientName = (value) => {
 const normalizeNames = (values) =>
   [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
 
-const getShoppingCategory = (ingredientName) => {
-  const normalizedName = normalizeIngredientText(ingredientName)
-
-  for (const category of DEFAULT_SHOPPING_CATEGORY_ORDER) {
-    if (category === 'annet') continue
-    const keywords = SHOPPING_CATEGORY_KEYWORDS[category] ?? []
-    if (keywords.some((keyword) => normalizedName.includes(normalizeIngredientText(keyword)))) {
-      return category
-    }
-  }
-
-  return 'annet'
-}
-
-const resolveShoppingCategory = (ingredientName, storedCategory) => {
-  const inferredCategory = getShoppingCategory(ingredientName)
-  if (inferredCategory !== 'annet') {
-    return inferredCategory
-  }
-
-  return storedCategory ?? 'annet'
-}
+const resolveShoppingCategory = (_ingredientName, storedCategory) =>
+  storedCategory || 'annet'
 
 const normalizeDefaultPeopleValue = (value) =>
   Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
@@ -559,7 +526,6 @@ function App() {
     if (missingNames.length) {
       const rowsToInsert = missingNames.map((name) => ({
         name,
-        shopping_category: getShoppingCategory(name),
       }))
       const { data: inserted, error: insertError } = await supabase
         .from('ingredients')
