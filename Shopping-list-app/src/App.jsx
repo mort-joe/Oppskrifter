@@ -62,6 +62,15 @@ const normalizeShoppingCategory = (value) => {
   return normalizedCategory || 'annet'
 }
 
+const getBestShoppingCategory = (storedCategory, globalCategory) => {
+  const normalizedGlobalCategory = normalizeShoppingCategory(globalCategory)
+  if (normalizedGlobalCategory !== 'annet') {
+    return normalizedGlobalCategory
+  }
+
+  return normalizeShoppingCategory(storedCategory)
+}
+
 const resolveShoppingCategory = (
   ingredientId,
   ingredientName,
@@ -982,15 +991,19 @@ function App() {
     shoppingRecipes.forEach((recipe) => {
       recipe.ingredients.forEach((ingredient) => {
         const key = ingredientIdentityKey(ingredient.name, ingredient.unit)
+        const globalCategory = getGlobalIngredientShoppingCategory(ingredient.name)
         const existing = totals.get(key) ?? {
           name: ingredient.name,
           unit: ingredient.unit ?? '',
-          shoppingCategory: ingredient.shoppingCategory || getGlobalIngredientShoppingCategory(ingredient.name),
+          shoppingCategory: normalizeShoppingCategory(globalCategory),
           requiredQuantity: 0,
         }
         totals.set(key, {
           ...existing,
-          shoppingCategory: ingredient.shoppingCategory || existing.shoppingCategory || getGlobalIngredientShoppingCategory(ingredient.name),
+          shoppingCategory: getBestShoppingCategory(
+            ingredient.shoppingCategory || existing.shoppingCategory,
+            globalCategory,
+          ),
           requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
         })
       })
@@ -1202,7 +1215,7 @@ function App() {
                 name: normalizeIngredientName(row.ingredients?.name),
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
-                shoppingCategory: resolveShoppingCategory(row.ingredients?.name, row.ingredients?.shopping_category),
+                shoppingCategory: resolveShoppingCategory(null, row.ingredients?.name, row.ingredients?.shopping_category),
               }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
