@@ -54,6 +54,9 @@ const normalizeIngredientName = (value) => {
   return INGREDIENT_NAME_ALIASES[normalizedKey] ?? trimmedValue
 }
 
+const normalizeIngredientLookupKey = (value) =>
+  normalizeIngredientText(normalizeIngredientName(String(value || '').trim()))
+
 const normalizeNames = (values) =>
   [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
 
@@ -83,7 +86,7 @@ const resolveShoppingCategory = (
   }
 
   const globalCategory = globalIngredientCategoriesByName[
-    normalizeIngredientText(String(ingredientName || '').trim())
+    normalizeIngredientLookupKey(ingredientName)
   ]
   return globalCategory || normalizeShoppingCategory(storedCategory)
 }
@@ -279,7 +282,7 @@ function App() {
 
   const getGlobalIngredientShoppingCategory = useCallback(
     (ingredientName) =>
-      globalIngredientCategories[normalizeIngredientText(String(ingredientName || '').trim())] ?? 'annet',
+      globalIngredientCategories[normalizeIngredientLookupKey(ingredientName)] ?? 'annet',
     [globalIngredientCategories],
   )
 
@@ -377,7 +380,7 @@ function App() {
 
     const ingredientCategoryMapByName = Object.fromEntries(
       (ingredientNameData || []).map((row) => [
-        normalizeIngredientText(String(row.name || '').trim()),
+        normalizeIngredientLookupKey(row.name),
         normalizeShoppingCategory(row.shopping_category),
       ]),
     )
