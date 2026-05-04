@@ -243,6 +243,7 @@ function App() {
   const [allTags, setAllTags] = useState([])
   const [shoppingCategoryOrder, setShoppingCategoryOrder] = useState(DEFAULT_SHOPPING_CATEGORY_ORDER)
   const [globalIngredientNames, setGlobalIngredientNames] = useState([])
+  const [globalIngredientCategories, setGlobalIngredientCategories] = useState({})
   const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
     name: '',
@@ -252,6 +253,12 @@ function App() {
   })
 
   const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
+
+  const getGlobalIngredientShoppingCategory = useCallback(
+    (ingredientName) =>
+      globalIngredientCategories[normalizeIngredientText(String(ingredientName || '').trim())] ?? 'annet',
+    [globalIngredientCategories],
+  )
 
   const normalizePositiveNumberRecord = (value) => {
     if (!value || typeof value !== 'object') return {}
@@ -300,7 +307,7 @@ function App() {
         .eq('user_id', userId)
         .order('id', { ascending: false }),
       supabase.from('shopping_categories').select('name,sort_order').order('sort_order', { ascending: true }),
-      supabase.from('ingredients').select('name').order('name', { ascending: true }),
+      supabase.from('ingredients').select('name,shopping_category').order('name', { ascending: true }),
     ])
 
     if (categoryError) {
@@ -341,12 +348,21 @@ function App() {
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
       setGlobalIngredientNames([])
+      setGlobalIngredientCategories({})
     } else if (ingredientNameData) {
       setGlobalIngredientNames(
         normalizeNames(
           ingredientNameData
             .map((row) => normalizeIngredientName(row.name))
             .filter(Boolean),
+        ),
+      )
+      setGlobalIngredientCategories(
+        Object.fromEntries(
+          (ingredientNameData || []).map((row) => [
+            normalizeIngredientText(String(row.name || '').trim()),
+            normalizeShoppingCategory(row.shopping_category),
+          ]),
         ),
       )
     }
@@ -935,18 +951,19 @@ function App() {
 
   const shoppingIngredients = useMemo(() => {
     const totals = new Map()
+
     shoppingRecipes.forEach((recipe) => {
       recipe.ingredients.forEach((ingredient) => {
         const key = ingredientIdentityKey(ingredient.name, ingredient.unit)
         const existing = totals.get(key) ?? {
           name: ingredient.name,
           unit: ingredient.unit ?? '',
-          shoppingCategory: ingredient.shoppingCategory ?? 'annet',
+          shoppingCategory: ingredient.shoppingCategory || getGlobalIngredientShoppingCategory(ingredient.name),
           requiredQuantity: 0,
         }
         totals.set(key, {
           ...existing,
-          shoppingCategory: ingredient.shoppingCategory || existing.shoppingCategory || 'annet',
+          shoppingCategory: ingredient.shoppingCategory || existing.shoppingCategory || getGlobalIngredientShoppingCategory(ingredient.name),
           requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
         })
       })
@@ -954,7 +971,12 @@ function App() {
 
     Object.entries(customShoppingItems).forEach(([name, quantity]) => {
       const key = ingredientIdentityKey(name, '')
-      const existing = totals.get(key) ?? { name, unit: '', shoppingCategory: 'annet', requiredQuantity: 0 }
+      const existing = totals.get(key) ?? {
+        name,
+        unit: '',
+        shoppingCategory: getGlobalIngredientShoppingCategory(name),
+        requiredQuantity: 0,
+      }
       totals.set(key, {
         ...existing,
         requiredQuantity: existing.requiredQuantity + quantity,
@@ -989,7 +1011,7 @@ function App() {
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
     })
-  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder])
+  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder, getGlobalIngredientShoppingCategory])
 
   const getActiveShoppingIngredientKeys = (recipeCounts, customItems) => {
     const keys = new Set()
