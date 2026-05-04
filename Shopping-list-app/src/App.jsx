@@ -946,7 +946,7 @@ function App() {
         }
         totals.set(key, {
           ...existing,
-          shoppingCategory: existing.shoppingCategory || ingredient.shoppingCategory || 'annet',
+          shoppingCategory: ingredient.shoppingCategory || existing.shoppingCategory || 'annet',
           requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
         })
       })
