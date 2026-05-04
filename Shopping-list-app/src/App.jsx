@@ -30,6 +30,8 @@ const INGREDIENT_NAME_ALIASES = {
   soyasaus2: 'Soyasaus',
 }
 
+const DEBUG_INGREDIENT_NAMES = ['Kyllingfilet', 'Paprika rød']
+
 const normalizeIngredientText = (value) =>
   String(value || '')
     .toLowerCase()
@@ -384,6 +386,45 @@ function App() {
         normalizeShoppingCategory(row.shopping_category),
       ]),
     )
+
+    const debugIngredientMap = DEBUG_INGREDIENT_NAMES.reduce((acc, name) => {
+      const normalizedKey = normalizeIngredientLookupKey(name)
+      acc[name] = {
+        normalizedKey,
+        globalByName: ingredientCategoryMapByName[normalizedKey],
+        foundRows: (ingredientNameData || [])
+          .filter((row) => normalizeIngredientLookupKey(row.name) === normalizedKey)
+          .map((row) => ({ id: row.id, name: row.name, shopping_category: row.shopping_category })),
+      }
+      return acc
+    }, {})
+
+    const debugRecipeIngredients = (recipeData || [])
+      .flatMap((recipe) =>
+        recipe.recipe_ingredients
+          ?.map((row) => ({
+            name: normalizeIngredientName(row.ingredients?.name),
+            ingredientId: row.ingredient_id,
+            storedCategory: row.ingredients?.shopping_category,
+            resolvedCategory: resolveShoppingCategory(
+              row.ingredient_id,
+              row.ingredients?.name,
+              row.ingredients?.shopping_category,
+              ingredientCategoryMapById,
+              ingredientCategoryMapByName,
+            ),
+          }))
+          .filter((item) =>
+            DEBUG_INGREDIENT_NAMES.some(
+              (debugName) => normalizeIngredientText(debugName) === normalizeIngredientText(item.name),
+            ),
+          ) ?? [],
+      )
+
+    console.log('DEBUG ingredientCategoryMapById', ingredientCategoryMapById)
+    console.log('DEBUG ingredientCategoryMapByName keys', Object.keys(ingredientCategoryMapByName))
+    console.log('DEBUG ingredient lookup', debugIngredientMap)
+    console.log('DEBUG recipe ingredient resolutions', debugRecipeIngredients)
 
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
@@ -1038,6 +1079,15 @@ function App() {
         neededQuantity: Math.max(item.requiredQuantity - haveQuantity, 0),
       }
     })
+
+    const debugItems = items.filter((item) =>
+      DEBUG_INGREDIENT_NAMES.some(
+        (debugName) => normalizeIngredientText(debugName) === normalizeIngredientText(item.name),
+      ),
+    )
+    if (debugItems.length) {
+      console.log('DEBUG final shopping ingredients', debugItems)
+    }
 
     return items.sort((a, b) => {
       const categoryA = normalizeShoppingCategory(a.shoppingCategory)
