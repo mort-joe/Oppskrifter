@@ -62,8 +62,20 @@ const normalizeShoppingCategory = (value) => {
   return normalizedCategory || 'annet'
 }
 
-const resolveShoppingCategory = (ingredientName, storedCategory, globalIngredientCategories = {}) => {
-  const globalCategory = globalIngredientCategories[normalizeIngredientText(String(ingredientName || '').trim())]
+const resolveShoppingCategory = (
+  ingredientId,
+  ingredientName,
+  storedCategory,
+  globalIngredientCategoriesById = {},
+  globalIngredientCategoriesByName = {},
+) => {
+  if (ingredientId && globalIngredientCategoriesById[ingredientId]) {
+    return globalIngredientCategoriesById[ingredientId]
+  }
+
+  const globalCategory = globalIngredientCategoriesByName[
+    normalizeIngredientText(String(ingredientName || '').trim())
+  ]
   return globalCategory || normalizeShoppingCategory(storedCategory)
 }
 
@@ -309,7 +321,7 @@ function App() {
         .eq('user_id', userId)
         .order('id', { ascending: false }),
       supabase.from('shopping_categories').select('name,sort_order').order('sort_order', { ascending: true }),
-      supabase.from('ingredients').select('name,shopping_category').order('name', { ascending: true }),
+      supabase.from('ingredients').select('id,name,shopping_category').order('name', { ascending: true }),
     ])
 
     if (categoryError) {
@@ -347,7 +359,14 @@ function App() {
       )
     }
 
-    const ingredientCategoryMap = Object.fromEntries(
+    const ingredientCategoryMapById = Object.fromEntries(
+      (ingredientNameData || []).map((row) => [
+        row.id,
+        normalizeShoppingCategory(row.shopping_category),
+      ]),
+    )
+
+    const ingredientCategoryMapByName = Object.fromEntries(
       (ingredientNameData || []).map((row) => [
         normalizeIngredientText(String(row.name || '').trim()),
         normalizeShoppingCategory(row.shopping_category),
@@ -366,7 +385,7 @@ function App() {
             .filter(Boolean),
         ),
       )
-      setGlobalIngredientCategories(ingredientCategoryMap)
+      setGlobalIngredientCategories(ingredientCategoryMapByName)
     }
 
     if (recipeError) {
@@ -389,9 +408,11 @@ function App() {
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
                 shoppingCategory: resolveShoppingCategory(
+                  row.ingredient_id,
                   row.ingredients?.name,
                   row.ingredients?.shopping_category,
-                  ingredientCategoryMap,
+                  ingredientCategoryMapById,
+                  ingredientCategoryMapByName,
                 ),
               }))
               .filter((ingredient) => ingredient.name) ?? [],
