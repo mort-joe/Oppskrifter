@@ -1085,8 +1085,15 @@ function App() {
         (debugName) => normalizeIngredientText(debugName) === normalizeIngredientText(item.name),
       ),
     )
+    const chickenDebugItems = items.filter((item) =>
+      normalizeIngredientText(item.name).includes('kylling'),
+    )
+
     if (debugItems.length) {
       console.log('DEBUG final shopping ingredients', debugItems)
+    }
+    if (chickenDebugItems.length) {
+      console.log('DEBUG chicken shopping items', chickenDebugItems)
     }
 
     return items.sort((a, b) => {
