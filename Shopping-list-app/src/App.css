@@ -200,6 +200,15 @@
   --button-danger-border-hover: #ff9386;
 }
 
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  accent-color: var(--accent, #3f63ea);
+  vertical-align: middle;
+}
+
 .app-shell.mobile,
 .app-shell.mobile .mobile-top-region,
 .app-shell.mobile .mobile-content {
