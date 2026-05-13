@@ -30,7 +30,7 @@ const INGREDIENT_NAME_ALIASES = {
   soyasaus2: 'Soyasaus',
 }
 
-const DEBUG_INGREDIENT_NAMES = ['Kyllingfilet', 'Paprika rød']
+const DEBUG_INGREDIENT_NAMES = ['Kyllingfilet', 'Paprika rød', 'Brus']
 
 const normalizeIngredientText = (value) =>
   String(value || '')
@@ -1063,6 +1063,7 @@ function App() {
 
     if (debugItems.length) {
       console.log('DEBUG final shopping ingredients', debugItems)
+      console.log('DEBUG shoppingCategoryOrder', shoppingCategoryOrder)
     }
     if (chickenDebugItems.length) {
       console.log('DEBUG chicken shopping items', chickenDebugItems)
