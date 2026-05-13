@@ -30,7 +30,7 @@ const INGREDIENT_NAME_ALIASES = {
   soyasaus2: 'Soyasaus',
 }
 
-const DEBUG_INGREDIENT_NAMES = ['Kyllingfilet', 'Paprika rød', 'Brus']
+const DEBUG_INGREDIENT_NAMES = ['Kyllingfilet', 'Paprika rød', 'Brus', 'Tomat']
 
 const normalizeIngredientText = (value) =>
   String(value || '')
@@ -344,23 +344,29 @@ function App() {
     }
 
     if (shoppingCategoryError) {
+      console.error('Shopping category error:', shoppingCategoryError)
       setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
-    } else if (shoppingCategoryData) {
-      const orderedCategoryKeys = [
-        ...new Set(
-          shoppingCategoryData
-            .map((row) => normalizeShoppingCategoryKey(row.name))
-            .filter(Boolean),
-        ),
-      ]
+    } else {
+      console.log('DEBUG shoppingCategoryData from DB:', shoppingCategoryData)
+      if (shoppingCategoryData && shoppingCategoryData.length > 0) {
+        const orderedCategoryKeys = [
+          ...new Set(
+            shoppingCategoryData
+              .map((row) => normalizeShoppingCategoryKey(row.name))
+              .filter(Boolean),
+          ),
+        ]
+        console.log('DEBUG orderedCategoryKeys after normalization:', orderedCategoryKeys)
 
-      if (!orderedCategoryKeys.includes('annet')) {
-        orderedCategoryKeys.push('annet')
+        if (!orderedCategoryKeys.includes('annet')) {
+          orderedCategoryKeys.push('annet')
+        }
+
+        setShoppingCategoryOrder(orderedCategoryKeys)
+      } else {
+        console.warn('DEBUG: shoppingCategoryData is empty or null, using DEFAULT_SHOPPING_CATEGORY_ORDER')
+        setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
       }
-
-      setShoppingCategoryOrder(
-        orderedCategoryKeys.length ? orderedCategoryKeys : DEFAULT_SHOPPING_CATEGORY_ORDER,
-      )
     }
 
     const ingredientCategoryMapById = Object.fromEntries(
@@ -381,34 +387,15 @@ function App() {
       const normalizedKey = normalizeIngredientLookupKey(name)
       acc[name] = {
         normalizedKey,
-        globalByName: ingredientCategoryMapByName[normalizedKey],
         foundRows: (ingredientNameData || [])
           .filter((row) => normalizeIngredientLookupKey(row.name) === normalizedKey)
-          .map((row) => ({ id: row.id, name: row.name, shopping_category: row.shopping_category })),
+          .map((row) => ({ id: row.id, name: row.name, shopping_category: row.shopping_category, normalized: normalizeShoppingCategory(row.shopping_category) })),
       }
       return acc
     }, {})
 
-    const debugRecipeIngredients = (recipeData || [])
-      .flatMap((recipe) =>
-        recipe.recipe_ingredients
-          ?.map((row) => ({
-            name: normalizeIngredientName(row.ingredients?.name),
-            ingredientId: row.ingredient_id,
-            storedCategory: row.ingredients?.shopping_category,
-            resolvedCategory: normalizeShoppingCategory(row.ingredients?.shopping_category),
-          }))
-          .filter((item) =>
-            DEBUG_INGREDIENT_NAMES.some(
-              (debugName) => normalizeIngredientText(debugName) === normalizeIngredientText(item.name),
-            ),
-          ) ?? [],
-      )
-
-    console.log('DEBUG ingredientCategoryMapById', ingredientCategoryMapById)
-    console.log('DEBUG ingredientCategoryMapByName keys', Object.keys(ingredientCategoryMapByName))
-    console.log('DEBUG ingredient lookup', debugIngredientMap)
-    console.log('DEBUG recipe ingredient resolutions', debugRecipeIngredients)
+    console.log('DEBUG ingredientNameData sample:', (ingredientNameData || []).slice(0, 10))
+    console.log('DEBUG ingredient lookup for debug names', debugIngredientMap)
 
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
