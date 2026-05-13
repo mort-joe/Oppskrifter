@@ -5,6 +5,22 @@ import { getAdminConfigDebugInfo } from '../_lib/adminSession.js'
 const normalizeRole = (role) => (role === 'admin' ? 'admin' : 'user')
 const CONFIG_ADMIN_ID = '__local_admin__'
 
+const toTimestamp = (value) => {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime()
+}
+
+const pickLatestDate = (first, second) => {
+  const firstTime = toTimestamp(first)
+  const secondTime = toTimestamp(second)
+
+  if (!firstTime && !secondTime) return null
+  if (!firstTime) return second
+  if (!secondTime) return first
+  return firstTime >= secondTime ? first : second
+}
+
 export default async function handler(req, res) {
   if (!requireAdminSession(req, res)) return
 
@@ -17,11 +33,24 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers()
+    const [{ data, error }, { data: shoppingStateData, error: shoppingStateError }] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers(),
+      supabaseAdmin.from('shopping_state').select('user_id,updated_at'),
+    ])
+
     if (error) {
       res.status(500).json({ error: error.message })
       return
     }
+
+    // shopping_state can be missing in some environments; continue without activity snapshots.
+    const shoppingStates = shoppingStateError ? [] : (shoppingStateData || [])
+
+    const activityByUserId = shoppingStates.reduce((acc, row) => {
+      if (!row.user_id || !row.updated_at) return acc
+      acc[row.user_id] = pickLatestDate(acc[row.user_id], row.updated_at)
+      return acc
+    }, {})
 
     const users = (data?.users || []).map((user) => ({
       id: user.id,
@@ -29,6 +58,7 @@ export default async function handler(req, res) {
       role: normalizeRole(user.app_metadata?.role),
       created_at: user.created_at,
       last_sign_in_at: user.last_sign_in_at,
+      last_active_at: pickLatestDate(user.last_sign_in_at, activityByUserId[user.id]),
       display_name: user.user_metadata?.display_name || '',
     }))
 
@@ -42,6 +72,7 @@ export default async function handler(req, res) {
         role: 'admin',
         created_at: null,
         last_sign_in_at: null,
+        last_active_at: null,
         is_config_admin: true,
       })
     }

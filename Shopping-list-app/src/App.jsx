@@ -288,6 +288,24 @@ function App() {
     [globalIngredientCategories],
   )
 
+  const updateUserActivity = async () => {
+    if (!user) return
+
+    try {
+      await supabase
+        .from('shopping_state')
+        .upsert(
+          {
+            user_id: user.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        )
+    } catch (error) {
+      console.error('Could not update user activity:', error)
+    }
+  }
+
   const normalizePositiveNumberRecord = (value) => {
     if (!value || typeof value !== 'object') return {}
 
@@ -2046,6 +2064,7 @@ function App() {
       await supabase.from('recipe_categories').delete().eq('recipe_id', editingRecipe.id)
       await supabase.from('recipe_tags').delete().eq('recipe_id', editingRecipe.id)
       await supabase.from('recipes').delete().eq('id', editingRecipe.id)
+      await updateUserActivity()
   await loadData(user.id)
       setEditingRecipe(null)
       setSelectedRecipeId(null)
@@ -2149,7 +2168,8 @@ function App() {
         await supabase.from('recipe_ingredients').insert(ingredientRows)
       }
 
-  await loadData(user.id)
+      await updateUserActivity()
+    await loadData(user.id)
       setEditingRecipe(null)
     } catch (error) {
       console.error('Edit recipe error:', error)
@@ -2244,6 +2264,7 @@ function App() {
         await supabase.from('recipe_tags').insert(tagRows)
       }
 
+      await updateUserActivity()
     await loadData(user.id)
       setSelectedRecipeId(recipeId)
   setNewRecipe({ name: '', ingredients: [{ name: '', quantity: 1, unit: '' }], typeTags: [], occasionTags: [] })

@@ -642,7 +642,7 @@ function AdminApp() {
                           <option value="admin">Administrator</option>
                         </select>
                       </td>
-                      <td>{formatDate(user.last_sign_in_at, false)}</td>
+                      <td>{formatDate(user.last_active_at, false)}</td>
                       <td>
                         <button
                           type="button"
