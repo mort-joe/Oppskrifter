@@ -613,8 +613,7 @@ function AdminApp() {
                   <th>Brukernavn (epost)</th>
                   <th>Visningsnavn</th>
                   <th>Rolle</th>
-                  <th>Opprettet</th>
-                  <th>Sist inn</th>
+                  <th>Sist aktivitet</th>
                 </tr>
               </thead>
               <tbody>
@@ -643,7 +642,6 @@ function AdminApp() {
                           <option value="admin">Administrator</option>
                         </select>
                       </td>
-                      <td>{formatDate(user.created_at, false)}</td>
                       <td>{formatDate(user.last_sign_in_at, false)}</td>
                       <td>
                         <button
@@ -663,7 +661,7 @@ function AdminApp() {
 
                     {openUserActionsId === user.id && !user.is_config_admin && (
                       <tr className="admin-user-edit-row">
-                        <td colSpan={6}>
+                        <td colSpan={5}>
                           <div className="admin-user-edit-fields">
                             <div className="admin-edit-field">
                               <label>Epostadresse</label>
