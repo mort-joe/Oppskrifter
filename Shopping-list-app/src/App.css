@@ -205,7 +205,7 @@ input[type="checkbox"] {
   height: 22px;
   min-width: 22px;
   min-height: 22px;
-  accent-color: var(--accent, #3f63ea);
+  accent-color: #0078d4;
   vertical-align: middle;
 }
 
