@@ -67,31 +67,10 @@ const normalizeShoppingCategory = (value) => {
   return normalizedCategory || 'annet'
 }
 
-const getBestShoppingCategory = (storedCategory, globalCategory) => {
-  const normalizedGlobalCategory = normalizeShoppingCategory(globalCategory)
-  if (normalizedGlobalCategory !== 'annet') {
-    return normalizedGlobalCategory
-  }
+const getBestShoppingCategory = (storedCategory) => normalizeShoppingCategory(storedCategory)
 
-  return normalizeShoppingCategory(storedCategory)
-}
-
-const resolveShoppingCategory = (
-  ingredientId,
-  ingredientName,
-  storedCategory,
-  globalIngredientCategoriesById = {},
-  globalIngredientCategoriesByName = {},
-) => {
-  if (ingredientId && globalIngredientCategoriesById[ingredientId]) {
-    return globalIngredientCategoriesById[ingredientId]
-  }
-
-  const globalCategory = globalIngredientCategoriesByName[
-    normalizeIngredientLookupKey(ingredientName)
-  ]
-  return globalCategory || normalizeShoppingCategory(storedCategory)
-}
+const resolveShoppingCategory = (ingredientId, ingredientName, storedCategory) =>
+  normalizeShoppingCategory(storedCategory)
 
 const normalizeDefaultPeopleValue = (value) =>
   Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
@@ -271,7 +250,6 @@ function App() {
   const [allTags, setAllTags] = useState([])
   const [shoppingCategoryOrder, setShoppingCategoryOrder] = useState(DEFAULT_SHOPPING_CATEGORY_ORDER)
   const [globalIngredientNames, setGlobalIngredientNames] = useState([])
-  const [globalIngredientCategories, setGlobalIngredientCategories] = useState({})
   const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
     name: '',
@@ -281,12 +259,6 @@ function App() {
   })
 
   const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
-
-  const getGlobalIngredientShoppingCategory = useCallback(
-    (ingredientName) =>
-      globalIngredientCategories[normalizeIngredientLookupKey(ingredientName)] ?? 'annet',
-    [globalIngredientCategories],
-  )
 
   const updateUserActivity = async () => {
     if (!user) return
@@ -424,13 +396,7 @@ function App() {
             name: normalizeIngredientName(row.ingredients?.name),
             ingredientId: row.ingredient_id,
             storedCategory: row.ingredients?.shopping_category,
-            resolvedCategory: resolveShoppingCategory(
-              row.ingredient_id,
-              row.ingredients?.name,
-              row.ingredients?.shopping_category,
-              ingredientCategoryMapById,
-              ingredientCategoryMapByName,
-            ),
+            resolvedCategory: normalizeShoppingCategory(row.ingredients?.shopping_category),
           }))
           .filter((item) =>
             DEBUG_INGREDIENT_NAMES.some(
@@ -447,7 +413,6 @@ function App() {
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
       setGlobalIngredientNames([])
-      setGlobalIngredientCategories({})
     } else if (ingredientNameData) {
       setGlobalIngredientNames(
         normalizeNames(
@@ -456,7 +421,6 @@ function App() {
             .filter(Boolean),
         ),
       )
-      setGlobalIngredientCategories(ingredientCategoryMapByName)
     }
 
     if (recipeError) {
@@ -478,13 +442,7 @@ function App() {
                 name: normalizeIngredientName(row.ingredients?.name),
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
-                shoppingCategory: resolveShoppingCategory(
-                  row.ingredient_id,
-                  row.ingredients?.name,
-                  row.ingredients?.shopping_category,
-                  ingredientCategoryMapById,
-                  ingredientCategoryMapByName,
-                ),
+                shoppingCategory: normalizeShoppingCategory(row.ingredients?.shopping_category),
               }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
@@ -1053,19 +1011,15 @@ function App() {
     shoppingRecipes.forEach((recipe) => {
       recipe.ingredients.forEach((ingredient) => {
         const key = ingredientIdentityKey(ingredient.name, ingredient.unit)
-        const globalCategory = getGlobalIngredientShoppingCategory(ingredient.name)
         const existing = totals.get(key) ?? {
           name: ingredient.name,
           unit: ingredient.unit ?? '',
-          shoppingCategory: normalizeShoppingCategory(globalCategory),
+          shoppingCategory: normalizeShoppingCategory(ingredient.shoppingCategory),
           requiredQuantity: 0,
         }
         totals.set(key, {
           ...existing,
-          shoppingCategory: getBestShoppingCategory(
-            ingredient.shoppingCategory || existing.shoppingCategory,
-            globalCategory,
-          ),
+          shoppingCategory: getBestShoppingCategory(existing.shoppingCategory),
           requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
         })
       })
@@ -1076,7 +1030,7 @@ function App() {
       const existing = totals.get(key) ?? {
         name,
         unit: '',
-        shoppingCategory: getGlobalIngredientShoppingCategory(name),
+        shoppingCategory: 'annet',
         requiredQuantity: 0,
       }
       totals.set(key, {
@@ -1129,7 +1083,7 @@ function App() {
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
     })
-  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder, getGlobalIngredientShoppingCategory])
+  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder])
 
   const getActiveShoppingIngredientKeys = (recipeCounts, customItems) => {
     const keys = new Set()
@@ -1293,7 +1247,7 @@ function App() {
                 name: normalizeIngredientName(row.ingredients?.name),
                 quantity: row.quantity ?? 1,
                 unit: row.unit ?? '',
-                shoppingCategory: resolveShoppingCategory(null, row.ingredients?.name, row.ingredients?.shopping_category),
+                shoppingCategory: normalizeShoppingCategory(row.ingredients?.shopping_category),
               }))
               .filter((ingredient) => ingredient.name) ?? [],
           typeTags:
