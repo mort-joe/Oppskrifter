@@ -98,9 +98,10 @@ function AdminApp() {
     const totalUsers = dashboardUsers.length
     const adminUsers = dashboardUsers.filter((user) => user.role === 'admin').length
     const normalUsers = totalUsers - adminUsers
+    const totalRecipes = dashboardRecipes.length
 
-    return { totalUsers, adminUsers, normalUsers }
-  }, [dashboardUsers])
+    return { totalUsers, adminUsers, normalUsers, totalRecipes }
+  }, [dashboardUsers, dashboardRecipes])
 
   const sortedDashboardUsers = useMemo(
     () =>
@@ -761,6 +762,10 @@ function AdminApp() {
               <h3>Vanlige brukere</h3>
               <strong>{dashboardSummary.normalUsers}</strong>
             </article>
+            <article>
+              <h3>Totalt antall matretter</h3>
+              <strong>{dashboardSummary.totalRecipes}</strong>
+            </article>
           </div>
 
           <div className="dashboard-grid">
@@ -786,8 +791,8 @@ function AdminApp() {
                         </td>
                         <td>{user.role === 'admin' ? 'Administrator' : 'Bruker'}</td>
                         <td>{user.recipe_count || 0}</td>
-                        <td>{formatDate(user.last_sign_in_at)}</td>
-                        <td>{formatDate(user.last_active_at)}</td>
+                        <td>{formatDate(user.last_sign_in_at, false)}</td>
+                        <td>{formatDate(user.last_active_at, false)}</td>
                       </tr>
                     ))}
                     {sortedDashboardUsers.length === 0 && (
