@@ -69,9 +69,6 @@ const normalizeShoppingCategory = (value) => {
 
 const getBestShoppingCategory = (storedCategory) => normalizeShoppingCategory(storedCategory)
 
-const resolveShoppingCategory = (ingredientId, ingredientName, storedCategory) =>
-  normalizeShoppingCategory(storedCategory)
-
 const normalizeDefaultPeopleValue = (value) =>
   Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
 
@@ -249,6 +246,7 @@ function App() {
   const [allCategories, setAllCategories] = useState([])
   const [allTags, setAllTags] = useState([])
   const [shoppingCategoryOrder, setShoppingCategoryOrder] = useState(DEFAULT_SHOPPING_CATEGORY_ORDER)
+  const [shoppingCategorySetupMessage, setShoppingCategorySetupMessage] = useState('')
   const [globalIngredientNames, setGlobalIngredientNames] = useState([])
   const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
@@ -343,9 +341,14 @@ function App() {
       setAllTags(tagData.map((row) => row.name))
     }
 
+    const setupWarnings = []
+
     if (shoppingCategoryError) {
       console.error('Shopping category error:', shoppingCategoryError)
       setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
+      setupWarnings.push(
+        'Kunne ikke hente sorteringskategorier fra databasen. Kjør auth_setup.sql i Supabase og last siden på nytt.',
+      )
     } else {
       console.log('DEBUG shoppingCategoryData from DB:', shoppingCategoryData)
       if (shoppingCategoryData && shoppingCategoryData.length > 0) {
@@ -366,22 +369,22 @@ function App() {
       } else {
         console.warn('DEBUG: shoppingCategoryData is empty or null, using DEFAULT_SHOPPING_CATEGORY_ORDER')
         setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
+        setupWarnings.push(
+          'Shoppingkategori-tabellen er tom eller mangler i databasen. Kjør auth_setup.sql i Supabase og last siden på nytt.',
+        )
       }
     }
 
-    const ingredientCategoryMapById = Object.fromEntries(
-      (ingredientNameData || []).map((row) => [
-        row.id,
-        normalizeShoppingCategory(row.shopping_category),
-      ]),
+    const missingIngredientCategoryRows = (ingredientNameData || []).filter(
+      (row) => !String(row.shopping_category || '').trim(),
     )
+    if (missingIngredientCategoryRows.length > 0) {
+      setupWarnings.push(
+        `Det finnes ${missingIngredientCategoryRows.length} ingrediens(er) uten shopping_category i databasen. Kjør auth_setup.sql i Supabase og last siden på nytt.`,
+      )
+    }
 
-    const ingredientCategoryMapByName = Object.fromEntries(
-      (ingredientNameData || []).map((row) => [
-        normalizeIngredientLookupKey(row.name),
-        normalizeShoppingCategory(row.shopping_category),
-      ]),
-    )
+    setShoppingCategorySetupMessage(setupWarnings.join(' '))
 
     const debugIngredientMap = DEBUG_INGREDIENT_NAMES.reduce((acc, name) => {
       const normalizedKey = normalizeIngredientLookupKey(name)
@@ -2381,6 +2384,20 @@ function App() {
       )}
 
       <div className={`menu-workspace ${isMobile ? 'mobile' : ''}`}>
+        {shoppingCategorySetupMessage && (
+          <section
+            style={{
+              marginBottom: '16px',
+              padding: '14px 16px',
+              border: '1px solid #e2b000',
+              borderRadius: '12px',
+              background: '#fff7cc',
+              color: '#4a3d0f',
+            }}
+          >
+            <strong>Databaseoppsett mangler:</strong> {shoppingCategorySetupMessage}
+          </section>
+        )}
       {!selectedMenu && (
         <section style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>
           <p>Velg en meny for å åpne siden.</p>
