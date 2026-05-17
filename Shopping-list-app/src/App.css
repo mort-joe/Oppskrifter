@@ -794,6 +794,69 @@ input[type="checkbox"] {
   padding: 8px;
 }
 
+/* Make the custom item text input more visible and easier to tap on mobile */
+.custom-item-form.mobile .custom-item-input {
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid rgba(63, 99, 234, 0.12);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(63, 99, 234, 0.06);
+  font-size: 1rem;
+  color: #0b2348;
+}
+
+.custom-item-form.mobile .custom-item-input::placeholder {
+  color: rgba(11, 35, 72, 0.45);
+}
+
+.custom-item-form.mobile .custom-item-input:focus-visible {
+  outline: none;
+  border-color: rgba(63, 99, 234, 0.28);
+  box-shadow: 0 10px 30px rgba(63, 99, 234, 0.12);
+}
+
+/* input-wrap and icon button inside the input */
+.custom-item-input-wrap {
+  position: relative;
+}
+
+.custom-item-input-wrap .custom-item-input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.custom-item-input-icon {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(63, 99, 234, 0.12);
+  color: #0b2348;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.custom-item-input-icon:focus-visible {
+  outline: 2px solid rgba(63, 99, 234, 0.28);
+  outline-offset: 2px;
+}
+
+/* make the main add button more prominent on mobile */
+.custom-item-add-btn.mobile.prominent {
+  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%);
+  color: #fff !important;
+  border-color: rgba(63, 99, 234, 0.9) !important;
+  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
+  font-weight: 700;
+}
+
 .custom-item-add-btn {
   padding: 8px 12px;
   min-height: 38px;

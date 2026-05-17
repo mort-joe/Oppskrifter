@@ -69,6 +69,47 @@ const normalizeShoppingCategory = (value) => {
 
 const getBestShoppingCategory = (storedCategory) => normalizeShoppingCategory(storedCategory)
 
+const getCategoryFromKeywordMap = (ingredientName) => {
+  if (!ingredientName) return ''
+
+  const normalizedText = normalizeIngredientText(ingredientName)
+  const matchesKeyword = (keywords) =>
+    keywords.some((keyword) => new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(normalizedText))
+
+  const categoryKeywords = [
+    { category: 'kjott', keywords: ['kjøtt', 'kjott', 'kylling', 'fugl', 'okse', 'storfe', 'svin', 'lam', 'pølse', 'bacon', 'skinke'] },
+    { category: 'fisk', keywords: ['fisk', 'laks', 'torsk', 'sei', 'reke', 'reker', 'tunfisk', 'krabbe', 'blåskjell', 'sjømat'] },
+    { category: 'gronnsaker', keywords: ['tomat', 'agurk', 'paprika', 'salat', 'gulrot', 'løk', 'hvitløk', 'kål', 'brokkoli', 'spinat', 'squash', 'selleri', 'blomkål', 'agurk'] },
+    { category: 'frukt', keywords: ['eple', 'banan', 'appelsin', 'sitron', 'lime', 'melon', 'jordbær', 'bringebær', 'pære', 'plomme', 'fersken', 'druer'] },
+    { category: 'mineralvann', keywords: ['brus', 'cola', 'vann', 'farris', 'juice', 'energi', 'saft'] },
+    { category: 'melkeprodukter', keywords: ['melk', 'ost', 'yoghurt', 'smør', 'fløte', 'krem', 'rømme', 'kesam', 'juice'] },
+    { category: 'frosenvarer', keywords: ['frossen', 'fryse', 'is', 'pizza', 'pinne', 'frysevarer'] },
+    { category: 'bakevarer', keywords: ['kake', 'bakst', 'brød', 'baguett', 'boller', 'kjeks', 'mel', 'mjöl', 'bakemiks', 'bakervarer'] },
+    { category: 'torrvarer', keywords: ['pasta', 'ris', 'sukker', 'salt', 'olje', 'eddik', 'buljong', 'krydder', 'bønner', 'linser', 'kaffe', 'te', 'honning', 'müsli', 'tørrvarer', 'torrvarer'] },
+    { category: 'kjolevarer', keywords: ['brød', 'knekkebrød', 'tortilla', 'lefse', 'hamburgerbrød', 'wrap', 'pita'] },
+  ]
+
+  for (const entry of categoryKeywords) {
+    if (matchesKeyword(entry.keywords)) {
+      return entry.category
+    }
+  }
+
+  return ''
+}
+
+const getShoppingCategoryForCustomItem = (itemName, ingredientCategoryMap) => {
+  const normalizedName = normalizeIngredientLookupKey(itemName)
+  if (!normalizedName) return 'annet'
+
+  if (ingredientCategoryMap && Object.prototype.hasOwnProperty.call(ingredientCategoryMap, normalizedName)) {
+    return normalizeShoppingCategory(ingredientCategoryMap[normalizedName])
+  }
+
+  const guessedCategory = getCategoryFromKeywordMap(normalizedName)
+  return normalizeShoppingCategory(guessedCategory)
+}
+
 const normalizeDefaultPeopleValue = (value) =>
   Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
 
@@ -250,6 +291,7 @@ function App() {
   const [shoppingCategoryOrder, setShoppingCategoryOrder] = useState(DEFAULT_SHOPPING_CATEGORY_ORDER)
   const [shoppingCategorySetupMessage, setShoppingCategorySetupMessage] = useState('')
   const [globalIngredientNames, setGlobalIngredientNames] = useState([])
+  const [globalIngredientCategoryMap, setGlobalIngredientCategoryMap] = useState({})
   const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
     name: '',
@@ -422,6 +464,7 @@ function App() {
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
       setGlobalIngredientNames([])
+      setGlobalIngredientCategoryMap({})
     } else if (ingredientNameData) {
       setGlobalIngredientNames(
         normalizeNames(
@@ -429,6 +472,16 @@ function App() {
             .map((row) => normalizeIngredientName(row.name))
             .filter(Boolean),
         ),
+      )
+      setGlobalIngredientCategoryMap(
+        ingredientNameData.reduce((acc, row) => {
+          const normalizedName = normalizeIngredientLookupKey(row.name)
+          if (!normalizedName) return acc
+          if (!acc[normalizedName]) {
+            acc[normalizedName] = row.shopping_category || 'annet'
+          }
+          return acc
+        }, {}),
       )
     }
 
@@ -1039,7 +1092,7 @@ function App() {
       const existing = totals.get(key) ?? {
         name,
         unit: '',
-        shoppingCategory: 'annet',
+        shoppingCategory: getShoppingCategoryForCustomItem(name, globalIngredientCategoryMap),
         requiredQuantity: 0,
       }
       totals.set(key, {
@@ -1097,7 +1150,7 @@ function App() {
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
     })
-  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder, shoppingCategoryOrderMap])
+  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder, shoppingCategoryOrderMap, globalIngredientCategoryMap])
 
   const getActiveShoppingIngredientKeys = (recipeCounts, customItems) => {
     const keys = new Set()
@@ -3089,14 +3142,24 @@ function App() {
           <div className={`custom-item-card ${isMobile ? 'mobile' : ''}`}>
             <h3 className={`custom-item-title ${isMobile ? 'mobile' : ''}`}>Legg til egen vare</h3>
             <div className={`custom-item-form ${isMobile ? 'mobile' : ''}`}>
-              <input
-                type="text"
-                value={customItemName}
-                onChange={(event) => setCustomItemName(event.target.value)}
-                onKeyDown={(event) => { if (event.key === 'Enter') handleAddCustomShoppingItem() }}
-                placeholder="F.eks. kaffe eller melk"
-                className="custom-item-input"
-              />
+              <div className="custom-item-input-wrap">
+                <input
+                  type="text"
+                  value={customItemName}
+                  onChange={(event) => setCustomItemName(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === 'Enter') handleAddCustomShoppingItem() }}
+                  placeholder="F.eks. kaffe eller melk"
+                  className="custom-item-input"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomShoppingItem}
+                  className="custom-item-input-icon"
+                  aria-label="Legg til vare"
+                >
+                  +
+                </button>
+              </div>
               <input
                 type="number"
                 min="1"
@@ -3109,7 +3172,7 @@ function App() {
               <button
                 type="button"
                 onClick={handleAddCustomShoppingItem}
-                className={`custom-item-add-btn ${isMobile ? 'mobile' : ''}`}
+                className={`custom-item-add-btn ${isMobile ? 'mobile prominent' : ''}`}
               >
                 Legg til
               </button>
