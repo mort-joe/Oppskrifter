@@ -245,6 +245,8 @@ function App() {
   const [collapsedImportGroups, setCollapsedImportGroups] = useState(getInitialCollapsedImportGroups)
   const [allCategories, setAllCategories] = useState([])
   const [allTags, setAllTags] = useState([])
+  // shoppingCategoryOrder is authoritative from the admin-managed database table.
+  // The admin sorting order should be the only order that decides handleliste-sorteringen.
   const [shoppingCategoryOrder, setShoppingCategoryOrder] = useState(DEFAULT_SHOPPING_CATEGORY_ORDER)
   const [shoppingCategorySetupMessage, setShoppingCategorySetupMessage] = useState('')
   const [globalIngredientNames, setGlobalIngredientNames] = useState([])
@@ -257,6 +259,11 @@ function App() {
   })
 
   const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
+
+  const shoppingCategoryOrderMap = useMemo(
+    () => new Map(shoppingCategoryOrder.map((category, index) => [category, index])),
+    [shoppingCategoryOrder],
+  )
 
   const updateUserActivity = async () => {
     if (!user) return
@@ -346,8 +353,20 @@ function App() {
     if (shoppingCategoryError) {
       console.error('Shopping category error:', shoppingCategoryError)
       setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
+
+      const rawShoppingCategoryErrorMessage = String(
+        shoppingCategoryError.message || shoppingCategoryError.details || shoppingCategoryError.code || '',
+      ).toLowerCase()
+      const isTableIssue =
+        rawShoppingCategoryErrorMessage.includes('shopping_categories') ||
+        rawShoppingCategoryErrorMessage.includes('relation') ||
+        rawShoppingCategoryErrorMessage.includes('permission denied') ||
+        rawShoppingCategoryErrorMessage.includes('row-level security')
+
       setupWarnings.push(
-        'Kunne ikke hente sorteringskategorier fra databasen. Kjør auth_setup.sql i Supabase og last siden på nytt.',
+        isTableIssue
+          ? 'Kunne ikke hente sorteringskategorier fra databasen. Kjør auth_setup.sql i Supabase og last siden på nytt.'
+          : 'Kunne ikke hente sorteringskategorier fra databasen. Prøv å logge ut og inn igjen.',
       )
     } else {
       console.log('DEBUG shoppingCategoryData from DB:', shoppingCategoryData)
@@ -1062,11 +1081,15 @@ function App() {
     return items.sort((a, b) => {
       const categoryA = normalizeShoppingCategory(a.shoppingCategory)
       const categoryB = normalizeShoppingCategory(b.shoppingCategory)
-      const categoryIndexA = shoppingCategoryOrder.indexOf(categoryA)
-      const categoryIndexB = shoppingCategoryOrder.indexOf(categoryB)
+      const categoryIndexA = shoppingCategoryOrderMap.has(categoryA)
+        ? shoppingCategoryOrderMap.get(categoryA)
+        : shoppingCategoryOrder.length
+      const categoryIndexB = shoppingCategoryOrderMap.has(categoryB)
+        ? shoppingCategoryOrderMap.get(categoryB)
+        : shoppingCategoryOrder.length
 
-      const safeCategoryIndexA = categoryIndexA >= 0 ? categoryIndexA : shoppingCategoryOrder.length
-      const safeCategoryIndexB = categoryIndexB >= 0 ? categoryIndexB : shoppingCategoryOrder.length
+      const safeCategoryIndexA = categoryIndexA != null ? categoryIndexA : shoppingCategoryOrder.length
+      const safeCategoryIndexB = categoryIndexB != null ? categoryIndexB : shoppingCategoryOrder.length
 
       if (safeCategoryIndexA !== safeCategoryIndexB) {
         return safeCategoryIndexA - safeCategoryIndexB
@@ -1074,7 +1097,7 @@ function App() {
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
     })
-  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder])
+  }, [shoppingRecipes, ingredientHaveCounts, customShoppingItems, shoppingCategoryOrder, shoppingCategoryOrderMap])
 
   const getActiveShoppingIngredientKeys = (recipeCounts, customItems) => {
     const keys = new Set()

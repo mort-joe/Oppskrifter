@@ -537,6 +537,37 @@ create table if not exists public.shopping_categories (
 create unique index if not exists shopping_categories_sort_order_key
   on public.shopping_categories(sort_order);
 
+alter table public.shopping_categories enable row level security;
+
+drop policy if exists "shopping_categories_select_all_authenticated" on public.shopping_categories;
+create policy "shopping_categories_select_all_authenticated"
+  on public.shopping_categories
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "shopping_categories_insert_all_authenticated" on public.shopping_categories;
+create policy "shopping_categories_insert_all_authenticated"
+  on public.shopping_categories
+  for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "shopping_categories_update_all_authenticated" on public.shopping_categories;
+create policy "shopping_categories_update_all_authenticated"
+  on public.shopping_categories
+  for update
+  to authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "shopping_categories_delete_all_authenticated" on public.shopping_categories;
+create policy "shopping_categories_delete_all_authenticated"
+  on public.shopping_categories
+  for delete
+  to authenticated
+  using (true);
+
 insert into public.shopping_categories(name, sort_order)
 select seed.name, seed.sort_order
 from (
