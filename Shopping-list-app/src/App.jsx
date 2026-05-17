@@ -18,7 +18,7 @@ const DEFAULT_SHOPPING_CATEGORY_ORDER = [
   'kjott',
   'fisk',
   'kjolevarer',
-  'pasta',
+  'torrvarer',
   'bakevarer',
   'frosenvarer',
   'melkeprodukter',

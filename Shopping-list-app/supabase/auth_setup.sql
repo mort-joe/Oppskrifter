@@ -62,7 +62,7 @@ set shopping_category = case
   ]) then 'kjolevarer'
   when n.normalized_name like any (array[
     '%pasta%', '%spagetti%', '%penne%', '%fusilli%', '%lasagne%', '%tagliatelle%', '%makaroni%', '%nudler%', '%risnudler%', '%lefse%', '%lefser%', '%tray%', '%tortilla%'
-  ]) then 'pasta'
+  ]) then 'tørrvarer'
   when n.normalized_name like any (array[
     '%hvetemel%', '%sammalt mel%', '%speltmel%', '%rugmel%', '%byggmel%', '%maismel%', '%rismel%', '%potetmel%', '%kokosmel%', '%mandelmel%', '%gjaer%', '%bakepulver%', '%sukker%', '%vaniljesukker%', '%sirup%', '%kakao%', '%havregryn%', '%smor%', '%egg%', '%brod%', '%rundstykke%', '%lompe%'
   ]) then 'bakevarer'
@@ -568,6 +568,28 @@ create policy "shopping_categories_delete_all_authenticated"
   to authenticated
   using (true);
 
+-- Rename legacy category name if it exists, before inserting the new set.
+update public.shopping_categories
+set name = 'tørrvarer'
+where lower(trim(name)) = 'pasta'
+  and not exists (
+    select 1
+    from public.shopping_categories sc
+    where lower(trim(sc.name)) = 'tørrvarer'
+  );
+
+delete from public.shopping_categories
+where lower(trim(name)) = 'pasta'
+  and exists (
+    select 1
+    from public.shopping_categories sc
+    where lower(trim(sc.name)) = 'tørrvarer'
+  );
+
+update public.ingredients
+set shopping_category = 'tørrvarer'
+where lower(trim(shopping_category)) = 'pasta';
+
 insert into public.shopping_categories(name, sort_order)
 select seed.name, seed.sort_order
 from (
@@ -577,7 +599,7 @@ from (
     ('kjott', 3),
     ('fisk', 4),
     ('kjolevarer', 5),
-    ('pasta', 6),
+    ('tørrvarer', 6),
     ('bakevarer', 7),
     ('frosenvarer', 8),
     ('melkeprodukter', 9),
