@@ -779,7 +779,8 @@ input[type="checkbox"] {
 }
 
 .custom-item-form.mobile {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 84px;
+  grid-template-rows: auto auto;
 }
 
 .custom-item-input,
@@ -794,10 +795,23 @@ input[type="checkbox"] {
   padding: 8px;
 }
 
-.custom-item-form.mobile .custom-item-quantity,
+.custom-item-form.mobile .custom-item-quantity {
+  width: 100%;
+}
+
 .custom-item-add-btn.mobile {
   width: 100%;
   grid-column: 1 / -1;
+  justify-self: stretch;
+}
+
+.custom-item-add-btn.mobile.prominent {
+  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%);
+  color: #fff !important;
+  border-color: rgba(63, 99, 234, 0.9) !important;
+  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
+  font-weight: 700;
+  text-align: center;
 }
 
 /* Make the custom item text input more visible and easier to tap on mobile */
