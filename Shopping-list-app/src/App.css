@@ -803,10 +803,16 @@ input[type="checkbox"] {
   width: 100%;
   grid-column: 1 / -1;
   justify-self: stretch;
+  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
+  color: #fff !important;
+  border-color: rgba(63, 99, 234, 0.9) !important;
+  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
+  font-weight: 700;
+  text-align: center;
 }
 
 .custom-item-add-btn.mobile.prominent {
-  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%);
+  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
   color: #fff !important;
   border-color: rgba(63, 99, 234, 0.9) !important;
   box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
