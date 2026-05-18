@@ -2986,7 +2986,7 @@ function App() {
       {selectedMenu === 'legg-til-matrett' && (
         <section className={`content-page menu-page ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '12px' }}>
           <h2>Legg til matrett</h2>
-          <form onSubmit={handleAddRecipe} style={{ display: 'grid', gap: '12px', padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>
+          <form onSubmit={handleAddRecipe} className={`recipe-form ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '12px', padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa' }}>
             <label>
               Navn på matrett:
               <input
@@ -2999,7 +2999,7 @@ function App() {
             <div>
               <strong>Ingredienser</strong>
               {newRecipe.ingredients.map((ingredient, index) => (
-                <div key={`ingredient-row-${index}`} style={{ display: 'grid', gridTemplateColumns: ingredientRowColumns, gap: '10px', marginTop: '8px' }}>
+                <div key={`ingredient-row-${index}`} className={`recipe-row ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gridTemplateColumns: ingredientRowColumns, gap: '10px', marginTop: '8px' }}>
                   <input
                     type="text"
                     placeholder="Navn på ingrediens"
@@ -3039,6 +3039,7 @@ function App() {
               ))}
               <button
                 type="button"
+                className={`recipe-add-ingredient-btn ${isMobile ? 'mobile prominent' : ''}`}
                 onClick={handleAddIngredientRow}
                 style={{ marginTop: '12px', padding: '10px 16px', cursor: 'pointer' }}
               >
@@ -3078,7 +3079,7 @@ function App() {
               </div>
             </div>
 
-            <button type="submit" style={{ padding: '12px 18px', cursor: 'pointer' }}>
+            <button type="submit" className={`recipe-submit-btn ${isMobile ? 'mobile prominent' : ''}`} style={{ padding: '12px 18px', cursor: 'pointer' }}>
               Legg til matrett
             </button>
           </form>
