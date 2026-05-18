@@ -3288,10 +3288,11 @@ function App() {
           </section>
           <div className={`menu-page-narrow compact ${isMobile ? 'mobile' : ''}`}>
           <h2>Lag meny</h2>
-          <div style={{ display: 'grid', gap: '12px' }}>
-            <label style={{ display: 'block' }}>
+          <div className="menu-form-fields" style={{ display: 'grid', gap: '12px' }}>
+            <label className="menu-field-label" style={{ display: 'block' }}>
               Hvor mange dager skal menyen dekke?
               <select
+                className="menu-field-select"
                 value={menuDays}
                 onChange={(event) => handleMenuDaysChange(event.target.value)}
                 style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
@@ -3303,9 +3304,10 @@ function App() {
                 ))}
               </select>
             </label>
-            <label style={{ display: 'block' }}>
+            <label className="menu-field-label" style={{ display: 'block' }}>
               Porsjoner for hele menyen (basis i dine innstillinger: {Math.max(1, Number(accountDefaultPeople) || DEFAULT_ACCOUNT_PEOPLE)})
               <select
+                className="menu-field-select"
                 value={menuServings}
                 onChange={(event) => handleMenuServingsChange(event.target.value)}
                 style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
@@ -3318,12 +3320,13 @@ function App() {
               </select>
             </label>
           </div>
-          <div style={{ display: 'grid', gap: '12px' }}>
+          <div className="menu-day-grid" style={{ display: 'grid', gap: '12px' }}>
             {Array.from({ length: menuDays }, (_, index) => (
-              <div key={`menu-day-${index}`} style={{ display: 'grid', gap: '6px' }}>
-                <label style={{ display: 'grid', gap: '6px' }}>
+              <div key={`menu-day-${index}`} className="menu-day-row" style={{ display: 'grid', gap: '6px' }}>
+                <label className="menu-field-label" style={{ display: 'grid', gap: '6px' }}>
                   Dag {index + 1}
                   <select
+                    className="menu-field-select"
                     value={menuPlan[index]?.recipeId || ''}
                     onChange={(event) => handleMenuRecipeChange(index, event.target.value)}
                     style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
@@ -3339,7 +3342,7 @@ function App() {
               </div>
             ))}
           </div>
-          <button type="button" onClick={handleCreateMenu} style={{ padding: '12px 18px', cursor: 'pointer', width: 'fit-content' }}>
+          <button type="button" className="menu-create-btn" onClick={handleCreateMenu} style={{ padding: '12px 18px', cursor: 'pointer', width: 'fit-content' }}>
             Opprett meny
           </button>
           {menuCreated && (

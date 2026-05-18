@@ -498,6 +498,37 @@ input[type="checkbox"] {
   width: 100%;
 }
 
+.menu-page-narrow.compact.mobile .menu-field-label,
+.menu-page-narrow.compact.mobile .menu-day-row {
+  font-size: 1rem;
+}
+
+.menu-page-narrow.compact.mobile .menu-field-select {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 1px solid #d7dbe8;
+  box-sizing: border-box;
+}
+
+.menu-page-narrow.compact.mobile .menu-create-btn {
+  width: 100%;
+  padding: 14px 18px;
+  margin-top: 8px;
+  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
+  color: #fff !important;
+  border: 1px solid rgba(63, 99, 234, 0.9) !important;
+  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 12px;
+}
+
+.menu-page-narrow.compact.mobile .menu-create-btn:hover {
+  transform: translateY(-1px);
+}
+
 .content-page.mobile {
   width: 100%;
   box-sizing: border-box;
