@@ -779,7 +779,7 @@ input[type="checkbox"] {
 }
 
 .custom-item-form.mobile {
-  grid-template-columns: 1fr 84px;
+  grid-template-columns: 1fr;
 }
 
 .custom-item-input,
@@ -792,6 +792,12 @@ input[type="checkbox"] {
 .custom-item-form.mobile .custom-item-input,
 .custom-item-form.mobile .custom-item-quantity {
   padding: 8px;
+}
+
+.custom-item-form.mobile .custom-item-quantity,
+.custom-item-add-btn.mobile {
+  width: 100%;
+  grid-column: 1 / -1;
 }
 
 /* Make the custom item text input more visible and easier to tap on mobile */
