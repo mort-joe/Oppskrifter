@@ -514,18 +514,35 @@ input[type="checkbox"] {
 
 .menu-page-narrow.compact.mobile .menu-create-btn {
   width: 100%;
-  padding: 14px 18px;
+  padding: 10px 14px;
   margin-top: 8px;
-  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
-  color: #fff !important;
-  border: 1px solid rgba(63, 99, 234, 0.9) !important;
-  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
-  font-weight: 700;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border: 1px solid var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600;
   text-align: center;
   border-radius: 12px;
 }
 
-.menu-page-narrow.compact.mobile .menu-create-btn:hover {
+.menu-page-narrow.compact.mobile .menu-create-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--button-border-hover);
+  box-shadow: var(--button-shadow-hover);
+}
+
+.menu-create-btn {
+  padding: 10px 14px !important;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border-color: var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600 !important;
+}
+
+.menu-create-btn:hover:not(:disabled) {
+  border-color: var(--button-border-hover) !important;
+  box-shadow: var(--button-shadow-hover) !important;
   transform: translateY(-1px);
 }
 
@@ -566,19 +583,38 @@ input[type="checkbox"] {
 .recipe-form.mobile .recipe-add-ingredient-btn,
 .recipe-form.mobile .recipe-submit-btn {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   margin-top: 12px;
-  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
-  color: #fff !important;
-  border-color: rgba(63, 99, 234, 0.9) !important;
-  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
-  font-weight: 700;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border-color: var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600;
   text-align: center;
 }
 
-.recipe-form.mobile .recipe-add-ingredient-btn:hover,
-.recipe-form.mobile .recipe-submit-btn:hover {
+.recipe-form.mobile .recipe-add-ingredient-btn:hover:not(:disabled),
+.recipe-form.mobile .recipe-submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
+  border-color: var(--button-border-hover);
+  box-shadow: var(--button-shadow-hover);
+}
+
+.recipe-add-ingredient-btn,
+.recipe-submit-btn {
+  padding: 10px 14px !important;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border-color: var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600 !important;
+}
+
+.recipe-add-ingredient-btn:hover:not(:disabled),
+.recipe-submit-btn:hover:not(:disabled) {
+  border-color: var(--button-border-hover) !important;
+  box-shadow: var(--button-shadow-hover) !important;
+  transform: translateY(-1px) !important;
 }
 
 .recipe-form.mobile .recipe-row.mobile {
@@ -879,20 +915,20 @@ input[type="checkbox"] {
   width: 100%;
   grid-column: 1 / -1;
   justify-self: stretch;
-  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
-  color: #fff !important;
-  border-color: rgba(63, 99, 234, 0.9) !important;
-  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
-  font-weight: 700;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border-color: var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600;
   text-align: center;
 }
 
 .custom-item-add-btn.mobile.prominent {
-  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%) !important;
-  color: #fff !important;
-  border-color: rgba(63, 99, 234, 0.9) !important;
-  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
-  font-weight: 700;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border-color: var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600;
   text-align: center;
 }
 
@@ -950,24 +986,25 @@ input[type="checkbox"] {
   outline-offset: 2px;
 }
 
-/* make the main add button more prominent on mobile */
-.custom-item-add-btn.mobile.prominent {
-  background: linear-gradient(180deg, #3f63ea 0%, #577ef5 100%);
-  color: #fff !important;
-  border-color: rgba(63, 99, 234, 0.9) !important;
-  box-shadow: 0 12px 28px rgba(63, 99, 234, 0.18) !important;
-  font-weight: 700;
-}
-
 .custom-item-add-btn {
-  padding: 8px 12px;
-  min-height: 38px;
+  padding: 10px 14px !important;
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border-color: var(--button-border) !important;
+  box-shadow: var(--button-shadow) !important;
+  font-weight: 600 !important;
   border-radius: 12px !important;
 }
 
+.custom-item-add-btn:hover:not(:disabled) {
+  border-color: var(--button-border-hover) !important;
+  box-shadow: var(--button-shadow-hover) !important;
+  transform: translateY(-1px) !important;
+}
+
 .app-shell .custom-item-add-btn {
-  padding: 6px 11px !important;
-  min-height: 32px !important;
+  padding: 10px 14px !important;
+  min-height: auto !important;
   border-radius: 12px !important;
   font-size: 0.95rem !important;
 }
