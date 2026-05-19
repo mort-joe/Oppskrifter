@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 
@@ -273,6 +273,8 @@ function App() {
   const [accountPasswordMessage, setAccountPasswordMessage] = useState('')
   const [isAccountPasswordError, setIsAccountPasswordError] = useState(false)
   const [accountPasswordSubmitting, setAccountPasswordSubmitting] = useState(false)
+  const [showMobileAccountMenu, setShowMobileAccountMenu] = useState(false)
+  const mobileAccountMenuRef = useRef(null)
   const [recipeImportCatalog, setRecipeImportCatalog] = useState([])
   const [selectedImportRecipeIds, setSelectedImportRecipeIds] = useState({})
   const [catalogDefaultPeopleByUser, setCatalogDefaultPeopleByUser] = useState({})
@@ -1228,6 +1230,7 @@ function App() {
       setAccountDisplayName(user?.user_metadata?.display_name ?? '')
     }
 
+    setShowMobileAccountMenu(false)
     setSelectedMenu('innstillinger')
     setAccountSettingsMessage('')
     setAccountPasswordMessage('')
@@ -1236,6 +1239,23 @@ function App() {
     setAccountPassword('')
     setAccountPasswordConfirm('')
   }
+
+  const handleRefreshApp = useCallback(() => {
+    window.location.reload()
+  }, [])
+
+  useEffect(() => {
+    if (!showMobileAccountMenu) return
+
+    const handleDocumentClick = (event) => {
+      if (mobileAccountMenuRef.current && !mobileAccountMenuRef.current.contains(event.target)) {
+        setShowMobileAccountMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleDocumentClick)
+    return () => document.removeEventListener('mousedown', handleDocumentClick)
+  }, [showMobileAccountMenu])
 
   useEffect(() => {
     if (!session) return
@@ -2379,17 +2399,48 @@ function App() {
               <span className="mobile-header-username" onClick={handleOpenAccountSettings}>
                 {currentUserLabel}
               </span>
-              <div className="mobile-header-actions">
+              <div className="mobile-header-actions" ref={mobileAccountMenuRef}>
+                <button
+                  type="button"
+                  className="mobile-refresh-btn"
+                  onClick={handleRefreshApp}
+                  aria-label="Oppdater appen"
+                  title="Oppdater"
+                >
+                  <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.3-.42 2.5-1.13 3.47l1.42 1.42A8.96 8.96 0 0 0 21 12c0-4.97-4.03-9-9-9zm-6.87 3.53L3.71 6.12A8.96 8.96 0 0 0 3 12c0 4.97 4.03 9 9 9v3l4-4-4-4v3c-3.31 0-6-2.69-6-6 0-1.3.42-2.5 1.13-3.47z" />
+                  </svg>
+                </button>
                 <button
                   type="button"
                   className="account-settings-btn"
-                  onClick={handleOpenAccountSettings}
-                  aria-label="Åpne brukerinnstillinger"
-                  title="Brukerinnstillinger"
+                  onClick={() => setShowMobileAccountMenu((current) => !current)}
+                  aria-label="Åpne meny"
+                  title="Meny"
                 >
                   ⋯
                 </button>
-                <button type="button" className="toolbar-signout-btn" onClick={handleSignOut}>Logg ut</button>
+                {showMobileAccountMenu && (
+                  <div className="mobile-account-menu" role="menu">
+                    <button
+                      type="button"
+                      className="mobile-account-menu-item"
+                      onClick={handleOpenAccountSettings}
+                    >
+                      Innstillinger
+                    </button>
+                    <button
+                      type="button"
+                      className="mobile-account-menu-item mobile-account-menu-signout"
+                      onClick={() => {
+                        setShowMobileAccountMenu(false)
+                        void handleSignOut()
+                      }}
+                    >
+                      Logg ut
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="mobile-header-banner">

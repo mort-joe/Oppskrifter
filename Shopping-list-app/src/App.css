@@ -393,6 +393,63 @@ input[type="checkbox"] {
   align-items: center;
   gap: 6px;
   margin-left: auto;
+  position: relative;
+}
+
+.app-shell.mobile .mobile-refresh-btn,
+.app-shell.mobile .account-settings-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  background: rgba(255, 255, 255, 0.92);
+  color: #2f4cc2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(47, 99, 244, 0.12);
+  cursor: pointer;
+  padding: 0;
+}
+
+.app-shell.mobile .mobile-refresh-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.app-shell.mobile .mobile-account-menu {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  width: max-content;
+  min-width: 160px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(60, 93, 220, 0.14);
+  box-shadow: 0 20px 40px rgba(39, 78, 203, 0.14);
+  padding: 8px 0;
+  z-index: 20;
+}
+
+.app-shell.mobile .mobile-account-menu-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #1f3269;
+  font-weight: 700;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.app-shell.mobile .mobile-account-menu-item:hover {
+  background: rgba(63, 99, 234, 0.08);
+}
+
+.app-shell.mobile .mobile-account-menu-signout {
+  color: #c02424;
 }
 
 .app-shell.mobile .mobile-header-avatar {
