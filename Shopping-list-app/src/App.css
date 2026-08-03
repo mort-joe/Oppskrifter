@@ -1223,16 +1223,6 @@ input[type="checkbox"] {
   gap: 8px;
 }
 
-.recipe-preview-link-btn {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #1f6feb;
-  background: #eff6ff;
-  color: #0a56c2;
-  cursor: pointer;
-  font-weight: 600;
-}
-
 .recipe-card-edit-btn {
   width: 34px;
   height: 34px;
@@ -1247,48 +1237,23 @@ input[type="checkbox"] {
   font-size: 1.1rem;
 }
 
-.recipe-preview-block {
-  margin-top: 4px;
-  padding: 10px 12px;
-  border: 1px solid #d8e3f4;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
-  color: #4a4a4a;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.recipe-preview-label {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.recipe-preview-text {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.recipe-preview-expand-btn {
-  margin-top: 8px;
-  border: 1px solid #b8d4ff;
-  background: #f7fbff;
-  color: #0b5bc2;
-  border-radius: 999px;
-  padding: 4px 9px;
+.recipe-inline-link {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  padding: 0;
   cursor: pointer;
-  font-weight: 700;
-  line-height: 1;
-  min-width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, background 0.15s ease;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
 }
 
-.recipe-preview-expand-btn:hover {
-  background: #ebf4ff;
-  transform: translateY(-1px);
+.recipe-inline-link:hover,
+.recipe-inline-link:focus-visible {
+  color: #153e9b;
 }
 
 .menu-created-summary {

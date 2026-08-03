@@ -2892,16 +2892,6 @@ function App() {
                           <div className="recipe-card-actions">
                             <button
                               type="button"
-                              className="recipe-preview-link-btn"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                handleOpenRecipeInstructions(recipe.id)
-                              }}
-                            >
-                              Oppskrift
-                            </button>
-                            <button
-                              type="button"
                               className="recipe-card-edit-btn"
                               onClick={(event) => {
                                 event.stopPropagation()
@@ -2913,24 +2903,16 @@ function App() {
                             </button>
                           </div>
                         </div>
-                        <div className="recipe-preview-block">
-                          <strong className="recipe-preview-label">Oppskrift:</strong>
-                          <div className="recipe-preview-text">
-                            {getRecipeInstructionsPreview(recipe.instructions)}
-                          </div>
-                          <button
-                            type="button"
-                            className="recipe-preview-expand-btn"
-                            aria-label="Les mer om oppskriften"
-                            title="Les mer om oppskriften"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              handleOpenRecipeInstructions(recipe.id)
-                            }}
-                          >
-                            ↗
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          className="recipe-inline-link"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleOpenRecipeInstructions(recipe.id)
+                          }}
+                        >
+                          Se oppskrift
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -3142,13 +3124,6 @@ function App() {
                     </tbody>
                   </table>
                   <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenRecipeInstructions(selectedRecipe.id)}
-                      style={{ padding: '10px 16px', cursor: 'pointer' }}
-                    >
-                      Vis oppskrift
-                    </button>
                     <button
                       type="button"
                       onClick={() => handleAddToShoppingList(selectedRecipe.id)}
@@ -3582,15 +3557,6 @@ function App() {
                     <div key={`menu-summary-${index}`} className="menu-created-day-row" role="row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <span className="menu-created-day-label" role="cell">Dag {index + 1}:</span>
                       <span className="menu-created-day-recipe" role="cell">{recipe ? getRecipeDisplayName(recipe) : 'Ingen rett valgt'}</span>
-                      {recipe && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenRecipeInstructions(recipe.id)}
-                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #1f6feb', background: '#eff6ff', cursor: 'pointer', color: '#0a56c2', fontWeight: 600 }}
-                        >
-                          Vis oppskrift
-                        </button>
-                      )}
                     </div>
                   )
                 })}
