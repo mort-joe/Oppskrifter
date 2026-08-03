@@ -1264,7 +1264,15 @@ input[type="checkbox"] {
 }
 
 .recipe-instructions-fold {
-  line-height: 1.45;
+  min-height: 22px;
+  padding: 6px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: pre-wrap;
 }
 
 .recipe-instructions-toggle {

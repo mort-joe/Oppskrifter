@@ -989,17 +989,13 @@ function App() {
   }, [selectedRecipeId])
 
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
-  const recipeInstructionsPreview = useMemo(() => {
+  const recipeInstructionsSummary = useMemo(() => {
     const instructions = normalizeRecipeInstructions(selectedRecipe?.instructions)
     if (!instructions) {
       return 'Ingen oppskrift er lagt inn for denne retten ennå.'
     }
 
-    if (instructions.length <= 220) {
-      return instructions
-    }
-
-    return `${instructions.slice(0, 220).trim()}…`
+    return 'Oppskrift lagret'
   }, [selectedRecipe])
   const currentUserLabel = user?.user_metadata?.display_name || user?.email || '?'
 
@@ -3115,10 +3111,10 @@ function App() {
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Oppskrift:</strong>
-                    <div className="recipe-instructions-fold" style={{ marginTop: '8px', whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                      {isRecipeInstructionsExpanded ? (selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.') : recipeInstructionsPreview}
+                    <div className="recipe-instructions-fold" style={{ marginTop: '8px' }}>
+                      {isRecipeInstructionsExpanded ? (selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.') : recipeInstructionsSummary}
                     </div>
-                    {selectedRecipe.instructions && selectedRecipe.instructions.length > 220 && (
+                    {selectedRecipe.instructions && (
                       <button
                         type="button"
                         className="recipe-instructions-toggle"
