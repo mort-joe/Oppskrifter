@@ -1352,6 +1352,9 @@ function App() {
 
   const handleSelectRecipe = (id) => {
     setSelectedRecipeId(id)
+    setIsRecipeInstructionsEditorOpen(false)
+    setRecipeInstructionsEditorDraft('')
+    setIsRecipeInstructionsExpanded(false)
     if (isMobile) {
       setEditingRecipe(null)
       setMobileRecipePane('details')
@@ -1403,6 +1406,8 @@ function App() {
     setSelectedRecipeId(recipeId)
     setSelectedMenu('oppskrift')
     setEditingRecipe(null)
+    setIsRecipeInstructionsEditorOpen(false)
+    setRecipeInstructionsEditorDraft('')
     setIsRecipeInstructionsExpanded(false)
 
     if (isMobile) {
@@ -3455,7 +3460,17 @@ function App() {
               Velg matrett:
               <select
                 value={selectedRecipeId ?? ''}
-                onChange={(event) => setSelectedRecipeId(Number(event.target.value) || null)}
+                onChange={(event) => {
+                  const nextRecipeId = Number(event.target.value) || null
+                  setSelectedRecipeId(nextRecipeId)
+                  setIsRecipeInstructionsEditorOpen(false)
+                  setRecipeInstructionsEditorDraft('')
+                  setIsRecipeInstructionsExpanded(false)
+
+                  if (nextRecipeId) {
+                    window.location.hash = `oppskrift/${nextRecipeId}`
+                  }
+                }}
                 style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
               >
                 <option value="">Velg en matrett</option>
