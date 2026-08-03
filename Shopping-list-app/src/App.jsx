@@ -263,6 +263,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRecipeId, setSelectedRecipeId] = useState(null)
   const [selectedMenu, setSelectedMenu] = useState('matretter')
+  const [isRecipeInstructionsExpanded, setIsRecipeInstructionsExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches)
   const [mobileRecipePane, setMobileRecipePane] = useState('list')
   const [editingRecipe, setEditingRecipe] = useState(null)
@@ -983,7 +984,23 @@ function App() {
     )
   }, [collapsedImportGroups])
 
+  useEffect(() => {
+    setIsRecipeInstructionsExpanded(false)
+  }, [selectedRecipeId])
+
   const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId)
+  const recipeInstructionsPreview = useMemo(() => {
+    const instructions = normalizeRecipeInstructions(selectedRecipe?.instructions)
+    if (!instructions) {
+      return 'Ingen oppskrift er lagt inn for denne retten ennå.'
+    }
+
+    if (instructions.length <= 220) {
+      return instructions
+    }
+
+    return `${instructions.slice(0, 220).trim()}…`
+  }, [selectedRecipe])
   const currentUserLabel = user?.user_metadata?.display_name || user?.email || '?'
 
   const filteredRecipes = useMemo(() => {
@@ -3098,9 +3115,21 @@ function App() {
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Oppskrift:</strong>
-                    <div style={{ marginTop: '8px', whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                      {selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.'}
+                    <div className="recipe-instructions-fold" style={{ marginTop: '8px', whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                      {isRecipeInstructionsExpanded ? (selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.') : recipeInstructionsPreview}
                     </div>
+                    {selectedRecipe.instructions && selectedRecipe.instructions.length > 220 && (
+                      <button
+                        type="button"
+                        className="recipe-instructions-toggle"
+                        aria-expanded={isRecipeInstructionsExpanded}
+                        onClick={() => setIsRecipeInstructionsExpanded((currentValue) => !currentValue)}
+                        style={{ marginTop: '8px', cursor: 'pointer' }}
+                      >
+                        <span aria-hidden="true">{isRecipeInstructionsExpanded ? '▴' : '▾'}</span>
+                        <span>{isRecipeInstructionsExpanded ? 'Vis mindre' : 'Vis mer'}</span>
+                      </button>
+                    )}
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Tags:</strong>{' '}

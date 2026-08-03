@@ -1263,6 +1263,30 @@ input[type="checkbox"] {
   outline: none;
 }
 
+.recipe-instructions-fold {
+  line-height: 1.45;
+}
+
+.recipe-instructions-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recipe-instructions-toggle:hover,
+.recipe-instructions-toggle:focus-visible {
+  color: #153e9b;
+  text-decoration: underline;
+  outline: none;
+}
+
 .menu-created-summary {
   text-align: center;
 }
