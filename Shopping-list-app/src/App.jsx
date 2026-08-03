@@ -995,7 +995,16 @@ function App() {
       return 'Ingen oppskrift er lagt inn for denne retten ennå.'
     }
 
-    return 'Oppskrift lagret'
+    const lines = instructions
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    if (lines.length === 0) {
+      return 'Ingen oppskrift er lagt inn for denne retten ennå.'
+    }
+
+    return lines[0]
   }, [selectedRecipe])
   const currentUserLabel = user?.user_metadata?.display_name || user?.email || '?'
 
