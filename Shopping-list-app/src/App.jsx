@@ -380,19 +380,61 @@ function App() {
   const loadData = useCallback(async (userId) => {
     if (!userId) return
 
-    const [{ data: categoryData, error: categoryError }, { data: tagData, error: tagError }, { data: recipeData, error: recipeError }, { data: shoppingCategoryData, error: shoppingCategoryError }, { data: ingredientNameData, error: ingredientNameError }] = await Promise.all([
+    const [{ data: categoryData, error: categoryError }, { data: tagData, error: tagError }, { data: shoppingCategoryData, error: shoppingCategoryError }, { data: ingredientNameData, error: ingredientNameError }] = await Promise.all([
       supabase.from('categories').select('name').order('name'),
       supabase.from('tags').select('name').order('name'),
-      supabase
-        .from('recipes')
-        .select(
-          'id,name,instructions,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
-        )
-        .eq('user_id', userId)
-        .order('id', { ascending: false }),
       supabase.from('shopping_categories').select('name,sort_order').order('sort_order', { ascending: true }),
       supabase.from('ingredients').select('id,name,shopping_category').order('name', { ascending: true }),
     ])
+
+    const loadRecipes = async () => {
+      const recipeSelect =
+        'id,name,instructions,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))'
+      const fallbackRecipeSelect =
+        'id,name,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))'
+
+      const primaryResponse = await supabase
+        .from('recipes')
+        .select(recipeSelect)
+        .eq('user_id', userId)
+        .order('id', { ascending: false })
+
+      if (!primaryResponse.error) {
+        return primaryResponse.data
+      }
+
+      const rawRecipeErrorMessage = String(primaryResponse.error?.message || primaryResponse.error?.details || '').toLowerCase()
+      const needsInstructionsMigration = rawRecipeErrorMessage.includes('instructions') || rawRecipeErrorMessage.includes('column') && rawRecipeErrorMessage.includes('does not exist')
+
+      if (!needsInstructionsMigration) {
+        throw primaryResponse.error
+      }
+
+      const fallbackResponse = await supabase
+        .from('recipes')
+        .select(fallbackRecipeSelect)
+        .eq('user_id', userId)
+        .order('id', { ascending: false })
+
+      if (fallbackResponse.error) {
+        throw fallbackResponse.error
+      }
+
+      setShoppingCategorySetupMessage(
+        'Databasen mangler oppdatert oppskriftsskjema. Kjør auth_setup.sql og last siden på nytt for å få med fremgangsmåtefeltet.',
+      )
+
+      return fallbackResponse.data
+    }
+
+    let recipeData = []
+    let recipeError = null
+
+    try {
+      recipeData = await loadRecipes()
+    } catch (error) {
+      recipeError = error
+    }
 
     if (categoryError) {
       console.error('Could not load categories:', categoryError)
@@ -506,6 +548,7 @@ function App() {
 
     if (recipeError) {
       console.error('Could not load recipes:', recipeError)
+      setRecipes([])
       return
     }
 
