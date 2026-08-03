@@ -7,6 +7,7 @@ const DEFAULT_ACCOUNT_PEOPLE = 4
 const IMPORT_GROUPS_STORAGE_KEY = 'recipe_import_collapsed_groups'
 const MENU_ITEMS = [
   { id: 'matretter', label: 'Matretter' },
+  { id: 'oppskrift', label: 'Oppskrift' },
   { id: 'legg-til-matrett', label: 'Legg til matrett' },
   { id: 'lag-meny', label: 'Lag meny' },
   { id: 'lag-handleliste', label: 'Handleliste' },
@@ -61,6 +62,21 @@ const normalizeIngredientLookupKey = (value) =>
 
 const normalizeNames = (values) =>
   [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
+
+const normalizeRecipeInstructions = (value) => String(value || '').trim()
+
+const getRecipeInstructionsPreview = (instructions, maxLength = 120) => {
+  const normalizedValue = normalizeRecipeInstructions(instructions)
+  if (!normalizedValue) {
+    return 'Ingen oppskrift er lagt inn ennå.'
+  }
+
+  if (normalizedValue.length <= maxLength) {
+    return normalizedValue
+  }
+
+  return `${normalizedValue.slice(0, maxLength).trim()}…`
+}
 
 const normalizeShoppingCategory = (value) => {
   const normalizedCategory = normalizeShoppingCategoryKey(value)
@@ -297,6 +313,7 @@ function App() {
   const [dragIngredientIndex, setDragIngredientIndex] = useState(null)
   const [newRecipe, setNewRecipe] = useState({
     name: '',
+    instructions: '',
     ingredients: [{ name: '', quantity: 1, unit: '' }],
     typeTags: [],
     occasionTags: [],
@@ -369,7 +386,7 @@ function App() {
       supabase
         .from('recipes')
         .select(
-          'id,name,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
+          'id,name,instructions,shared_root_recipe_id,shared_root_name,shared_version_number,recipe_ingredients(ingredient_id,quantity,unit,ingredients(name,shopping_category)),recipe_categories(category_id,categories(name)),recipe_tags(tag_id,tags(name))',
         )
         .eq('user_id', userId)
         .order('id', { ascending: false }),
@@ -497,6 +514,7 @@ function App() {
         recipeData.map((recipe) => ({
           id: recipe.id,
           name: recipe.name,
+          instructions: normalizeRecipeInstructions(recipe.instructions),
           sharedRootRecipeId: recipe.shared_root_recipe_id,
           sharedRootName: recipe.shared_root_name,
           sharedVersionNumber: recipe.shared_version_number,
@@ -2014,6 +2032,7 @@ function App() {
     setEditingRecipe({
       id: recipe.id,
       name: recipe.name,
+      instructions: recipe.instructions || '',
       ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient })),
       typeTags: [...recipe.typeTags],
       occasionTags: [...recipe.occasionTags],
@@ -2039,6 +2058,10 @@ function App() {
 
   const handleEditRecipeName = (value) => {
     setEditingRecipe((current) => (current ? { ...current, name: value } : current))
+  }
+
+  const handleEditRecipeInstructions = (value) => {
+    setEditingRecipe((current) => (current ? { ...current, instructions: value } : current))
   }
 
   const handleEditIngredientChange = (index, field, value) => {
@@ -2182,6 +2205,7 @@ function App() {
         .from('recipes')
         .update({
           name: editingRecipe.name.trim(),
+          instructions: normalizeRecipeInstructions(editingRecipe.instructions),
           shared_version_number: nextSharedVersionNumber,
         })
         .eq('id', editingRecipe.id)
@@ -2275,7 +2299,13 @@ function App() {
 
       const { data: recipeInsert, error: recipeError } = await supabase
         .from('recipes')
-        .insert([{ name: newRecipe.name.trim(), user_id: user.id }])
+        .insert([
+          {
+            name: newRecipe.name.trim(),
+            instructions: normalizeRecipeInstructions(newRecipe.instructions),
+            user_id: user.id,
+          },
+        ])
         .select('id')
         .single()
 
@@ -2308,7 +2338,7 @@ function App() {
       await updateUserActivity()
     await loadData(user.id)
       setSelectedRecipeId(recipeId)
-  setNewRecipe({ name: '', ingredients: [{ name: '', quantity: 1, unit: '' }], typeTags: [], occasionTags: [] })
+  setNewRecipe({ name: '', instructions: '', ingredients: [{ name: '', quantity: 1, unit: '' }], typeTags: [], occasionTags: [] })
     } catch (error) {
       console.error('Add recipe error:', error)
       alert('Noe gikk galt ved lagring i databasen.')
@@ -2773,58 +2803,60 @@ function App() {
                       key={recipe.id}
                       role="button"
                       onClick={() => handleSelectRecipe(recipe.id)}
+                      className="recipe-list-card"
                       style={{
-                        textAlign: 'left',
-                        padding: '16px',
                         border: recipe.id === selectedRecipeId ? '2px solid #1f6feb' : '1px solid #ccc',
-                        borderRadius: '10px',
-                        background: '#fff',
-                        cursor: 'pointer',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <strong style={{ minWidth: 0, flex: '1 1 auto' }}>{getRecipeDisplayName(recipe)}</strong>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: '1 1 auto' }}>
-                          {recipe.typeTags.map((tag) => (
-                            <span
-                              key={`type-${recipe.id}-${tag}`}
-                              style={{ padding: '4px 8px', background: '#eef', borderRadius: '999px', fontSize: '13px' }}
+                      <div style={{ display: 'grid', gap: '10px', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <strong style={{ minWidth: 0, flex: '1 1 auto' }}>{getRecipeDisplayName(recipe)}</strong>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: '1 1 auto' }}>
+                            {recipe.typeTags.map((tag) => (
+                              <span
+                                key={`type-${recipe.id}-${tag}`}
+                                style={{ padding: '4px 8px', background: '#eef', borderRadius: '999px', fontSize: '13px' }}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {recipe.occasionTags.map((tag) => (
+                              <span
+                                key={`occasion-${recipe.id}-${tag}`}
+                                style={{ padding: '4px 8px', background: '#efe', borderRadius: '999px', fontSize: '13px' }}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="recipe-card-actions">
+                            <button
+                              type="button"
+                              className="recipe-preview-link-btn"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleOpenRecipeInstructions(recipe.id)
+                              }}
                             >
-                              {tag}
-                            </span>
-                          ))}
-                          {recipe.occasionTags.map((tag) => (
-                            <span
-                              key={`occasion-${recipe.id}-${tag}`}
-                              style={{ padding: '4px 8px', background: '#efe', borderRadius: '999px', fontSize: '13px' }}
+                              Oppskrift
+                            </button>
+                            <button
+                              type="button"
+                              className="recipe-card-edit-btn"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleStartEditing(recipe)
+                              }}
+                              aria-label="Rediger matrett"
                             >
-                              {tag}
-                            </span>
-                          ))}
+                              ⋯
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            handleStartEditing(recipe)
-                          }}
-                          aria-label="Rediger matrett"
-                          style={{
-                            width: '34px',
-                            height: '34px',
-                            borderRadius: '50%',
-                            border: '1px solid #ccc',
-                            background: '#fff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: 0,
-                            fontSize: '1.1rem',
-                          }}
-                        >
-                          ⋯
-                        </button>
+                        <div className="recipe-preview-block">
+                          <strong className="recipe-preview-label">Oppskrift:</strong>
+                          {getRecipeInstructionsPreview(recipe.instructions)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2853,6 +2885,17 @@ function App() {
                         value={editingRecipe.name}
                         onChange={(event) => handleEditRecipeName(event.target.value)}
                         style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
+                      />
+                    </label>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px' }}>
+                      Fremgangsmåte / oppskriftstekst:
+                      <textarea
+                        value={editingRecipe.instructions || ''}
+                        onChange={(event) => handleEditRecipeInstructions(event.target.value)}
+                        rows={8}
+                        style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box', resize: 'vertical' }}
                       />
                     </label>
                   </div>
@@ -2989,6 +3032,12 @@ function App() {
                     </button>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
+                    <strong>Oppskrift:</strong>
+                    <div style={{ marginTop: '8px', whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                      {selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.'}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
                     <strong>Tags:</strong>{' '}
                     {[...selectedRecipe.typeTags, ...selectedRecipe.occasionTags].map((tag) => (
                       <span
@@ -3018,13 +3067,22 @@ function App() {
                       ))}
                     </tbody>
                   </table>
-                  <button
-                    type="button"
-                    onClick={() => handleAddToShoppingList(selectedRecipe.id)}
-                    style={{ marginTop: '16px', padding: '10px 16px', cursor: 'pointer' }}
-                  >
-                    Legg til i handleliste
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRecipeInstructions(selectedRecipe.id)}
+                      style={{ padding: '10px 16px', cursor: 'pointer' }}
+                    >
+                      Vis oppskrift
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddToShoppingList(selectedRecipe.id)}
+                      style={{ padding: '10px 16px', cursor: 'pointer' }}
+                    >
+                      Legg til i handleliste
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p>{isMobile ? 'Velg en matrett for å se detaljer.' : 'Velg en matrett i listen for å se ingrediensene.'}</p>
@@ -3045,6 +3103,15 @@ function App() {
                 value={newRecipe.name}
                 onChange={(event) => handleNewRecipeChange('name', event.target.value)}
                 style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
+              />
+            </label>
+            <label>
+              Fremgangsmåte / oppskriftstekst:
+              <textarea
+                value={newRecipe.instructions}
+                onChange={(event) => handleNewRecipeChange('instructions', event.target.value)}
+                rows={8}
+                style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box', resize: 'vertical' }}
               />
             </label>
             <div>
@@ -3134,6 +3201,40 @@ function App() {
               Legg til matrett
             </button>
           </form>
+        </section>
+      )}
+
+      {selectedMenu === 'oppskrift' && (
+        <section className={`content-page menu-page ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '12px' }}>
+          <h2>Oppskrift</h2>
+          <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '12px', background: '#fafafa', textAlign: 'left' }}>
+            <label style={{ display: 'block', fontWeight: 700, marginBottom: '10px' }}>
+              Velg matrett:
+              <select
+                value={selectedRecipeId ?? ''}
+                onChange={(event) => setSelectedRecipeId(Number(event.target.value) || null)}
+                style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
+              >
+                <option value="">Velg en matrett</option>
+                {recipes.map((recipe) => (
+                  <option key={`oppskrift-select-${recipe.id}`} value={recipe.id}>
+                    {getRecipeDisplayName(recipe)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedRecipe ? (
+              <div>
+                <h3 style={{ marginTop: 0 }}>{getRecipeDisplayName(selectedRecipe)}</h3>
+                <div style={{ whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                  {selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.'}
+                </div>
+              </div>
+            ) : (
+              <p>Velg en matrett for å lese oppskriftsteksten.</p>
+            )}
+          </div>
         </section>
       )}
 
@@ -3404,9 +3505,18 @@ function App() {
                 {menuPlan.map((dayPlan, index) => {
                   const recipe = recipes.find((item) => item.id === dayPlan?.recipeId)
                   return (
-                    <div key={`menu-summary-${index}`} className="menu-created-day-row" role="row">
+                    <div key={`menu-summary-${index}`} className="menu-created-day-row" role="row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <span className="menu-created-day-label" role="cell">Dag {index + 1}:</span>
                       <span className="menu-created-day-recipe" role="cell">{recipe ? getRecipeDisplayName(recipe) : 'Ingen rett valgt'}</span>
+                      {recipe && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenRecipeInstructions(recipe.id)}
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #1f6feb', background: '#eff6ff', cursor: 'pointer', color: '#0a56c2', fontWeight: 600 }}
+                        >
+                          Vis oppskrift
+                        </button>
+                      )}
                     </div>
                   )
                 })}

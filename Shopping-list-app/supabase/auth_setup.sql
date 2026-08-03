@@ -10,7 +10,8 @@ alter table public.recipes
 alter table public.recipes
   add column if not exists shared_root_recipe_id bigint references public.recipes(id) on delete set null,
   add column if not exists shared_root_name text,
-  add column if not exists shared_version_number integer;
+  add column if not exists shared_version_number integer,
+  add column if not exists instructions text not null default '';
 
 -- Optional but recommended index
 create index if not exists recipes_user_id_idx on public.recipes(user_id);
