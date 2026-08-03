@@ -2903,17 +2903,25 @@ function App() {
                             </button>
                           </div>
                         </div>
-                        <button
-                          type="button"
+                        <div
                           className="recipe-inline-link"
+                          role="button"
+                          tabIndex={0}
                           onClick={(event) => {
                             event.stopPropagation()
                             handleOpenRecipeInstructions(recipe.id)
                           }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault()
+                              event.stopPropagation()
+                              handleOpenRecipeInstructions(recipe.id)
+                            }
+                          }}
                         >
                           <span aria-hidden="true">📖</span>
                           <span>Se oppskrift</span>
-                        </button>
+                        </div>
                       </div>
                     </div>
                   ))}
