@@ -7,7 +7,7 @@ const DEFAULT_ACCOUNT_PEOPLE = 4
 const IMPORT_GROUPS_STORAGE_KEY = 'recipe_import_collapsed_groups'
 const MENU_ITEMS = [
   { id: 'matretter', label: 'Matretter' },
-  { id: 'oppskrift', label: 'Oppskrift' },
+  { id: 'oppskrift', label: 'Oppskrifter' },
   { id: 'legg-til-matrett', label: 'Legg til matrett' },
   { id: 'lag-meny', label: 'Lag meny' },
   { id: 'lag-handleliste', label: 'Handleliste' },
@@ -2898,7 +2898,21 @@ function App() {
                         </div>
                         <div className="recipe-preview-block">
                           <strong className="recipe-preview-label">Oppskrift:</strong>
-                          {getRecipeInstructionsPreview(recipe.instructions)}
+                          <div className="recipe-preview-text">
+                            {getRecipeInstructionsPreview(recipe.instructions)}
+                          </div>
+                          <button
+                            type="button"
+                            className="recipe-preview-expand-btn"
+                            aria-label="Les mer om oppskriften"
+                            title="Les mer om oppskriften"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              handleOpenRecipeInstructions(recipe.id)
+                            }}
+                          >
+                            ↗
+                          </button>
                         </div>
                       </div>
                     </div>

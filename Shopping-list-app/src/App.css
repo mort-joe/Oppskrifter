@@ -1256,13 +1256,39 @@ input[type="checkbox"] {
   color: #4a4a4a;
   font-size: 14px;
   line-height: 1.45;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 .recipe-preview-label {
   display: block;
   margin-bottom: 4px;
+}
+
+.recipe-preview-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.recipe-preview-expand-btn {
+  margin-top: 8px;
+  border: 1px solid #b8d4ff;
+  background: #f7fbff;
+  color: #0b5bc2;
+  border-radius: 999px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.recipe-preview-expand-btn:hover {
+  background: #ebf4ff;
+  transform: translateY(-1px);
 }
 
 .menu-created-summary {
