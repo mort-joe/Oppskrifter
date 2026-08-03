@@ -292,7 +292,6 @@ function App() {
   const editingInstructionsRef = useRef(null)
   const newInstructionsRef = useRef(null)
   const recipeEditorInstructionsRef = useRef(null)
-  const newInstructionsRef = useRef(null)
   const [mobileRecipePane, setMobileRecipePane] = useState('list')
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [shoppingListRecipeCounts, setShoppingListRecipeCounts] = useState({})
