@@ -2911,7 +2911,8 @@ function App() {
                             handleOpenRecipeInstructions(recipe.id)
                           }}
                         >
-                          Se oppskrift
+                          <span aria-hidden="true">📖</span>
+                          <span>Se oppskrift</span>
                         </button>
                       </div>
                     </div>

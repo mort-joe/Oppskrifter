@@ -1239,21 +1239,25 @@ input[type="checkbox"] {
 
 .recipe-inline-link {
   align-self: flex-start;
-  border: none;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
   color: #1d4ed8;
-  padding: 0;
+  padding: 6px 10px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
 }
 
 .recipe-inline-link:hover,
 .recipe-inline-link:focus-visible {
   color: #153e9b;
+  background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .menu-created-summary {
