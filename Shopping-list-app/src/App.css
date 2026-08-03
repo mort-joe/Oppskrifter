@@ -1280,6 +1280,13 @@ input[type="checkbox"] {
   -webkit-line-clamp: 2;
 }
 
+.recipe-instructions-fold-expanded {
+  max-height: none;
+  overflow: visible;
+  display: block;
+  -webkit-line-clamp: initial;
+}
+
 .recipe-instructions-toggle {
   display: inline-flex;
   align-items: center;

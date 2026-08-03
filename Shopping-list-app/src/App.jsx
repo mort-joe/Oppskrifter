@@ -3120,7 +3120,10 @@ function App() {
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Oppskrift:</strong>
-                    <div className="recipe-instructions-fold" style={{ marginTop: '8px' }}>
+                    <div
+                      className={isRecipeInstructionsExpanded ? 'recipe-instructions-fold recipe-instructions-fold-expanded' : 'recipe-instructions-fold'}
+                      style={{ marginTop: '8px' }}
+                    >
                       {isRecipeInstructionsExpanded ? (selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.') : recipeInstructionsSummary}
                     </div>
                     {selectedRecipe.instructions && (
