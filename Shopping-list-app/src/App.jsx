@@ -1073,6 +1073,14 @@ function App() {
     })
   }, [recipes, searchTerm])
 
+  const sortedRecipesForInstructionsSelect = useMemo(
+    () =>
+      [...recipes].sort((a, b) =>
+        getRecipeDisplayName(a).localeCompare(getRecipeDisplayName(b), 'no', { sensitivity: 'base' }),
+      ),
+    [recipes],
+  )
+
   const ingredientNameSuggestions = useMemo(() => {
     const seen = new Set()
     const suggestions = []
@@ -1344,6 +1352,47 @@ function App() {
     if (isMobile) {
       setEditingRecipe(null)
       setMobileRecipePane('details')
+    }
+  }
+
+  const handleOpenRecipeInstructionsEditor = (recipeId) => {
+    const recipe = recipes.find((item) => item.id === recipeId)
+    if (!recipe) return
+
+    setSelectedRecipeId(recipeId)
+    setRecipeInstructionsEditorDraft(recipe.instructions || '')
+    setIsRecipeInstructionsEditorOpen(true)
+  }
+
+  const handleSaveRecipeInstructionsEditor = async () => {
+    if (!selectedRecipeId) return
+
+    const trimmedInstructions = normalizeRecipeInstructions(recipeInstructionsEditorDraft)
+
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .update({ instructions: trimmedInstructions })
+        .eq('id', selectedRecipeId)
+
+      if (error) {
+        console.error('Could not save recipe instructions:', error)
+        alert('Kunne ikke lagre oppskriften. Prøv igjen.')
+        return
+      }
+
+      setRecipes((current) =>
+        current.map((recipe) =>
+          recipe.id === selectedRecipeId
+            ? { ...recipe, instructions: trimmedInstructions }
+            : recipe,
+        ),
+      )
+      setIsRecipeInstructionsEditorOpen(false)
+      setIsRecipeInstructionsExpanded(false)
+    } catch (error) {
+      console.error('Recipe instructions update error:', error)
+      alert('Kunne ikke lagre oppskriften. Prøv igjen.')
     }
   }
 
@@ -3407,7 +3456,7 @@ function App() {
                 style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
               >
                 <option value="">Velg en matrett</option>
-                {recipes.map((recipe) => (
+                {sortedRecipesForInstructionsSelect.map((recipe) => (
                   <option key={`oppskrift-select-${recipe.id}`} value={recipe.id}>
                     {getRecipeDisplayName(recipe)}
                   </option>
@@ -3417,11 +3466,47 @@ function App() {
 
             {selectedRecipe ? (
               <div>
-                <h3 style={{ marginTop: 0 }}>{getRecipeDisplayName(selectedRecipe)}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: 0 }}>
+                  <h3 style={{ marginTop: 0, marginBottom: 0 }}>{getRecipeDisplayName(selectedRecipe)}</h3>
+                  <button
+                    type="button"
+                    className="app-icon-btn"
+                    aria-label="Rediger oppskriftstekst"
+                    onClick={() => handleOpenRecipeInstructionsEditor(selectedRecipe.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    ✎
+                  </button>
+                </div>
                 <div
                   style={{ whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}
                   dangerouslySetInnerHTML={{ __html: renderFormattedInstructions(selectedRecipe.instructions) }}
                 />
+                {isRecipeInstructionsEditorOpen && (
+                  <div style={{ marginTop: '12px', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                    <div className="recipe-format-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'bold')}>Fet</button>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'italic')}>Kursiv</button>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'heading')}>Overskrift</button>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'bullet')}>Punkt</button>
+                    </div>
+                    <textarea
+                      ref={recipeEditorInstructionsRef}
+                      value={recipeInstructionsEditorDraft}
+                      onChange={(event) => setRecipeInstructionsEditorDraft(event.target.value)}
+                      rows={8}
+                      style={{ width: '100%', padding: '10px', boxSizing: 'border-box', resize: 'vertical' }}
+                    />
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={handleSaveRecipeInstructionsEditor} style={{ padding: '8px 12px', cursor: 'pointer' }}>
+                        Lagre
+                      </button>
+                      <button type="button" onClick={() => setIsRecipeInstructionsEditorOpen(false)} style={{ padding: '8px 12px', cursor: 'pointer' }}>
+                        Avbryt
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p>Velg en matrett for å lese oppskriftsteksten.</p>
