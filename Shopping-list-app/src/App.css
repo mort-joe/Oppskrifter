@@ -1286,6 +1286,26 @@ input[type="checkbox"] {
   -webkit-line-clamp: initial;
 }
 
+.recipe-format-toolbar {
+  margin-top: 4px;
+}
+
+.recipe-format-btn {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.recipe-format-btn:hover,
+.recipe-format-btn:focus-visible {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  outline: none;
+}
+
 .recipe-instructions-toggle {
   display: inline-flex;
   align-items: center;

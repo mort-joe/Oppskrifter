@@ -65,6 +65,28 @@ const normalizeNames = (values) =>
 
 const normalizeRecipeInstructions = (value) => String(value || '').trim()
 
+const escapeHtml = (value) =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const renderFormattedInstructions = (instructions) => {
+  const trimmedValue = normalizeRecipeInstructions(instructions)
+  if (!trimmedValue) {
+    return 'Ingen oppskrift er lagt inn for denne retten ennå.'
+  }
+
+  const escapedValue = escapeHtml(trimmedValue)
+  const withBold = escapedValue.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  const withItalic = withBold.replace(/\*(.+?)\*/g, '<em>$1</em>')
+  const withLineBreaks = withItalic.replace(/\n/g, '<br />')
+
+  return withLineBreaks
+}
+
 const getRecipeInstructionsPreview = (instructions, maxLength = 120) => {
   const normalizedValue = normalizeRecipeInstructions(instructions)
   if (!normalizedValue) {
@@ -265,6 +287,8 @@ function App() {
   const [selectedMenu, setSelectedMenu] = useState('matretter')
   const [isRecipeInstructionsExpanded, setIsRecipeInstructionsExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches)
+  const editingInstructionsRef = useRef(null)
+  const newInstructionsRef = useRef(null)
   const [mobileRecipePane, setMobileRecipePane] = useState('list')
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [shoppingListRecipeCounts, setShoppingListRecipeCounts] = useState({})
@@ -1285,6 +1309,34 @@ function App() {
     const activeIngredientKeys = getActiveShoppingIngredientKeys(recipeCounts, customItems)
     setIngredientHaveCounts((current) => filterRecordByAllowedKeys(current, activeIngredientKeys))
     setCheckedIngredients((current) => current.filter((key) => activeIngredientKeys.has(key)))
+  }
+
+  const applyInstructionFormatting = (textareaRef, updateState, formatType) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selectedText = textarea.value.slice(start, end)
+    const formatMap = {
+      bold: { prefix: '**', suffix: '**', placeholder: 'fet tekst' },
+      italic: { prefix: '*', suffix: '*', placeholder: 'kursiv tekst' },
+      heading: { prefix: '## ', suffix: '', placeholder: 'Overskrift' },
+      bullet: { prefix: '- ', suffix: '', placeholder: 'Punkt' },
+    }
+
+    const selectedValue = selectedText || formatMap[formatType].placeholder
+    const replacement = `${formatMap[formatType].prefix}${selectedValue}${formatMap[formatType].suffix}`
+    const updatedValue = `${textarea.value.slice(0, start)}${replacement}${textarea.value.slice(end)}`
+
+    updateState(updatedValue)
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const cursorStart = start + formatMap[formatType].prefix.length
+      const cursorEnd = cursorStart + selectedValue.length
+      textarea.setSelectionRange(cursorStart, cursorEnd)
+    })
   }
 
   const handleSelectRecipe = (id) => {
@@ -3004,9 +3056,16 @@ function App() {
                     </label>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
+                    <div className="recipe-format-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'bold')}>Fet</button>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'italic')}>Kursiv</button>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'heading')}>Overskrift</button>
+                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'bullet')}>Punkt</button>
+                    </div>
                     <label style={{ display: 'block', marginBottom: '8px' }}>
                       Fremgangsmåte / oppskriftstekst:
                       <textarea
+                        ref={editingInstructionsRef}
                         value={editingRecipe.instructions || ''}
                         onChange={(event) => handleEditRecipeInstructions(event.target.value)}
                         rows={8}
@@ -3228,15 +3287,24 @@ function App() {
                 style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box' }}
               />
             </label>
-            <label>
-              Fremgangsmåte / oppskriftstekst:
-              <textarea
-                value={newRecipe.instructions}
-                onChange={(event) => handleNewRecipeChange('instructions', event.target.value)}
-                rows={8}
-                style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box', resize: 'vertical' }}
-              />
-            </label>
+            <div>
+              <div className="recipe-format-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'bold')}>Fet</button>
+                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'italic')}>Kursiv</button>
+                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'heading')}>Overskrift</button>
+                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'bullet')}>Punkt</button>
+              </div>
+              <label>
+                Fremgangsmåte / oppskriftstekst:
+                <textarea
+                  ref={newInstructionsRef}
+                  value={newRecipe.instructions}
+                  onChange={(event) => handleNewRecipeChange('instructions', event.target.value)}
+                  rows={8}
+                  style={{ width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box', resize: 'vertical' }}
+                />
+              </label>
+            </div>
             <div>
               <strong>Ingredienser</strong>
               {newRecipe.ingredients.map((ingredient, index) => (
@@ -3350,9 +3418,10 @@ function App() {
             {selectedRecipe ? (
               <div>
                 <h3 style={{ marginTop: 0 }}>{getRecipeDisplayName(selectedRecipe)}</h3>
-                <div style={{ whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                  {selectedRecipe.instructions || 'Ingen oppskrift er lagt inn for denne retten ennå.'}
-                </div>
+                <div
+                  style={{ whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}
+                  dangerouslySetInnerHTML={{ __html: renderFormattedInstructions(selectedRecipe.instructions) }}
+                />
               </div>
             ) : (
               <p>Velg en matrett for å lese oppskriftsteksten.</p>
