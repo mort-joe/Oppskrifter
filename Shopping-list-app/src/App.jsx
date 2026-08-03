@@ -2160,6 +2160,15 @@ function App() {
     setDragIngredientIndex(null)
   }
 
+  const isMissingInstructionsColumnError = (error) => {
+    const diagnosticText = [error?.message, error?.details, error?.hint]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return diagnosticText.includes('instructions') && diagnosticText.includes('does not exist')
+  }
+
   const handleDeleteRecipe = async () => {
     if (!editingRecipe) return
     if (!window.confirm(`Er du sikker på at du vil slette matretten "${getRecipeDisplayName(editingRecipe)}"?`)) {
@@ -2281,7 +2290,11 @@ function App() {
       setEditingRecipe(null)
     } catch (error) {
       console.error('Edit recipe error:', error)
-      alert('Noe gikk galt ved lagring av endringene.')
+      if (isMissingInstructionsColumnError(error)) {
+        alert('Fremgangsmåte-feltet finnes ikke i databasen ennå. Kjør auth_setup.sql i Supabase og prøv igjen.')
+      } else {
+        alert('Noe gikk galt ved lagring av endringene.')
+      }
     }
   }
 
@@ -2384,7 +2397,11 @@ function App() {
   setNewRecipe({ name: '', instructions: '', ingredients: [{ name: '', quantity: 1, unit: '' }], typeTags: [], occasionTags: [] })
     } catch (error) {
       console.error('Add recipe error:', error)
-      alert('Noe gikk galt ved lagring i databasen.')
+      if (isMissingInstructionsColumnError(error)) {
+        alert('Fremgangsmåte-feltet finnes ikke i databasen ennå. Kjør auth_setup.sql i Supabase og prøv igjen.')
+      } else {
+        alert('Noe gikk galt ved lagring i databasen.')
+      }
     }
   }
 
