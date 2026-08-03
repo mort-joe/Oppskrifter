@@ -985,6 +985,30 @@ function App() {
   }, [collapsedImportGroups])
 
   useEffect(() => {
+    const syncRecipeShortcutFromHash = () => {
+      if (typeof window === 'undefined') return
+
+      const match = window.location.hash.match(/^#oppskrift\/(\d+)$/)
+      if (!match) return
+
+      const recipeId = Number(match[1])
+      if (!recipeId) return
+
+      setSelectedMenu('oppskrift')
+      setSelectedRecipeId(recipeId)
+      setEditingRecipe(null)
+      setIsRecipeInstructionsExpanded(false)
+    }
+
+    syncRecipeShortcutFromHash()
+    window.addEventListener('hashchange', syncRecipeShortcutFromHash)
+
+    return () => {
+      window.removeEventListener('hashchange', syncRecipeShortcutFromHash)
+    }
+  }, [])
+
+  useEffect(() => {
     setIsRecipeInstructionsExpanded(false)
   }, [selectedRecipeId])
 
@@ -1269,6 +1293,19 @@ function App() {
       setEditingRecipe(null)
       setMobileRecipePane('details')
     }
+  }
+
+  const handleOpenRecipeInstructions = (recipeId) => {
+    setSelectedRecipeId(recipeId)
+    setSelectedMenu('oppskrift')
+    setEditingRecipe(null)
+    setIsRecipeInstructionsExpanded(false)
+
+    if (isMobile) {
+      setMobileRecipePane('details')
+    }
+
+    window.location.hash = `oppskrift/${recipeId}`
   }
 
   const refreshCurrentUserFromServer = useCallback(async () => {
@@ -2925,25 +2962,17 @@ function App() {
                             </button>
                           </div>
                         </div>
-                        <div
+                        <a
                           className="recipe-inline-link"
-                          role="button"
-                          tabIndex={0}
+                          href={`#oppskrift/${recipe.id}`}
                           onClick={(event) => {
                             event.stopPropagation()
                             handleOpenRecipeInstructions(recipe.id)
                           }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault()
-                              event.stopPropagation()
-                              handleOpenRecipeInstructions(recipe.id)
-                            }
-                          }}
                         >
                           <span aria-hidden="true">📖</span>
                           <span>Se oppskrift</span>
-                        </div>
+                        </a>
                       </div>
                     </div>
                   ))}
