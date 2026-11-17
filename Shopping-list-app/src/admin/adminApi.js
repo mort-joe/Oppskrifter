@@ -11,6 +11,14 @@ const safeFetch = async (url, options) => {
   }
 }
 
+// Errors from the API carry the HTTP status so callers can react to it
+// (for example 401 -> log out) without comparing message text.
+const apiError = (message, status) => {
+  const error = new Error(message)
+  error.status = status
+  return error
+}
+
 const parseJson = async (response) => {
   const text = await response.text()
   let data = null
@@ -25,11 +33,11 @@ const parseJson = async (response) => {
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error('Admin-API finnes ikke i vanlig Vite-dev. Start med "vercel dev" for å teste innlogging lokalt.')
+      throw apiError('Admin-API finnes ikke i vanlig Vite-dev. Start med "vercel dev" for å teste innlogging lokalt.', response.status)
     }
 
     const plainTextError = text?.trim()
-    throw new Error(data?.error || plainTextError || `API-feil (${response.status}).`)
+    throw apiError(data?.error || plainTextError || `API-feil (${response.status}).`, response.status)
   }
 
   return data
@@ -82,7 +90,7 @@ export const deleteUser = async (token, userId) => {
 
   if (!response.ok && response.status !== 204) {
     const data = await response.json().catch(() => ({}))
-    throw new Error(data?.error || 'Kunne ikke slette brukeren.')
+    throw apiError(data?.error || 'Kunne ikke slette brukeren.', response.status)
   }
 }
 

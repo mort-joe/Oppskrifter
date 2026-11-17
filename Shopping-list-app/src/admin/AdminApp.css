@@ -149,12 +149,6 @@
   font-size: 1.1rem;
 }
 
-.admin-inline-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .admin-inline-action-btn {
   flex: 0 0 auto;
   min-width: 58px;
@@ -244,12 +238,6 @@
 
 .admin-user-row td {
   border-bottom-color: #d9e5ff;
-}
-
-.admin-user-email-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .admin-user-email-input {

@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import './AdminApp.css'
+import { confirmAction } from '../lib/dialogs'
 import {
   adminLogin,
   createShoppingCategory,
@@ -19,6 +20,26 @@ import {
 const ADMIN_TOKEN_KEY = 'admin_session_token'
 
 const getStoredToken = () => window.localStorage.getItem(ADMIN_TOKEN_KEY) || ''
+
+// Admins first, then by e-mail.
+const compareUsersByRoleThenEmail = (a, b) => {
+  const roleA = a.role === 'admin' ? 0 : 1
+  const roleB = b.role === 'admin' ? 0 : 1
+  if (roleA !== roleB) {
+    return roleA - roleB
+  }
+
+  return (a.email || '').localeCompare(b.email || '', 'no', { sensitivity: 'base' })
+}
+
+// { [id]: name } for the editable name fields.
+const toNameDraftMap = (rows) => {
+  const draftMap = {}
+  rows.forEach((row) => {
+    draftMap[row.id] = row.name
+  })
+  return draftMap
+}
 
 const formatDate = (value, includeTime = true) => {
   if (!value) return '-'
@@ -80,19 +101,7 @@ function AdminApp() {
 
   const isLoggedIn = Boolean(token)
 
-  const sortedUsers = useMemo(
-    () =>
-      [...users].sort((a, b) => {
-        const roleA = a.role === 'admin' ? 0 : 1
-        const roleB = b.role === 'admin' ? 0 : 1
-        if (roleA !== roleB) {
-          return roleA - roleB
-        }
-
-        return (a.email || '').localeCompare(b.email || '', 'no', { sensitivity: 'base' })
-      }),
-    [users],
-  )
+  const sortedUsers = useMemo(() => [...users].sort(compareUsersByRoleThenEmail), [users])
 
   const dashboardSummary = useMemo(() => {
     const totalUsers = dashboardUsers.length
@@ -103,20 +112,7 @@ function AdminApp() {
     return { totalUsers, adminUsers, normalUsers, totalRecipes }
   }, [dashboardUsers, dashboardRecipes])
 
-  const sortedDashboardUsers = useMemo(
-    () =>
-      [...dashboardUsers].sort((a, b) => {
-        const roleA = a.role === 'admin' ? 0 : 1
-        const roleB = b.role === 'admin' ? 0 : 1
-
-        if (roleA !== roleB) {
-          return roleA - roleB
-        }
-
-        return (a.email || '').localeCompare(b.email || '', 'no', { sensitivity: 'base' })
-      }),
-    [dashboardUsers],
-  )
+  const sortedDashboardUsers = useMemo(() => [...dashboardUsers].sort(compareUsersByRoleThenEmail), [dashboardUsers])
 
   const shoppingCategoryNames = useMemo(() => {
     const names = shoppingCategories
@@ -141,7 +137,7 @@ function AdminApp() {
     )
   }, [ingredientSearch, ingredients])
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     if (!token) return
 
     setLoading(true)
@@ -158,17 +154,13 @@ function AdminApp() {
       const categories = categoryResult.categories || []
       setShoppingCategories(categories)
 
-      const draftMap = {}
-      categories.forEach((category) => {
-        draftMap[category.id] = category.name
-      })
-      setCategoryNameDrafts(draftMap)
+      setCategoryNameDrafts(toNameDraftMap(categories))
     } catch (dashboardError) {
       setError(dashboardError.message)
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
   const loadIngredientData = async () => {
     if (!token) return
@@ -218,7 +210,17 @@ function AdminApp() {
     }
   }
 
-  const loadUsers = async () => {
+  const handleLogOut = useCallback(() => {
+    window.localStorage.removeItem(ADMIN_TOKEN_KEY)
+    setToken('')
+    setUsers([])
+    setPasswordDrafts({})
+    setRoleDrafts({})
+    setEmailDrafts({})
+    setOpenUserActionsId(null)
+  }, [])
+
+  const loadUsers = useCallback(async () => {
     if (!token) return
 
     setLoading(true)
@@ -236,25 +238,25 @@ function AdminApp() {
       setEmailDrafts(emailMap)
     } catch (loadError) {
       setError(loadError.message)
-      if (loadError.message === 'Unauthorized') {
+      if (loadError.status === 401) {
         handleLogOut()
       }
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, handleLogOut])
 
   useEffect(() => {
     if (token) {
       void loadUsers()
     }
-  }, [token])
+  }, [token, loadUsers])
 
   useEffect(() => {
     if (token && activeMenu === 'dashboard') {
       void loadDashboard()
     }
-  }, [token, activeMenu])
+  }, [token, activeMenu, loadDashboard])
 
   const handleLogIn = async (event) => {
     event.preventDefault()
@@ -272,16 +274,6 @@ function AdminApp() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleLogOut = () => {
-    window.localStorage.removeItem(ADMIN_TOKEN_KEY)
-    setToken('')
-    setUsers([])
-    setPasswordDrafts({})
-    setRoleDrafts({})
-    setEmailDrafts({})
-    setOpenUserActionsId(null)
   }
 
   const handleCreateUser = async (event) => {
@@ -347,7 +339,7 @@ function AdminApp() {
       return
     }
 
-    const confirmed = window.confirm(`Slette brukeren ${user.email}?`)
+    const confirmed = confirmAction(`Slette brukeren ${user.email}?`)
     if (!confirmed) return
 
     setLoading(true)
@@ -434,11 +426,7 @@ function AdminApp() {
       )
       const categories = result.categories || []
       setShoppingCategories(categories)
-      const draftMap = {}
-      categories.forEach((category) => {
-        draftMap[category.id] = category.name
-      })
-      setCategoryNameDrafts(draftMap)
+      setCategoryNameDrafts(toNameDraftMap(categories))
     } catch (categoryError) {
       setError(categoryError.message)
     } finally {
@@ -492,7 +480,7 @@ function AdminApp() {
       return
     }
 
-    const confirmed = window.confirm(
+    const confirmed = confirmAction(
       `Sla sammen ${mergeIngredientIds.length} duplikat(er) til valgt ingrediens? Dette kan ikke angres.`,
     )
     if (!confirmed) return
@@ -523,6 +511,7 @@ function AdminApp() {
               Brukernavn
               <input
                 type="text"
+                autoComplete="username"
                 value={loginUsername}
                 onChange={(event) => setLoginUsername(event.target.value)}
                 required
@@ -532,6 +521,7 @@ function AdminApp() {
               Passord
               <input
                 type="password"
+                autoComplete="current-password"
                 value={loginPassword}
                 onChange={(event) => setLoginPassword(event.target.value)}
                 required
@@ -583,6 +573,7 @@ function AdminApp() {
             <input
               type="email"
               value={newEmail}
+              aria-label="Brukernavn (epost)"
               onChange={(event) => setNewEmail(event.target.value)}
               placeholder="Brukernavn (epost)"
               required
@@ -590,6 +581,7 @@ function AdminApp() {
             <input
               type="text"
               value={newPassword}
+              aria-label="Passord"
               onChange={(event) => setNewPassword(event.target.value)}
               placeholder="Passord"
               required
@@ -597,10 +589,11 @@ function AdminApp() {
             <input
               type="text"
               value={newUsername}
+              aria-label="Visningsnavn"
               onChange={(event) => setNewUsername(event.target.value)}
               placeholder="Visningsnavn"
             />
-            <select value={newRole} onChange={(event) => setNewRole(event.target.value)}>
+            <select aria-label="Rolle" value={newRole} onChange={(event) => setNewRole(event.target.value)}>
               <option value="user">Bruker</option>
               <option value="admin">Administrator</option>
             </select>
@@ -631,6 +624,7 @@ function AdminApp() {
                       <td>
                         <select
                           value={roleDrafts[user.id] || user.role || 'user'}
+                          aria-label="Rolle"
                           disabled={Boolean(user.is_config_admin) || openUserActionsId === user.id}
                           onChange={(event) =>
                             setRoleDrafts((current) => ({
@@ -665,8 +659,9 @@ function AdminApp() {
                         <td colSpan={5}>
                           <div className="admin-user-edit-fields">
                             <div className="admin-edit-field">
-                              <label>Epostadresse</label>
+                              <label htmlFor={`admin-user-email-${user.id}`}>Epostadresse</label>
                               <input
+                                id={`admin-user-email-${user.id}`}
                                 type="email"
                                 className="admin-user-email-input"
                                 value={emailDrafts[user.id] ?? user.email ?? ''}
@@ -681,8 +676,9 @@ function AdminApp() {
                             </div>
 
                             <div className="admin-edit-field">
-                              <label>Visningsnavn</label>
+                              <label htmlFor={`admin-user-display-name-${user.id}`}>Visningsnavn</label>
                               <input
+                                id={`admin-user-display-name-${user.id}`}
                                 type="text"
                                 className="admin-user-email-input"
                                 value={displayNameDrafts[user.id] ?? user.display_name ?? ''}
@@ -697,8 +693,9 @@ function AdminApp() {
                             </div>
 
                             <div className="admin-edit-field">
-                              <label>Nytt passord</label>
+                              <label htmlFor={`admin-user-password-${user.id}`}>Nytt passord</label>
                               <input
+                                id={`admin-user-password-${user.id}`}
                                 type="text"
                                 value={passwordDrafts[user.id] || ''}
                                 onChange={(event) =>
@@ -737,7 +734,7 @@ function AdminApp() {
                 ))}
                 {sortedUsers.length === 0 && (
                   <tr>
-                    <td colSpan={6}>Ingen brukere funnet.</td>
+                    <td colSpan={5}>Ingen brukere funnet.</td>
                   </tr>
                 )}
               </tbody>
@@ -872,6 +869,7 @@ function AdminApp() {
                   <input
                     type="text"
                     value={newCategoryName}
+                    aria-label="Legg til ny kategori"
                     onChange={(event) => setNewCategoryName(event.target.value)}
                     placeholder="Legg til ny kategori"
                   />
@@ -885,6 +883,7 @@ function AdminApp() {
                       <input
                         type="text"
                         value={categoryNameDrafts[category.id] ?? category.name}
+                        aria-label={`Navn på kategori ${index + 1}`}
                         onChange={(event) =>
                           setCategoryNameDrafts((current) => ({
                             ...current,
@@ -928,6 +927,7 @@ function AdminApp() {
                   <input
                     type="text"
                     value={ingredientSearch}
+                    aria-label="Sok etter ingrediensnavn"
                     onChange={(event) => setIngredientSearch(event.target.value)}
                     placeholder="Sok etter ingrediensnavn"
                   />
@@ -977,6 +977,7 @@ function AdminApp() {
                               <input
                                 type="text"
                                 value={ingredientNameDrafts[ingredient.id] ?? ingredient.name ?? ''}
+                                aria-label="Ingrediensnavn"
                                 onChange={(event) =>
                                   setIngredientNameDrafts((current) => ({
                                     ...current,
@@ -988,6 +989,7 @@ function AdminApp() {
                             <td>
                               <select
                                 value={ingredientCategoryDrafts[ingredient.id] ?? ingredient.shopping_category ?? 'annet'}
+                                aria-label="Sorteringskategori"
                                 onChange={(event) =>
                                   setIngredientCategoryDrafts((current) => ({
                                     ...current,

@@ -1,5 +1,4 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { badRequest, getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
 
 const mergeRowsForSameRecipeAndUnit = async (supabaseAdmin, keepIngredientId, mergeIngredientIds) => {
   const idsToScan = [keepIngredientId, ...mergeIngredientIds]
@@ -61,22 +60,14 @@ const mergeRowsForSameRecipeAndUnit = async (supabaseAdmin, keepIngredientId, me
   }
 }
 
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
+export default withAdmin(async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['POST'])
     return
   }
 
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   const keepIngredientId = Number(req.body?.keepIngredientId)
   const mergeIngredientIds = Array.isArray(req.body?.mergeIngredientIds)
@@ -84,17 +75,17 @@ export default async function handler(req, res) {
     : []
 
   if (!Number.isFinite(keepIngredientId) || keepIngredientId <= 0) {
-    res.status(400).json({ error: 'Mangler ingrediens som skal beholdes.' })
+    badRequest(res, 'Mangler ingrediens som skal beholdes.')
     return
   }
 
   if (!mergeIngredientIds.length) {
-    res.status(400).json({ error: 'Mangler ingredienser som skal slas sammen.' })
+    badRequest(res, 'Mangler ingredienser som skal slas sammen.')
     return
   }
 
   if (mergeIngredientIds.includes(keepIngredientId)) {
-    res.status(400).json({ error: 'Ingrediens som beholdes kan ikke ogsa slaes sammen.' })
+    badRequest(res, 'Ingrediens som beholdes kan ikke ogsa slaes sammen.')
     return
   }
 
@@ -115,6 +106,6 @@ export default async function handler(req, res) {
       mergedIngredientIds: mergeIngredientIds,
     })
   } catch (error) {
-    res.status(400).json({ error: error.message || 'Kunne ikke sla sammen ingredienser.' })
+    badRequest(res, error.message || 'Kunne ikke sla sammen ingredienser.')
   }
-}
+})

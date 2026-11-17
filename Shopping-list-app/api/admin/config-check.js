@@ -1,9 +1,12 @@
 import { getAdminConfigDebugInfo } from '../_lib/adminSession.js'
+import { methodNotAllowed, withAdmin } from '../_lib/http.js'
 
-export default async function handler(req, res) {
+// Diagnostic endpoint: reports where the admin configuration comes from.
+// Requires an admin session so that it never reveals the admin username to
+// unauthenticated callers.
+export default withAdmin(async function handler(req, res) {
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['GET'])
     return
   }
 
@@ -12,5 +15,6 @@ export default async function handler(req, res) {
     effectiveUsername: info.effectiveUsername,
     usernameSource: info.usernameSource,
     passwordSource: info.passwordSource,
+    sessionSecretSource: info.sessionSecretSource,
   })
-}
+})

@@ -1,11 +1,10 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
 
 const normalizeDuplicateKey = (value) =>
   String(value || '')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .trim()
 
 const buildIngredientPayload = async (supabaseAdmin) => {
@@ -76,22 +75,14 @@ const buildIngredientPayload = async (supabaseAdmin) => {
   }
 }
 
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
+export default withAdmin(async function handler(req, res) {
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['GET'])
     return
   }
 
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   try {
     const payload = await buildIngredientPayload(supabaseAdmin)
@@ -99,4 +90,4 @@ export default async function handler(req, res) {
   } catch (error) {
     res.status(500).json({ error: error.message || 'Kunne ikke hente ingrediensdata.' })
   }
-}
+})
