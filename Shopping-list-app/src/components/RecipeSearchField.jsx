@@ -7,6 +7,7 @@ export default function RecipeSearchField({ id, value, onChange, marginBottom })
       </label>
       <input
         id={id}
+        className="recipe-search-field-input"
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}

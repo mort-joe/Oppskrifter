@@ -325,6 +325,10 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
+.app-shell.mobile .recipe-search-field-input {
+  border: 1px solid #ccc;
+}
+
 .app-content-region {
   width: 100%;
   box-sizing: border-box;
