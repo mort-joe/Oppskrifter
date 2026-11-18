@@ -1,37 +1,39 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { badRequest, getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
+import { isIntegerId, isOptionalString } from '../../_lib/validate.js'
 
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
+export default withAdmin(async function handler(req, res) {
   if (req.method !== 'PATCH') {
-    res.setHeader('Allow', ['PATCH'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['PATCH'])
     return
   }
 
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   const {
     query: { id },
   } = req
 
-  const name = String(req.body?.name || '').trim()
-  const shoppingCategory = String(req.body?.shopping_category || '').trim()
-
   if (!id) {
-    res.status(400).json({ error: 'Mangler ingrediens-id.' })
+    badRequest(res, 'Mangler ingrediens-id.')
     return
   }
 
+  if (!isIntegerId(id)) {
+    badRequest(res, 'Ugyldig ingrediens-id.')
+    return
+  }
+
+  if (!isOptionalString(req.body?.name) || !isOptionalString(req.body?.shopping_category)) {
+    badRequest(res, 'Navn og sorteringskategori må være tekst.')
+    return
+  }
+
+  const name = String(req.body?.name || '').trim()
+  const shoppingCategory = String(req.body?.shopping_category || '').trim()
+
   if (!name && !shoppingCategory) {
-    res.status(400).json({ error: 'Mangler felter som skal oppdateres.' })
+    badRequest(res, 'Mangler felter som skal oppdateres.')
     return
   }
 
@@ -47,9 +49,9 @@ export default async function handler(req, res) {
     .single()
 
   if (error) {
-    res.status(400).json({ error: error.message })
+    badRequest(res, error.message)
     return
   }
 
   res.status(200).json({ ingredient: data })
-}
+})

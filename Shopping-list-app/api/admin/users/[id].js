@@ -1,36 +1,38 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { badRequest, getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
+import { CONFIG_ADMIN_ID, normalizeRole } from '../../_lib/users.js'
+import { isOptionalString, isUuid } from '../../_lib/validate.js'
 
-const normalizeRole = (role) => (role === 'admin' ? 'admin' : 'user')
-const CONFIG_ADMIN_ID = '__local_admin__'
-
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+export default withAdmin(async function handler(req, res) {
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   const {
     query: { id },
   } = req
 
   if (!id) {
-    res.status(400).json({ error: 'Mangler bruker-id.' })
+    badRequest(res, 'Mangler bruker-id.')
     return
   }
 
   if (id === CONFIG_ADMIN_ID) {
-    res.status(400).json({ error: 'Denne administratorkontoen styres av konfigurasjon og kan ikke endres her.' })
+    badRequest(res, 'Denne administratorkontoen styres av konfigurasjon og kan ikke endres her.')
+    return
+  }
+
+  if (!isUuid(id)) {
+    badRequest(res, 'Ugyldig bruker-id.')
     return
   }
 
   if (req.method === 'PATCH') {
     const { password, role, email, username } = req.body || {}
+
+    if (!isOptionalString(password) || !isOptionalString(email) || !isOptionalString(username)) {
+      badRequest(res, 'Passord, e-post og visningsnavn må være tekst.')
+      return
+    }
+
     const payload = {}
 
     if (password) {
@@ -50,13 +52,13 @@ export default async function handler(req, res) {
     }
 
     if (!Object.keys(payload).length) {
-      res.status(400).json({ error: 'Ingen endringer oppgitt.' })
+      badRequest(res, 'Ingen endringer oppgitt.')
       return
     }
 
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, payload)
     if (error) {
-      res.status(400).json({ error: error.message })
+      badRequest(res, error.message)
       return
     }
 
@@ -76,7 +78,7 @@ export default async function handler(req, res) {
   if (req.method === 'DELETE') {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
     if (error) {
-      res.status(400).json({ error: error.message })
+      badRequest(res, error.message)
       return
     }
 
@@ -84,6 +86,5 @@ export default async function handler(req, res) {
     return
   }
 
-  res.setHeader('Allow', ['PATCH', 'DELETE'])
-  res.status(405).json({ error: 'Method not allowed' })
-}
+  methodNotAllowed(res, ['PATCH', 'DELETE'])
+})

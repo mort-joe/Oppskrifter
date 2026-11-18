@@ -1,31 +1,34 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { badRequest, getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
+import { isIntegerId, isOptionalString } from '../../_lib/validate.js'
 
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+export default withAdmin(async function handler(req, res) {
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   const {
     query: { id },
   } = req
 
   if (!id) {
-    res.status(400).json({ error: 'Mangler kategori-id.' })
+    badRequest(res, 'Mangler kategori-id.')
+    return
+  }
+
+  if (!isIntegerId(id)) {
+    badRequest(res, 'Ugyldig kategori-id.')
     return
   }
 
   if (req.method === 'PATCH') {
+    if (!isOptionalString(req.body?.name)) {
+      badRequest(res, 'Kategorinavn ma vaere tekst.')
+      return
+    }
+
     const name = String(req.body?.name || '').trim()
 
     if (!name) {
-      res.status(400).json({ error: 'Kategorinavn ma fylles ut.' })
+      badRequest(res, 'Kategorinavn ma fylles ut.')
       return
     }
 
@@ -37,7 +40,7 @@ export default async function handler(req, res) {
       .single()
 
     if (fetchError) {
-      res.status(400).json({ error: fetchError.message })
+      badRequest(res, fetchError.message)
       return
     }
 
@@ -51,7 +54,7 @@ export default async function handler(req, res) {
       .single()
 
     if (error) {
-      res.status(400).json({ error: error.message })
+      badRequest(res, error.message)
       return
     }
 
@@ -72,6 +75,5 @@ export default async function handler(req, res) {
     return
   }
 
-  res.setHeader('Allow', ['PATCH'])
-  res.status(405).json({ error: 'Method not allowed' })
-}
+  methodNotAllowed(res, ['PATCH'])
+})

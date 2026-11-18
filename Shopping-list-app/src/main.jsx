@@ -13,4 +13,5 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
+// Named export keeps eslint-plugin-react-refresh happy for this entry file.
 export { RootComponent }

@@ -1,21 +1,32 @@
 import { createAdminToken, validateAdminCredentials } from '../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../_lib/supabaseAdmin.js'
+import { methodNotAllowed } from '../_lib/http.js'
+import { getSupabaseAuthClient } from '../_lib/supabaseAdmin.js'
+import { isNonEmptyString } from '../_lib/validate.js'
 
 const isSupabaseAdmin = async (username, password) => {
-  let supabaseAdmin
+  let authClient
   try {
-    supabaseAdmin = getSupabaseAdmin()
+    authClient = getSupabaseAuthClient()
   } catch (error) {
     return { valid: false, error: error.message, status: 500 }
   }
 
-  const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+  const { data, error } = await authClient.auth.signInWithPassword({
     email: username,
     password,
   })
 
   if (error || !data?.user) {
     return { valid: false, error: 'Feil brukernavn eller passord.' }
+  }
+
+  // The password check created a server-side session that is never used
+  // again. Revoke just that session ('local'), leaving the user's own
+  // browser sessions untouched.
+  try {
+    await authClient.auth.signOut({ scope: 'local' })
+  } catch (signOutError) {
+    console.error('Could not revoke the admin login session:', signOutError)
   }
 
   const role = data.user.app_metadata?.role
@@ -26,10 +37,21 @@ const isSupabaseAdmin = async (username, password) => {
   return { valid: true }
 }
 
+const respondWithToken = (res) => {
+  let token
+  try {
+    token = createAdminToken()
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Kunne ikke opprette admin-sesjon.' })
+    return
+  }
+
+  res.status(200).json({ token })
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['POST'])
     return
   }
 
@@ -40,12 +62,16 @@ export default async function handler(req, res) {
     return
   }
 
-  const trimmedUsername = String(username).trim()
-  const trimmedPassword = String(password)
+  if (!isNonEmptyString(username) || typeof password !== 'string') {
+    res.status(400).json({ error: 'Brukernavn og passord må være tekst.' })
+    return
+  }
+
+  const trimmedUsername = username.trim()
+  const trimmedPassword = password
 
   if (validateAdminCredentials(trimmedUsername, trimmedPassword)) {
-    const token = createAdminToken()
-    res.status(200).json({ token })
+    respondWithToken(res)
     return
   }
 
@@ -56,6 +82,5 @@ export default async function handler(req, res) {
     return
   }
 
-  const token = createAdminToken()
-  res.status(200).json({ token })
+  respondWithToken(res)
 }

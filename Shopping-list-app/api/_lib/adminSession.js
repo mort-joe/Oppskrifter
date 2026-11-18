@@ -1,15 +1,26 @@
 import crypto from 'node:crypto'
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'mortenadmin'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Postboks22@oppskrifter'
-const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || 'change-this-secret'
 const SESSION_TTL_SECONDS = 60 * 60 * 8
 
-export const getAdminConfigDebugInfo = () => ({
-  effectiveUsername: ADMIN_USERNAME,
-  usernameSource: process.env.ADMIN_USERNAME ? 'env' : 'default',
-  passwordSource: process.env.ADMIN_PASSWORD ? 'env' : 'default',
+// All three values must be set as environment variables (see .env.example).
+// There are deliberately no fallback values: if one is missing, the config
+// admin login is disabled and tokens can neither be created nor verified.
+const getAdminConfig = () => ({
+  username: process.env.ADMIN_USERNAME || '',
+  password: process.env.ADMIN_PASSWORD || '',
+  sessionSecret: process.env.ADMIN_SESSION_SECRET || '',
 })
+
+export const getAdminConfigDebugInfo = () => {
+  const config = getAdminConfig()
+
+  return {
+    effectiveUsername: config.username,
+    usernameSource: config.username ? 'env' : 'missing',
+    passwordSource: config.password ? 'env' : 'missing',
+    sessionSecretSource: config.sessionSecret ? 'env' : 'missing',
+  }
+}
 
 const base64UrlEncode = (value) =>
   Buffer.from(value, 'utf8').toString('base64url')
@@ -17,15 +28,37 @@ const base64UrlEncode = (value) =>
 const base64UrlDecode = (value) =>
   Buffer.from(value, 'base64url').toString('utf8')
 
-const signValue = (value) =>
-  crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url')
+const requireSessionSecret = () => {
+  const { sessionSecret } = getAdminConfig()
+  if (!sessionSecret) {
+    throw new Error('ADMIN_SESSION_SECRET mangler i miljøvariablene.')
+  }
+  return sessionSecret
+}
 
-export const validateAdminCredentials = (username, password) =>
-  username === ADMIN_USERNAME && password === ADMIN_PASSWORD
+const signValue = (value) =>
+  crypto.createHmac('sha256', requireSessionSecret()).update(value).digest('base64url')
+
+const sha256 = (value) => crypto.createHash('sha256').update(String(value), 'utf8').digest()
+
+// Constant-time string comparison. Both sides are hashed first so that the
+// comparison never short-circuits on length.
+const safeEqual = (first, second) => crypto.timingSafeEqual(sha256(first), sha256(second))
+
+export const validateAdminCredentials = (username, password) => {
+  const config = getAdminConfig()
+  if (!config.username || !config.password) {
+    return false
+  }
+
+  const usernameMatches = safeEqual(username, config.username)
+  const passwordMatches = safeEqual(password, config.password)
+  return usernameMatches && passwordMatches
+}
 
 export const createAdminToken = () => {
   const payload = {
-    sub: ADMIN_USERNAME,
+    sub: getAdminConfig().username,
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
   }
 
@@ -37,6 +70,11 @@ export const createAdminToken = () => {
 export const verifyAdminToken = (token) => {
   if (!token || typeof token !== 'string' || !token.includes('.')) {
     return { valid: false, reason: 'missing token' }
+  }
+
+  const config = getAdminConfig()
+  if (!config.sessionSecret) {
+    return { valid: false, reason: 'missing session secret' }
   }
 
   const [payloadEncoded, signature] = token.split('.')
@@ -57,7 +95,7 @@ export const verifyAdminToken = (token) => {
       return { valid: false, reason: 'token expired' }
     }
 
-    if (payload.sub !== ADMIN_USERNAME) {
+    if (payload.sub !== config.username) {
       return { valid: false, reason: 'invalid subject' }
     }
 

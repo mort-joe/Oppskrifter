@@ -1,27 +1,24 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { badRequest, getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
+import { isIntegerIdList } from '../../_lib/validate.js'
 
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
+export default withAdmin(async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['POST'])
     return
   }
 
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   const orderedIds = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds : []
 
   if (!orderedIds.length) {
-    res.status(400).json({ error: 'Mangler sortert kategoriliste.' })
+    badRequest(res, 'Mangler sortert kategoriliste.')
+    return
+  }
+
+  if (!isIntegerIdList(orderedIds)) {
+    badRequest(res, 'Kategorilisten ma inneholde unike kategori-id-er.')
     return
   }
 
@@ -36,7 +33,7 @@ export default async function handler(req, res) {
   const firstError = results.find((result) => result.error)?.error
 
   if (firstError) {
-    res.status(400).json({ error: firstError.message })
+    badRequest(res, firstError.message)
     return
   }
 
@@ -46,9 +43,9 @@ export default async function handler(req, res) {
     .order('sort_order', { ascending: true })
 
   if (error) {
-    res.status(400).json({ error: error.message })
+    badRequest(res, error.message)
     return
   }
 
   res.status(200).json({ categories: data || [] })
-}
+})

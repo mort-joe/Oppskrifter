@@ -1,19 +1,17 @@
-import { requireAdminSession } from '../../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../../_lib/supabaseAdmin.js'
+import { badRequest, getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../../_lib/http.js'
+import { isOptionalString } from '../../_lib/validate.js'
+
+const MISSING_TABLE_MESSAGE = 'Tabellen shopping_categories mangler. Kjor SQL-oppsettet for dashboard-kategorier.'
 
 const ensureTableExistsError = (errorMessage) =>
   String(errorMessage || '').toLowerCase().includes('shopping_categories')
 
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
+const describeReadError = (error) =>
+  ensureTableExistsError(error.message) ? MISSING_TABLE_MESSAGE : error.message
 
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+export default withAdmin(async function handler(req, res) {
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   if (req.method === 'GET') {
     const { data, error } = await supabaseAdmin
@@ -22,10 +20,7 @@ export default async function handler(req, res) {
       .order('sort_order', { ascending: true })
 
     if (error) {
-      const errorMessage = ensureTableExistsError(error.message)
-        ? 'Tabellen shopping_categories mangler. Kjor SQL-oppsettet for dashboard-kategorier.'
-        : error.message
-      res.status(500).json({ error: errorMessage })
+      res.status(500).json({ error: describeReadError(error) })
       return
     }
 
@@ -34,10 +29,15 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (!isOptionalString(req.body?.name)) {
+      badRequest(res, 'Kategorinavn ma vaere tekst.')
+      return
+    }
+
     const name = String(req.body?.name || '').trim()
 
     if (!name) {
-      res.status(400).json({ error: 'Kategorinavn ma fylles ut.' })
+      badRequest(res, 'Kategorinavn ma fylles ut.')
       return
     }
 
@@ -48,10 +48,7 @@ export default async function handler(req, res) {
       .limit(1)
 
     if (maxError) {
-      const errorMessage = ensureTableExistsError(maxError.message)
-        ? 'Tabellen shopping_categories mangler. Kjor SQL-oppsettet for dashboard-kategorier.'
-        : maxError.message
-      res.status(500).json({ error: errorMessage })
+      res.status(500).json({ error: describeReadError(maxError) })
       return
     }
 
@@ -64,7 +61,7 @@ export default async function handler(req, res) {
       .single()
 
     if (error) {
-      res.status(400).json({ error: error.message })
+      badRequest(res, error.message)
       return
     }
 
@@ -72,6 +69,5 @@ export default async function handler(req, res) {
     return
   }
 
-  res.setHeader('Allow', ['GET', 'POST'])
-  res.status(405).json({ error: 'Method not allowed' })
-}
+  methodNotAllowed(res, ['GET', 'POST'])
+})

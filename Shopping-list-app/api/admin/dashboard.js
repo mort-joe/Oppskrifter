@@ -1,41 +1,14 @@
-import { getAdminConfigDebugInfo, requireAdminSession } from '../_lib/adminSession.js'
-import { getSupabaseAdmin } from '../_lib/supabaseAdmin.js'
+import { getSupabaseAdminOr500, methodNotAllowed, withAdmin } from '../_lib/http.js'
+import { buildActivityByUserId, normalizeRole, pickLatestDate, withConfigAdmin } from '../_lib/users.js'
 
-const normalizeRole = (role) => (role === 'admin' ? 'admin' : 'user')
-const CONFIG_ADMIN_ID = '__local_admin__'
-
-const toTimestamp = (value) => {
-  if (!value) return null
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime()
-}
-
-const pickLatestDate = (first, second) => {
-  const firstTime = toTimestamp(first)
-  const secondTime = toTimestamp(second)
-
-  if (!firstTime && !secondTime) return null
-  if (!firstTime) return second
-  if (!secondTime) return first
-  return firstTime >= secondTime ? first : second
-}
-
-export default async function handler(req, res) {
-  if (!requireAdminSession(req, res)) return
-
+export default withAdmin(async function handler(req, res) {
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET'])
-    res.status(405).json({ error: 'Method not allowed' })
+    methodNotAllowed(res, ['GET'])
     return
   }
 
-  let supabaseAdmin
-  try {
-    supabaseAdmin = getSupabaseAdmin()
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Kunne ikke initialisere Supabase admin-klient.' })
-    return
-  }
+  const supabaseAdmin = getSupabaseAdminOr500(res)
+  if (!supabaseAdmin) return
 
   const [{ data: authData, error: authError }, { data: recipeData, error: recipeError }, { data: shoppingStateData, error: shoppingStateError }] = await Promise.all([
     supabaseAdmin.auth.admin.listUsers(),
@@ -56,27 +29,15 @@ export default async function handler(req, res) {
   // shopping_state can be missing in some environments; continue without activity snapshots.
   const shoppingStates = shoppingStateError ? [] : (shoppingStateData || [])
 
-  const users = (authData?.users || []).map((user) => ({
-    id: user.id,
-    email: user.email,
-    role: normalizeRole(user.app_metadata?.role),
-    created_at: user.created_at,
-    last_sign_in_at: user.last_sign_in_at,
-  }))
-
-  const adminConfig = getAdminConfigDebugInfo()
-  const hasConfigAdminInList = users.some((user) => (user.email || '').toLowerCase() === adminConfig.effectiveUsername.toLowerCase())
-
-  if (!hasConfigAdminInList) {
-    users.unshift({
-      id: CONFIG_ADMIN_ID,
-      email: adminConfig.effectiveUsername,
-      role: 'admin',
-      created_at: null,
-      last_sign_in_at: null,
-      is_config_admin: true,
-    })
-  }
+  const users = withConfigAdmin(
+    (authData?.users || []).map((user) => ({
+      id: user.id,
+      email: user.email,
+      role: normalizeRole(user.app_metadata?.role),
+      created_at: user.created_at,
+      last_sign_in_at: user.last_sign_in_at,
+    })),
+  )
 
   const recipes = recipeData || []
 
@@ -86,11 +47,7 @@ export default async function handler(req, res) {
     return acc
   }, {})
 
-  const activityByUserId = shoppingStates.reduce((acc, row) => {
-    if (!row.user_id || !row.updated_at) return acc
-    acc[row.user_id] = pickLatestDate(acc[row.user_id], row.updated_at)
-    return acc
-  }, {})
+  const activityByUserId = buildActivityByUserId(shoppingStates)
 
   const usersWithStats = users.map((user) => ({
     ...user,
@@ -115,4 +72,4 @@ export default async function handler(req, res) {
     users: usersWithStats,
     recipes: recipesWithOwner,
   })
-}
+})

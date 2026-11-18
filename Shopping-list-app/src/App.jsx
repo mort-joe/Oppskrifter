@@ -1,275 +1,48 @@
-﻿import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
-
-const INGREDIENT_UNITS = ['', 'l', 'dl', 'cl', 'ml', 'kg', 'g', 'hg', 'ts', 'ss', 'stk', 'bunt', 'pk', 'fl', 'boks', 'glass', 'pose', 'eske', 'fed']
-const DEFAULT_ACCOUNT_PEOPLE = 4
-const IMPORT_GROUPS_STORAGE_KEY = 'recipe_import_collapsed_groups'
-const MENU_ITEMS = [
-  { id: 'matretter', label: 'Matretter' },
-  { id: 'oppskrift', label: 'Oppskrifter' },
-  { id: 'legg-til-matrett', label: 'Legg til matrett' },
-  { id: 'lag-meny', label: 'Lag meny' },
-  { id: 'lag-handleliste', label: 'Handleliste' },
-]
-
-const DEFAULT_SHOPPING_CATEGORY_ORDER = [
-  'gronnsaker',
-  'frukt',
-  'kjott',
-  'fisk',
-  'kjolevarer',
-  'torrvarer',
-  'bakevarer',
-  'frosenvarer',
-  'melkeprodukter',
-  'mineralvann',
-  'annet',
-]
-
-const INGREDIENT_NAME_ALIASES = {
-  soyasaus2: 'Soyasaus',
-}
-
-const DEBUG_INGREDIENT_NAMES = ['Kyllingfilet', 'Paprika rød', 'Brus', 'Tomat']
-
-const normalizeIngredientText = (value) =>
-  String(value || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-
-const normalizeCategoryName = (value) => {
-  const trimmedValue = String(value || '').trim()
-  if (!trimmedValue) return ''
-  if (normalizeIngredientText(trimmedValue) === 'supper') return 'Suppe'
-  return trimmedValue
-}
-
-const normalizeShoppingCategoryKey = (value) =>
-  normalizeIngredientText(String(value || '').trim())
-
-const normalizeIngredientName = (value) => {
-  const trimmedValue = String(value || '').trim()
-  if (!trimmedValue) return ''
-
-  const normalizedKey = normalizeIngredientText(trimmedValue)
-  return INGREDIENT_NAME_ALIASES[normalizedKey] ?? trimmedValue
-}
-
-const normalizeIngredientLookupKey = (value) =>
-  normalizeIngredientText(normalizeIngredientName(String(value || '').trim()))
-
-const normalizeNames = (values) =>
-  [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
-
-const normalizeRecipeInstructions = (value) => String(value || '').trim()
-
-const escapeHtml = (value) =>
-  String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-
-const renderFormattedInstructions = (instructions) => {
-  const trimmedValue = normalizeRecipeInstructions(instructions)
-  if (!trimmedValue) {
-    return 'Ingen oppskrift er lagt inn for denne retten ennå.'
-  }
-
-  const escapedValue = escapeHtml(trimmedValue)
-  const withBold = escapedValue.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  const withItalic = withBold.replace(/\*(.+?)\*/g, '<em>$1</em>')
-  const withLineBreaks = withItalic.replace(/\n/g, '<br />')
-
-  return withLineBreaks
-}
-
-const getRecipeInstructionsPreview = (instructions, maxLength = 120) => {
-  const normalizedValue = normalizeRecipeInstructions(instructions)
-  if (!normalizedValue) {
-    return 'Ingen oppskrift er lagt inn ennå.'
-  }
-
-  if (normalizedValue.length <= maxLength) {
-    return normalizedValue
-  }
-
-  return `${normalizedValue.slice(0, maxLength).trim()}…`
-}
-
-const normalizeShoppingCategory = (value) => {
-  const normalizedCategory = normalizeShoppingCategoryKey(value)
-  return normalizedCategory || 'annet'
-}
-
-const getBestShoppingCategory = (storedCategory) => normalizeShoppingCategory(storedCategory)
-
-const getCategoryFromKeywordMap = (ingredientName) => {
-  if (!ingredientName) return ''
-
-  const normalizedText = normalizeIngredientText(ingredientName)
-  const matchesKeyword = (keywords) =>
-    keywords.some((keyword) => new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(normalizedText))
-
-  const categoryKeywords = [
-    { category: 'kjott', keywords: ['kjøtt', 'kjott', 'kylling', 'fugl', 'okse', 'storfe', 'svin', 'lam', 'pølse', 'bacon', 'skinke'] },
-    { category: 'fisk', keywords: ['fisk', 'laks', 'torsk', 'sei', 'reke', 'reker', 'tunfisk', 'krabbe', 'blåskjell', 'sjømat'] },
-    { category: 'gronnsaker', keywords: ['tomat', 'agurk', 'paprika', 'salat', 'gulrot', 'løk', 'hvitløk', 'kål', 'brokkoli', 'spinat', 'squash', 'selleri', 'blomkål', 'agurk'] },
-    { category: 'frukt', keywords: ['eple', 'banan', 'appelsin', 'sitron', 'lime', 'melon', 'jordbær', 'bringebær', 'pære', 'plomme', 'fersken', 'druer'] },
-    { category: 'mineralvann', keywords: ['brus', 'cola', 'vann', 'farris', 'juice', 'energi', 'saft'] },
-    { category: 'melkeprodukter', keywords: ['melk', 'ost', 'yoghurt', 'smør', 'fløte', 'krem', 'rømme', 'kesam', 'juice'] },
-    { category: 'frosenvarer', keywords: ['frossen', 'fryse', 'is', 'pizza', 'pinne', 'frysevarer'] },
-    { category: 'bakevarer', keywords: ['kake', 'bakst', 'brød', 'baguett', 'boller', 'kjeks', 'mel', 'mjöl', 'bakemiks', 'bakervarer'] },
-    { category: 'torrvarer', keywords: ['pasta', 'ris', 'sukker', 'salt', 'olje', 'eddik', 'buljong', 'krydder', 'bønner', 'linser', 'kaffe', 'te', 'honning', 'müsli', 'tørrvarer', 'torrvarer'] },
-    { category: 'kjolevarer', keywords: ['brød', 'knekkebrød', 'tortilla', 'lefse', 'hamburgerbrød', 'wrap', 'pita'] },
-  ]
-
-  for (const entry of categoryKeywords) {
-    if (matchesKeyword(entry.keywords)) {
-      return entry.category
-    }
-  }
-
-  return ''
-}
-
-const getShoppingCategoryForCustomItem = (itemName, ingredientCategoryMap) => {
-  const normalizedName = normalizeIngredientLookupKey(itemName)
-  if (!normalizedName) return 'annet'
-
-  if (ingredientCategoryMap && Object.prototype.hasOwnProperty.call(ingredientCategoryMap, normalizedName)) {
-    return normalizeShoppingCategory(ingredientCategoryMap[normalizedName])
-  }
-
-  const guessedCategory = getCategoryFromKeywordMap(normalizedName)
-  return normalizeShoppingCategory(guessedCategory)
-}
-
-const normalizeDefaultPeopleValue = (value) =>
-  Math.max(1, Number(value) || DEFAULT_ACCOUNT_PEOPLE)
-
-const scaleIngredientQuantity = (quantity, factor) =>
-  Math.max(0, Math.round(((Number(quantity) || 0) * factor + Number.EPSILON) * 1000) / 1000)
-
-const RECIPE_NAME_SUFFIX_PATTERN = /\s\(\d+\)$/
-
-const getRecipeDisplayName = (recipe) => {
-  const recipeName = String(recipe?.name || '').trim()
-  const sharedRootName = String(recipe?.sharedRootName || '').trim()
-
-  if (recipe?.sharedVersionNumber) {
-    return sharedRootName || recipeName.replace(RECIPE_NAME_SUFFIX_PATTERN, '')
-  }
-
-  if (recipe?.sharedRootRecipeId && RECIPE_NAME_SUFFIX_PATTERN.test(recipeName)) {
-    return recipeName.replace(RECIPE_NAME_SUFFIX_PATTERN, '')
-  }
-
-  return recipeName
-}
-
-const getSharedRecipeDisplayName = (recipe) => {
-  const recipeName = String(recipe?.name || '').trim()
-  const sharedRootName = String(recipe?.sharedRootName || '').trim()
-
-  if (recipe?.sharedVersionNumber) {
-    return `${sharedRootName || recipeName} (${recipe.sharedVersionNumber})`
-  }
-
-  return recipeName
-}
-
-const getInitialCollapsedImportGroups = () => {
-  if (typeof window === 'undefined') {
-    return { own: false, existing: false, new: false }
-  }
-
-  try {
-    const savedValue = window.localStorage.getItem(IMPORT_GROUPS_STORAGE_KEY)
-    if (!savedValue) {
-      return { own: false, existing: false, new: false }
-    }
-
-    const parsed = JSON.parse(savedValue)
-    return {
-      own: Boolean(parsed?.own),
-      existing: Boolean(parsed?.existing),
-      new: Boolean(parsed?.new),
-    }
-  } catch {
-    return { own: false, existing: false, new: false }
-  }
-}
-
-const getRecipeImportErrorMessage = (error) => {
-  const rawMessage = String(error?.message || error?.details || '').toLowerCase()
-
-  if (
-    rawMessage.includes('shared_root_recipe_id') ||
-    rawMessage.includes('shared_root_name') ||
-    rawMessage.includes('shared_version_number') ||
-    rawMessage.includes('user_settings') ||
-    rawMessage.includes('permission denied') ||
-    rawMessage.includes('row-level security')
-  ) {
-    return 'Importlisten krever at oppdatert SQL er kjørt i Supabase. Kjør auth_setup.sql og last siden på nytt.'
-  }
-
-  return 'Kunne ikke laste listen over matretter i databasen.'
-}
-
-const formatSupabaseErrorDetails = (error) => {
-  const code = String(error?.code || '').trim()
-  const message = String(error?.message || '').trim()
-  const details = String(error?.details || '').trim()
-  const hint = String(error?.hint || '').trim()
-
-  const segments = []
-  if (code) segments.push(`kode: ${code}`)
-  if (message) segments.push(`melding: ${message}`)
-  if (details) segments.push(`detaljer: ${details}`)
-  if (hint) segments.push(`hint: ${hint}`)
-
-  return segments.join(' | ')
-}
-
-const getRecipeImportFailureMessage = (error) => {
-  const rawMessage = [error?.code, error?.message, error?.details, error?.hint]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-
-  if (
-    rawMessage.includes('shared_root_recipe_id') ||
-    rawMessage.includes('shared_root_name') ||
-    rawMessage.includes('shared_version_number') ||
-    rawMessage.includes('user_settings')
-  ) {
-    return 'Import krever at oppdatert SQL er kjørt i Supabase. Kjør auth_setup.sql og last siden på nytt.'
-  }
-
-  if (rawMessage.includes('permission denied') || rawMessage.includes('row-level security')) {
-    return 'Import feilet på grunn av manglende database-tilgang (RLS-policy). Kjør auth_setup.sql i Supabase.'
-  }
-
-  if (rawMessage.includes('duplicate key') || rawMessage.includes('unique')) {
-    const duplicateDiagnosticText = formatSupabaseErrorDetails(error)
-    if (duplicateDiagnosticText) {
-      return `Import feilet på grunn av duplikatdata i databasen. ${duplicateDiagnosticText}`
-    }
-    return 'Import feilet på grunn av duplikatdata i databasen (for eksempel ingrediens, kategori eller tag med samme navn).'
-  }
-
-  const diagnosticText = formatSupabaseErrorDetails(error)
-  if (diagnosticText) {
-    return `Import feilet. ${diagnosticText}`
-  }
-
-  return 'Noe gikk galt under import av matretter.'
-}
+import {
+  DEFAULT_ACCOUNT_PEOPLE,
+  DEFAULT_SHOPPING_CATEGORY_ORDER,
+  IMPORT_GROUPS_STORAGE_KEY,
+  INGREDIENT_UNITS,
+  MENU_ITEMS,
+} from './lib/constants'
+import {
+  getShoppingCategoryForCustomItem,
+  ingredientIdentityKey,
+  normalizeCategoryName,
+  normalizeIngredientLookupKey,
+  normalizeIngredientName,
+  normalizeIngredientText,
+  normalizeNames,
+  normalizeShoppingCategory,
+  normalizeShoppingCategoryKey,
+  parseQuantityValue,
+  scaleIngredientQuantity,
+} from './lib/ingredients'
+import {
+  getRecipeDisplayName,
+  getSharedRecipeDisplayName,
+  isMissingInstructionsColumnError,
+  mapRecipeRow,
+  normalizeRecipeInstructions,
+  renderFormattedInstructions,
+} from './lib/recipes'
+import { getRecipeImportErrorMessage, getRecipeImportFailureMessage } from './lib/importMessages'
+import { getInitialCollapsedImportGroups, normalizeDefaultPeopleValue } from './lib/settings'
+import {
+  buildShoppingState,
+  filterRecordByAllowedKeys,
+  normalizeMenuPlan,
+  normalizeNonNegativeNumberRecord,
+  normalizePositiveNumberRecord,
+} from './lib/shoppingState'
+import { confirmAction, notifyError } from './lib/dialogs'
+import { getOrCreateIngredients, getOrCreateRecords } from './data/catalog'
+import InstructionsToolbar from './components/InstructionsToolbar'
+import TagCheckboxList from './components/TagCheckboxList'
+import RecipeSearchField from './components/RecipeSearchField'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -347,8 +120,6 @@ function App() {
     occasionTags: [],
   })
 
-  const ingredientIdentityKey = (name, unit) => `${name}__${unit || ''}`
-
   const shoppingCategoryOrderMap = useMemo(
     () => new Map(shoppingCategoryOrder.map((category, index) => [category, index])),
     [shoppingCategoryOrder],
@@ -370,39 +141,6 @@ function App() {
     } catch (error) {
       console.error('Could not update user activity:', error)
     }
-  }
-
-  const normalizePositiveNumberRecord = (value) => {
-    if (!value || typeof value !== 'object') return {}
-
-    return Object.fromEntries(
-      Object.entries(value)
-        .map(([key, raw]) => [key, Number(raw) || 0])
-        .filter(([, numberValue]) => numberValue > 0),
-    )
-  }
-
-  const normalizeNonNegativeNumberRecord = (value) => {
-    if (!value || typeof value !== 'object') return {}
-
-    return Object.fromEntries(
-      Object.entries(value)
-        .map(([key, raw]) => [key, Math.max(0, Number(raw) || 0)]),
-    )
-  }
-
-  const filterRecordByAllowedKeys = (value, allowedKeys) =>
-    Object.fromEntries(Object.entries(value).filter(([key]) => allowedKeys.has(key)))
-
-  const normalizeMenuPlan = (value, fallbackDays = 1) => {
-    const defaultPlan = Array.from({ length: fallbackDays }, () => ({ recipeId: null }))
-    if (!Array.isArray(value) || value.length === 0) {
-      return defaultPlan
-    }
-
-    return value.map((entry) => ({
-      recipeId: entry?.recipeId ? Number(entry.recipeId) : null,
-    }))
   }
 
   const loadData = useCallback(async (userId) => {
@@ -500,7 +238,6 @@ function App() {
           : 'Kunne ikke hente sorteringskategorier fra databasen. Prøv å logge ut og inn igjen.',
       )
     } else {
-      console.log('DEBUG shoppingCategoryData from DB:', shoppingCategoryData)
       if (shoppingCategoryData && shoppingCategoryData.length > 0) {
         const orderedCategoryKeys = [
           ...new Set(
@@ -509,7 +246,6 @@ function App() {
               .filter(Boolean),
           ),
         ]
-        console.log('DEBUG orderedCategoryKeys after normalization:', orderedCategoryKeys)
 
         if (!orderedCategoryKeys.includes('annet')) {
           orderedCategoryKeys.push('annet')
@@ -517,7 +253,6 @@ function App() {
 
         setShoppingCategoryOrder(orderedCategoryKeys)
       } else {
-        console.warn('DEBUG: shoppingCategoryData is empty or null, using DEFAULT_SHOPPING_CATEGORY_ORDER')
         setShoppingCategoryOrder(DEFAULT_SHOPPING_CATEGORY_ORDER)
         setupWarnings.push(
           'Shoppingkategori-tabellen er tom eller mangler i databasen. Kjør auth_setup.sql i Supabase og last siden på nytt.',
@@ -535,20 +270,6 @@ function App() {
     }
 
     setShoppingCategorySetupMessage(setupWarnings.join(' '))
-
-    const debugIngredientMap = DEBUG_INGREDIENT_NAMES.reduce((acc, name) => {
-      const normalizedKey = normalizeIngredientLookupKey(name)
-      acc[name] = {
-        normalizedKey,
-        foundRows: (ingredientNameData || [])
-          .filter((row) => normalizeIngredientLookupKey(row.name) === normalizedKey)
-          .map((row) => ({ id: row.id, name: row.name, shopping_category: row.shopping_category, normalized: normalizeShoppingCategory(row.shopping_category) })),
-      }
-      return acc
-    }, {})
-
-    console.log('DEBUG ingredientNameData sample:', (ingredientNameData || []).slice(0, 10))
-    console.log('DEBUG ingredient lookup for debug names', debugIngredientMap)
 
     if (ingredientNameError) {
       console.error('Could not load global ingredient names:', ingredientNameError)
@@ -583,204 +304,12 @@ function App() {
     if (recipeData) {
       setRecipes(
         recipeData.map((recipe) => ({
-          id: recipe.id,
-          name: recipe.name,
+          ...mapRecipeRow(recipe),
           instructions: normalizeRecipeInstructions(recipe.instructions),
-          sharedRootRecipeId: recipe.shared_root_recipe_id,
-          sharedRootName: recipe.shared_root_name,
-          sharedVersionNumber: recipe.shared_version_number,
-          ingredients:
-            recipe.recipe_ingredients
-              ?.map((row) => ({
-                name: normalizeIngredientName(row.ingredients?.name),
-                quantity: row.quantity ?? 1,
-                unit: row.unit ?? '',
-                shoppingCategory: normalizeShoppingCategory(row.ingredients?.shopping_category),
-              }))
-              .filter((ingredient) => ingredient.name) ?? [],
-          typeTags:
-            normalizeNames(
-              recipe.recipe_categories
-                ?.map((row) => normalizeCategoryName(row.categories?.name))
-                .filter(Boolean) ?? [],
-            ),
-          occasionTags:
-            recipe.recipe_tags?.map((row) => row.tags?.name).filter(Boolean) ?? [],
         })),
       )
     }
   }, [])
-
-  const getOrCreateRecords = async (table, names) => {
-    const normalizedInputNames = table === 'categories'
-      ? names.map((name) => normalizeCategoryName(name))
-      : names
-    const getLookupKey = (value) => normalizeIngredientText(String(value || '').trim())
-
-    const _seenKeys = new Set()
-    const uniqueNames = normalizeNames(normalizedInputNames).filter((name) => {
-      const key = getLookupKey(name)
-      if (_seenKeys.has(key)) return false
-      _seenKeys.add(key)
-      return true
-    })
-    if (!uniqueNames.length) return []
-
-    const findRecordIdByName = async (lookupName) => {
-      const { data, error } = await supabase
-        .from(table)
-        .select('id,name')
-        .ilike('name', lookupName)
-        .limit(1)
-      if (error) {
-        throw error
-      }
-      return data?.[0]?.id ?? null
-    }
-
-    const resolveIdsFromMap = (nameToIdMap) => {
-      const resolvedIds = uniqueNames.map((name) => nameToIdMap.get(getLookupKey(name)))
-      if (resolvedIds.some((id) => !id)) {
-        throw new Error(`Could not resolve id(s) in ${table} for one or more names.`)
-      }
-      return resolvedIds
-    }
-
-    const { data: existing, error: existingError } = await supabase.from(table).select('id,name').in('name', uniqueNames)
-    if (existingError) {
-      throw existingError
-    }
-
-    const existingMap = new Map(
-      (existing || []).map((row) => [getLookupKey(row.name), row.id]),
-    )
-
-    const missingNames = []
-    for (const name of uniqueNames) {
-      const lookupKey = getLookupKey(name)
-      if (existingMap.has(lookupKey)) {
-        continue
-      }
-
-      const matchingId = await findRecordIdByName(name)
-      if (matchingId) {
-        existingMap.set(lookupKey, matchingId)
-      } else {
-        missingNames.push(name)
-      }
-    }
-
-    if (missingNames.length) {
-      const { data: inserted, error: insertError } = await supabase.from(table).insert(missingNames.map((name) => ({ name }))).select('id,name')
-      if (insertError) {
-        if (insertError.code === '23505') {
-          for (const name of missingNames) {
-            if (existingMap.has(getLookupKey(name))) {
-              continue
-            }
-            const matchingId = await findRecordIdByName(name)
-            if (matchingId) {
-              existingMap.set(getLookupKey(name), matchingId)
-            }
-          }
-          return resolveIdsFromMap(existingMap)
-        }
-        throw insertError
-      }
-      inserted.forEach((row) => existingMap.set(getLookupKey(row.name), row.id))
-    }
-
-    return resolveIdsFromMap(existingMap)
-  }
-
-  const getOrCreateIngredients = async (names) => {
-    const normalizedNames = names.map((name) => normalizeIngredientName(name))
-    const getLookupKey = (value) => normalizeIngredientText(String(value || '').trim())
-
-    const _seenIngredientKeys = new Set()
-    const uniqueNames = normalizeNames(normalizedNames).filter((name) => {
-      const key = getLookupKey(name)
-      if (_seenIngredientKeys.has(key)) return false
-      _seenIngredientKeys.add(key)
-      return true
-    })
-    if (!uniqueNames.length) return []
-
-    const findIngredientIdByName = async (lookupName) => {
-      const { data, error } = await supabase
-        .from('ingredients')
-        .select('id,name')
-        .ilike('name', lookupName)
-        .limit(1)
-      if (error) {
-        throw error
-      }
-      return data?.[0]?.id ?? null
-    }
-
-    const resolveIdsFromMap = (nameToIdMap) => {
-      const resolvedIds = uniqueNames.map((name) => nameToIdMap.get(getLookupKey(name)))
-      if (resolvedIds.some((id) => !id)) {
-        throw new Error('Could not resolve ingredient id(s) for one or more names.')
-      }
-      return resolvedIds
-    }
-
-    const { data: existing, error: existingError } = await supabase
-      .from('ingredients')
-      .select('id,name,shopping_category')
-      .in('name', uniqueNames)
-    if (existingError) {
-      throw existingError
-    }
-
-    const existingMap = new Map(
-      (existing || []).map((row) => [getLookupKey(row.name), row.id]),
-    )
-
-    const missingNames = []
-    for (const name of uniqueNames) {
-      const lookupKey = getLookupKey(name)
-      if (existingMap.has(lookupKey)) {
-        continue
-      }
-
-      const matchingId = await findIngredientIdByName(name)
-      if (matchingId) {
-        existingMap.set(lookupKey, matchingId)
-      } else {
-        missingNames.push(name)
-      }
-    }
-
-    if (missingNames.length) {
-      const rowsToInsert = missingNames.map((name) => ({
-        name,
-      }))
-      const { data: inserted, error: insertError } = await supabase
-        .from('ingredients')
-        .insert(rowsToInsert)
-        .select('id,name')
-      if (insertError) {
-        if (insertError.code === '23505') {
-          for (const name of missingNames) {
-            if (existingMap.has(getLookupKey(name))) {
-              continue
-            }
-            const matchingId = await findIngredientIdByName(name)
-            if (matchingId) {
-              existingMap.set(getLookupKey(name), matchingId)
-            }
-          }
-          return resolveIdsFromMap(existingMap)
-        }
-        throw insertError
-      }
-      inserted.forEach((row) => existingMap.set(getLookupKey(row.name), row.id))
-    }
-
-    return resolveIdsFromMap(existingMap)
-  }
 
   useEffect(() => {
     const initAuth = async () => {
@@ -819,6 +348,8 @@ function App() {
   useEffect(() => {
     if (!user) return
 
+    let ignore = false
+
     const load = async () => {
       await loadData(user.id)
 
@@ -834,6 +365,8 @@ function App() {
           .eq('user_id', user.id)
           .maybeSingle(),
       ])
+
+      if (ignore) return
 
       if (error) {
         console.error('Could not load shopping state:', error)
@@ -884,6 +417,10 @@ function App() {
       setIsShoppingStateReady(true)
     }
     void load()
+
+    return () => {
+      ignore = true
+    }
   }, [user, loadData])
 
   useEffect(() => {
@@ -913,20 +450,17 @@ function App() {
     if (!user || !isShoppingStateReady) return
 
     const persistState = async () => {
-      const state = {
+      const state = buildShoppingState({
         shoppingListRecipeCounts,
         customShoppingItems,
         ingredientHaveCounts,
         checkedIngredients,
         menuDays,
-  menuServings,
+        menuServings,
         menuPlan,
         menuCreated,
         defaultPeople: accountDefaultPeople,
-        userSettings: {
-          defaultPeople: accountDefaultPeople,
-        },
-      }
+      })
 
       const { error } = await supabase
         .from('shopping_state')
@@ -1225,7 +759,7 @@ function App() {
         }
         totals.set(key, {
           ...existing,
-          shoppingCategory: getBestShoppingCategory(existing.shoppingCategory),
+          shoppingCategory: normalizeShoppingCategory(existing.shoppingCategory),
           requiredQuantity: existing.requiredQuantity + ingredient.quantity * recipe.count,
         })
       })
@@ -1258,23 +792,6 @@ function App() {
       }
     })
 
-    const debugItems = items.filter((item) =>
-      DEBUG_INGREDIENT_NAMES.some(
-        (debugName) => normalizeIngredientText(debugName) === normalizeIngredientText(item.name),
-      ),
-    )
-    const chickenDebugItems = items.filter((item) =>
-      normalizeIngredientText(item.name).includes('kylling'),
-    )
-
-    if (debugItems.length) {
-      console.log('DEBUG final shopping ingredients', debugItems)
-      console.log('DEBUG shoppingCategoryOrder', shoppingCategoryOrder)
-    }
-    if (chickenDebugItems.length) {
-      console.log('DEBUG chicken shopping items', chickenDebugItems)
-    }
-
     return items.sort((a, b) => {
       const categoryA = normalizeShoppingCategory(a.shoppingCategory)
       const categoryB = normalizeShoppingCategory(b.shoppingCategory)
@@ -1285,11 +802,8 @@ function App() {
         ? shoppingCategoryOrderMap.get(categoryB)
         : shoppingCategoryOrder.length
 
-      const safeCategoryIndexA = categoryIndexA != null ? categoryIndexA : shoppingCategoryOrder.length
-      const safeCategoryIndexB = categoryIndexB != null ? categoryIndexB : shoppingCategoryOrder.length
-
-      if (safeCategoryIndexA !== safeCategoryIndexB) {
-        return safeCategoryIndexA - safeCategoryIndexB
+      if (categoryIndexA !== categoryIndexB) {
+        return categoryIndexA - categoryIndexB
       }
 
       return a.name.localeCompare(b.name, 'no', { sensitivity: 'base' })
@@ -1383,7 +897,7 @@ function App() {
 
       if (error) {
         console.error('Could not save recipe instructions:', error)
-        alert('Kunne ikke lagre oppskriften. Prøv igjen.')
+        notifyError('Kunne ikke lagre oppskriften. Prøv igjen.')
         return
       }
 
@@ -1398,7 +912,7 @@ function App() {
       setIsRecipeInstructionsExpanded(false)
     } catch (error) {
       console.error('Recipe instructions update error:', error)
-      alert('Kunne ikke lagre oppskriften. Prøv igjen.')
+      notifyError('Kunne ikke lagre oppskriften. Prøv igjen.')
     }
   }
 
@@ -1467,6 +981,13 @@ function App() {
     setRecipeImportMessage('')
     setAccountPassword('')
     setAccountPasswordConfirm('')
+  }
+
+  const handleAccountSettingsKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      void handleOpenAccountSettings()
+    }
   }
 
   const handleRefreshApp = useCallback(() => {
@@ -1595,15 +1116,12 @@ function App() {
 
   useEffect(() => {
     if (selectedMenu !== 'innstillinger' || !user) return
-    void loadRecipeImportCatalog()
-  }, [selectedMenu, user, loadRecipeImportCatalog])
-
-  useEffect(() => {
-    if (selectedMenu !== 'innstillinger' || !user) return
 
     const refreshCatalog = () => {
       void loadRecipeImportCatalog()
     }
+
+    refreshCatalog()
 
     const intervalId = window.setInterval(refreshCatalog, 20000)
     const handleWindowFocus = () => refreshCatalog()
@@ -1633,7 +1151,7 @@ function App() {
 
     const displayNameTrimmed = accountDisplayName.trim()
 
-    const state = {
+    const state = buildShoppingState({
       shoppingListRecipeCounts,
       customShoppingItems,
       ingredientHaveCounts,
@@ -1643,10 +1161,7 @@ function App() {
       menuPlan,
       menuCreated,
       defaultPeople: normalizedPeople,
-      userSettings: {
-        defaultPeople: normalizedPeople,
-      },
-    }
+    })
 
     const [{ error: shoppingStateError }, { error: userSettingsError }] = await Promise.all([
       supabase
@@ -1957,7 +1472,7 @@ function App() {
 
   const handleCreateMenu = () => {
     if (menuPlan.some((dayPlan) => !dayPlan?.recipeId)) {
-      alert('Velg en rett for hver dag før du oppretter menyen.')
+      notifyError('Velg en rett for hver dag før du oppretter menyen.')
       return
     }
 
@@ -2000,7 +1515,7 @@ function App() {
     const quantity = Math.max(1, Number(customItemQuantity) || 1)
 
     if (!name) {
-      alert('Skriv inn navn på varen du vil legge til i handlelisten.')
+      notifyError('Skriv inn navn på varen du vil legge til i handlelisten.')
       return
     }
 
@@ -2047,7 +1562,7 @@ function App() {
     const shouldResetCustomItems = resetCustomItemsSelected && hasCustomItems
 
     if (!shouldResetIngredients && !shouldResetCustomItems) {
-      alert('Velg minst en liste å nullstille.')
+      notifyError('Velg minst en liste å nullstille.')
       return
     }
 
@@ -2058,7 +1573,7 @@ function App() {
           ? 'handleliste med ingredienser'
           : 'egne varer'
 
-    const shouldReset = window.confirm(`Er du sikker på at du vil nullstille ${scopeText}?`)
+    const shouldReset = confirmAction(`Er du sikker på at du vil nullstille ${scopeText}?`)
     if (!shouldReset) {
       return
     }
@@ -2176,7 +1691,7 @@ function App() {
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
-      alert('Kunne ikke logge ut akkurat nå. Prøv igjen.')
+      notifyError('Kunne ikke logge ut akkurat nå. Prøv igjen.')
       return
     }
 
@@ -2215,12 +1730,6 @@ function App() {
     setIsAccountPasswordError(false)
     setAuthNotice('')
     setAuthResetSubmitting(false)
-  }
-
-  const parseQuantityValue = (value) => {
-    const normalized = String(value).replace(',', '.')
-    const parsed = parseFloat(normalized)
-    return Number.isNaN(parsed) ? 0 : parsed
   }
 
   const handleNewRecipeChange = (field, value) => {
@@ -2328,18 +1837,9 @@ function App() {
     setDragIngredientIndex(null)
   }
 
-  const isMissingInstructionsColumnError = (error) => {
-    const diagnosticText = [error?.message, error?.details, error?.hint]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-
-    return diagnosticText.includes('instructions') && diagnosticText.includes('does not exist')
-  }
-
   const handleDeleteRecipe = async () => {
     if (!editingRecipe) return
-    if (!window.confirm(`Er du sikker på at du vil slette matretten "${getRecipeDisplayName(editingRecipe)}"?`)) {
+    if (!confirmAction(`Er du sikker på at du vil slette matretten "${getRecipeDisplayName(editingRecipe)}"?`)) {
       return
     }
 
@@ -2354,7 +1854,7 @@ function App() {
       setSelectedRecipeId(null)
     } catch (error) {
       console.error('Delete recipe error:', error)
-      alert('Noe gikk galt ved sletting av matretten.')
+      notifyError('Noe gikk galt ved sletting av matretten.')
     }
   }
 
@@ -2371,12 +1871,12 @@ function App() {
       .filter((ingredient) => ingredient.name)
 
     if (!editingRecipe.name.trim()) {
-      alert('Fyll inn navn på matretten før du lagrer endringene.')
+      notifyError('Fyll inn navn på matretten før du lagrer endringene.')
       return
     }
 
     if (!ingredientEntries.length) {
-      alert('Fyll inn minst én ingrediens før du lagrer endringene.')
+      notifyError('Fyll inn minst én ingrediens før du lagrer endringene.')
       return
     }
 
@@ -2459,9 +1959,9 @@ function App() {
     } catch (error) {
       console.error('Edit recipe error:', error)
       if (isMissingInstructionsColumnError(error)) {
-        alert('Fremgangsmåte-feltet finnes ikke i databasen ennå. Kjør auth_setup.sql i Supabase og prøv igjen.')
+        notifyError('Fremgangsmåte-feltet finnes ikke i databasen ennå. Kjør auth_setup.sql i Supabase og prøv igjen.')
       } else {
-        alert('Noe gikk galt ved lagring av endringene.')
+        notifyError('Noe gikk galt ved lagring av endringene.')
       }
     }
   }
@@ -2502,7 +2002,7 @@ function App() {
       .filter((ingredient) => ingredient.name)
 
     if (!newRecipe.name.trim() || !ingredientEntries.length || !newRecipe.typeTags.length || !newRecipe.occasionTags.length) {
-      alert('Fyll inn navn, ingredienser og alle tag-klassifiseringer før du legger til matretten.')
+      notifyError('Fyll inn navn, ingredienser og alle tag-klassifiseringer før du legger til matretten.')
       return
     }
 
@@ -2535,7 +2035,7 @@ function App() {
 
       if (recipeError || !recipeInsert) {
         console.error('Recipe insert error:', recipeError)
-        alert('Noe gikk galt ved lagring av oppskriften.')
+        notifyError('Noe gikk galt ved lagring av oppskriften.')
         return
       }
 
@@ -2566,9 +2066,9 @@ function App() {
     } catch (error) {
       console.error('Add recipe error:', error)
       if (isMissingInstructionsColumnError(error)) {
-        alert('Fremgangsmåte-feltet finnes ikke i databasen ennå. Kjør auth_setup.sql i Supabase og prøv igjen.')
+        notifyError('Fremgangsmåte-feltet finnes ikke i databasen ennå. Kjør auth_setup.sql i Supabase og prøv igjen.')
       } else {
-        alert('Noe gikk galt ved lagring i databasen.')
+        notifyError('Noe gikk galt ved lagring i databasen.')
       }
     }
   }
@@ -2608,6 +2108,7 @@ function App() {
               E-post
               <input
                 type="email"
+                autoComplete="email"
                 value={authEmail}
                 onChange={(event) => setAuthEmail(event.target.value)}
                 required
@@ -2618,6 +2119,7 @@ function App() {
               Passord
               <input
                 type="password"
+                autoComplete="current-password"
                 value={authPassword}
                 onChange={(event) => setAuthPassword(event.target.value)}
                 required
@@ -2651,10 +2153,22 @@ function App() {
         <div className="mobile-top-region">
           <div className="mobile-header">
             <div className="mobile-header-top">
-              <div className="mobile-header-avatar" onClick={handleOpenAccountSettings}>
+              <div
+                className="mobile-header-avatar"
+                role="button"
+                tabIndex={0}
+                onClick={handleOpenAccountSettings}
+                onKeyDown={handleAccountSettingsKeyDown}
+              >
                 {currentUserLabel[0].toUpperCase()}
               </div>
-              <span className="mobile-header-username" onClick={handleOpenAccountSettings}>
+              <span
+                className="mobile-header-username"
+                role="button"
+                tabIndex={0}
+                onClick={handleOpenAccountSettings}
+                onKeyDown={handleAccountSettingsKeyDown}
+              >
                 {currentUserLabel}
               </span>
               <div className="mobile-header-actions" ref={mobileAccountMenuRef}>
@@ -2841,6 +2355,7 @@ function App() {
               Nytt passord
               <input
                 type="password"
+                autoComplete="new-password"
                 value={accountPassword}
                 onChange={(event) => {
                   setAccountPassword(event.target.value)
@@ -2856,6 +2371,7 @@ function App() {
               Bekreft nytt passord
               <input
                 type="password"
+                autoComplete="new-password"
                 value={accountPasswordConfirm}
                 onChange={(event) => {
                   setAccountPasswordConfirm(event.target.value)
@@ -3005,19 +2521,7 @@ function App() {
 
       {selectedMenu === 'matretter' && (
         <div className={`content-page menu-page ${isMobile ? 'mobile' : ''}`}>
-          <section style={{ marginBottom: '24px' }}>
-            <label htmlFor="search" style={{ display: 'block', marginBottom: '8px' }}>
-              Søk etter tag eller ingrediens:
-            </label>
-            <input
-              id="search"
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Søk på navn, kategori, tag eller ingrediens"
-              style={{ width: '100%', padding: '10px', fontSize: '16px', boxSizing: 'border-box' }}
-            />
-          </section>
+          <RecipeSearchField id="search" value={searchTerm} onChange={setSearchTerm} marginBottom="24px" />
 
           <section style={{ display: 'grid', gap: '24px', gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr' }}>
             <div style={{ display: !isMobile || mobileRecipePane === 'list' ? 'block' : 'none' }}>
@@ -3030,7 +2534,15 @@ function App() {
                     <div
                       key={recipe.id}
                       role="button"
+                      tabIndex={0}
                       onClick={() => handleSelectRecipe(recipe.id)}
+                      onKeyDown={(event) => {
+                        if (event.target !== event.currentTarget) return
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          handleSelectRecipe(recipe.id)
+                        }
+                      }}
                       className="recipe-list-card"
                       style={{
                         border: recipe.id === selectedRecipeId ? '2px solid #1f6feb' : '1px solid #ccc',
@@ -3113,12 +2625,15 @@ function App() {
                     </label>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
-                    <div className="recipe-format-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'bold')}>Fet</button>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'italic')}>Kursiv</button>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'heading')}>Overskrift</button>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(editingInstructionsRef, (value) => setEditingRecipe((current) => ({ ...current, instructions: value })), 'bullet')}>Punkt</button>
-                    </div>
+                    <InstructionsToolbar
+                      onFormat={(formatType) =>
+                        applyInstructionFormatting(
+                          editingInstructionsRef,
+                          (value) => setEditingRecipe((current) => ({ ...current, instructions: value })),
+                          formatType,
+                        )
+                      }
+                    />
                     <label style={{ display: 'block', marginBottom: '8px' }}>
                       Fremgangsmåte / oppskriftstekst:
                       <textarea
@@ -3132,33 +2647,11 @@ function App() {
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Velg kategori:</strong>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                      {allCategories.map((tag) => (
-                        <label key={`edit-category-${tag}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <input
-                            type="checkbox"
-                            checked={editingRecipe.typeTags?.includes(tag)}
-                            onChange={() => handleEditToggleTag('typeTags', tag)}
-                          />
-                          {tag}
-                        </label>
-                      ))}
-                    </div>
+                    <TagCheckboxList tags={allCategories} selectedTags={editingRecipe.typeTags} keyPrefix="edit-category" onToggle={(tag) => handleEditToggleTag('typeTags', tag)} />
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Velg tag:</strong>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                      {allTags.map((tag) => (
-                        <label key={`edit-tag-${tag}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <input
-                            type="checkbox"
-                            checked={editingRecipe.occasionTags?.includes(tag)}
-                            onChange={() => handleEditToggleTag('occasionTags', tag)}
-                          />
-                          {tag}
-                        </label>
-                      ))}
-                    </div>
+                    <TagCheckboxList tags={allTags} selectedTags={editingRecipe.occasionTags} keyPrefix="edit-tag" onToggle={(tag) => handleEditToggleTag('occasionTags', tag)} />
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <strong>Ingredienser</strong>
@@ -3176,6 +2669,7 @@ function App() {
                         <input
                           type="text"
                           placeholder="Ingrediensnavn"
+                          aria-label="Ingrediensnavn"
                           value={ingredient.name}
                           list="ingredient-name-suggestions"
                           onChange={(event) => handleEditIngredientChange(index, 'name', event.target.value)}
@@ -3186,11 +2680,13 @@ function App() {
                           min="0.1"
                           step="any"
                           inputMode="decimal"
+                          aria-label="Antall"
                           value={ingredient.quantity}
                           onChange={(event) => handleEditIngredientChange(index, 'quantity', event.target.value)}
                           style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
                         />
                         <select
+                          aria-label="Enhet"
                           value={ingredient.unit || ''}
                           onChange={(event) => handleEditIngredientChange(index, 'unit', event.target.value)}
                           style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
@@ -3204,7 +2700,7 @@ function App() {
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                           <span
                             title="Dra for å endre rekkefølge"
-                            aria-label="Dra for å flytte ingrediens"
+                            aria-hidden="true"
                             style={{ cursor: 'grab', fontSize: '20px', padding: '6px 10px', userSelect: 'none', color: '#888', lineHeight: 1 }}
                           >
                             ⋮
@@ -3345,12 +2841,9 @@ function App() {
               />
             </label>
             <div>
-              <div className="recipe-format-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'bold')}>Fet</button>
-                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'italic')}>Kursiv</button>
-                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'heading')}>Overskrift</button>
-                <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), 'bullet')}>Punkt</button>
-              </div>
+              <InstructionsToolbar
+                onFormat={(formatType) => applyInstructionFormatting(newInstructionsRef, (value) => handleNewRecipeChange('instructions', value), formatType)}
+              />
               <label>
                 Fremgangsmåte / oppskriftstekst:
                 <textarea
@@ -3369,6 +2862,7 @@ function App() {
                   <input
                     type="text"
                     placeholder="Navn på ingrediens"
+                    aria-label="Navn på ingrediens"
                     value={ingredient.name}
                     list="ingredient-name-suggestions"
                     onChange={(event) => handleNewIngredientChange(index, 'name', event.target.value)}
@@ -3379,11 +2873,13 @@ function App() {
                     min="0.1"
                     step="any"
                     inputMode="decimal"
+                    aria-label="Antall"
                     value={ingredient.quantity}
                     onChange={(event) => handleNewIngredientChange(index, 'quantity', event.target.value)}
                     style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
                   />
                   <select
+                    aria-label="Enhet"
                     value={ingredient.unit || ''}
                     onChange={(event) => handleNewIngredientChange(index, 'unit', event.target.value)}
                     style={{ width: '100%', padding: '10px', boxSizing: 'border-box' }}
@@ -3415,34 +2911,12 @@ function App() {
 
             <div>
               <strong>Velg kategori:</strong>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                {allCategories.map((tag) => (
-                  <label key={`category-${tag}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input
-                      type="checkbox"
-                      checked={newRecipe.typeTags.includes(tag)}
-                      onChange={() => handleToggleTag('typeTags', tag)}
-                    />
-                    {tag}
-                  </label>
-                ))}
-              </div>
+              <TagCheckboxList tags={allCategories} selectedTags={newRecipe.typeTags} keyPrefix="category" onToggle={(tag) => handleToggleTag('typeTags', tag)} />
             </div>
 
             <div>
               <strong>Velg tag:</strong>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                {allTags.map((tag) => (
-                  <label key={`tag-${tag}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input
-                      type="checkbox"
-                      checked={newRecipe.occasionTags.includes(tag)}
-                      onChange={() => handleToggleTag('occasionTags', tag)}
-                    />
-                    {tag}
-                  </label>
-                ))}
-              </div>
+              <TagCheckboxList tags={allTags} selectedTags={newRecipe.occasionTags} keyPrefix="tag" onToggle={(tag) => handleToggleTag('occasionTags', tag)} />
             </div>
 
             <button type="submit" className={`recipe-submit-btn ${isMobile ? 'mobile prominent' : ''}`} style={{ padding: '12px 18px', cursor: 'pointer' }}>
@@ -3496,18 +2970,14 @@ function App() {
                     ✎
                   </button>
                 </div>
-                <div
-                  style={{ whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}
-                  dangerouslySetInnerHTML={{ __html: renderFormattedInstructions(selectedRecipe.instructions) }}
-                />
+                <div style={{ whiteSpace: 'pre-wrap', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                  {renderFormattedInstructions(selectedRecipe.instructions)}
+                </div>
                 {isRecipeInstructionsEditorOpen && (
                   <div style={{ marginTop: '12px', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                    <div className="recipe-format-toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'bold')}>Fet</button>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'italic')}>Kursiv</button>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'heading')}>Overskrift</button>
-                      <button type="button" className="recipe-format-btn" onClick={() => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, 'bullet')}>Punkt</button>
-                    </div>
+                    <InstructionsToolbar
+                      onFormat={(formatType) => applyInstructionFormatting(recipeEditorInstructionsRef, setRecipeInstructionsEditorDraft, formatType)}
+                    />
                     <textarea
                       ref={recipeEditorInstructionsRef}
                       value={recipeInstructionsEditorDraft}
@@ -3597,6 +3067,7 @@ function App() {
                   onChange={(event) => setCustomItemName(event.target.value)}
                   onKeyDown={(event) => { if (event.key === 'Enter') handleAddCustomShoppingItem() }}
                   placeholder="F.eks. kaffe eller melk"
+                  aria-label="Navn på vare"
                   className="custom-item-input"
                 />
                 <button
@@ -3612,6 +3083,7 @@ function App() {
                 type="number"
                 min="1"
                 step="1"
+                aria-label="Antall"
                 value={customItemQuantity}
                 onChange={(event) => setCustomItemQuantity(event.target.value)}
                 onKeyDown={(event) => { if (event.key === 'Enter') handleAddCustomShoppingItem() }}
@@ -3720,19 +3192,7 @@ function App() {
 
       {selectedMenu === 'lag-meny' && (
         <section className={`content-page menu-page ${isMobile ? 'mobile' : ''}`} style={{ display: 'grid', gap: '16px' }}>
-          <section style={{ marginBottom: '8px' }}>
-            <label htmlFor="menu-search" style={{ display: 'block', marginBottom: '8px' }}>
-              Søk etter tag eller ingrediens:
-            </label>
-            <input
-              id="menu-search"
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Søk på navn, kategori, tag eller ingrediens"
-              style={{ width: '100%', padding: '10px', fontSize: '16px', boxSizing: 'border-box' }}
-            />
-          </section>
+          <RecipeSearchField id="menu-search" value={searchTerm} onChange={setSearchTerm} marginBottom="8px" />
           <div className={`menu-page-narrow compact ${isMobile ? 'mobile' : ''}`}>
           <h2>Lag meny</h2>
           <div className="menu-form-fields" style={{ display: 'grid', gap: '12px' }}>
