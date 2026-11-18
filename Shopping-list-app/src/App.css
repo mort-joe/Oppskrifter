@@ -329,6 +329,11 @@ input[type="checkbox"] {
   border: 1px solid #ccc;
 }
 
+.app-shell.mobile .account-settings-form input,
+.app-shell.mobile .account-password-form input {
+  font-size: 1rem;
+}
+
 .app-content-region {
   width: 100%;
   box-sizing: border-box;
