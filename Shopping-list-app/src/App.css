@@ -57,6 +57,11 @@ input[type="checkbox"] {
   border: 1px solid rgba(255, 255, 255, 0.72);
 }
 
+.app-shell.mobile .mobile-header.has-open-account-menu {
+  overflow: visible;
+  z-index: 2;
+}
+
 .app-shell.mobile .mobile-header::before {
   content: '';
   position: absolute;
@@ -89,6 +94,10 @@ input[type="checkbox"] {
   position: relative;
   z-index: 1;
   padding: 2px 2px 0;
+}
+
+.app-shell.mobile .mobile-header.has-open-account-menu .mobile-header-top {
+  z-index: 2;
 }
 
 .app-shell.mobile .mobile-header-banner {

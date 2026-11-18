@@ -2151,7 +2151,7 @@ function App() {
     <div className={`App app-shell ${isMobile ? 'mobile' : ''}`}>
       {isMobile ? (
         <div className="mobile-top-region">
-          <div className="mobile-header">
+          <div className={`mobile-header ${showMobileAccountMenu ? 'has-open-account-menu' : ''}`}>
             <div className="mobile-header-top">
               <div
                 className="mobile-header-avatar"
