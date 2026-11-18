@@ -2817,6 +2817,13 @@ function App() {
                     >
                       Legg til i handleliste
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMenuSelect('lag-handleliste')}
+                      style={{ padding: '10px 16px', cursor: 'pointer' }}
+                    >
+                      Gå til handleliste
+                    </button>
                   </div>
                 </div>
               ) : (
